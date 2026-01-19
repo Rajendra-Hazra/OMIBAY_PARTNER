@@ -1,0 +1,115 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configurations and tasks you actually want to
+# keep. However, some settings are better kept out of a shared repository.
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+__pycache__/
+build/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android related
+**/android/app/src/main/res/values/strings.xml
+**/android/local.properties
+**/android/key.properties
+**/android/app/src/main/assets/google-services.json
+**/android/app/src/main/res/xml/google_maps_api_key.xml
+**/android/app/src/main/res/values/google_maps_api_key.xml
+.gradle/
+captures/
+**/android/app/*.jks
+**/android/app/*.keystore
+**/android/app/*.p12
+**/android/app/*.google-services.json
+
+# iOS related
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Flutter/ephemeral/
+**/ios/Pods/
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GoogleService-Info.plist
+**/ios/Runner/GeneratedPluginRegistrant.h
+**/ios/Runner/GeneratedPluginRegistrant.m
+**/ios/Runner/GeneratedPluginRegistrant.swift
+**/ios/Runner/Runner.xcworkspace/
+**/ios/Runner/project.xcworkspace/
+**/ios/Runner/xcshareddata/
+**/ios/Runner/xcuserdata/
+**/ios/Runner.xcodeproj/project.xcworkspace/
+**/ios/Runner.xcodeproj/xcuserdata/
+**/ios/Runner.xcworkspace/xcuserdata/
+**/ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/
+**/ios/Runner.xcworkspace/xcshareddata/
+**/ios/Runner.xcodeproj/xcshareddata/
+**/ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+**/ios/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+**/ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
+**/ios/Runner.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
+**/ios/Runner.xcodeproj/xcshareddata/xcschemes/
+**/ios/Runner.xcworkspace/xcshareddata/xcschemes/
+**/ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/xcschemes/
+**/ios/Runner.xcworkspace/project.xcworkspace/
+**/ios/Runner.xcodeproj/project.xcworkspace/
+
+# macOS related
+**/macos/Flutter/ephemeral/
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+**/macos/Flutter/Flutter-Generated.xcconfig
+**/macos/Flutter/flutter_export_environment.sh
+**/macos/Pods/
+
+# Windows related
+**/windows/flutter/ephemeral/
+**/windows/flutter/generated_plugin_registrant.cc
+**/windows/flutter/generated_plugin_registrant.h
+**/windows/flutter/generated_plugins.cmake
+
+# Linux related
+**/linux/flutter/ephemeral/
+**/linux/flutter/generated_plugin_registrant.cc
+**/linux/flutter/generated_plugin_registrant.h
+**/linux/flutter/generated_plugins.cmake
+
+# Web related
+lib/generated_plugin_registrant.dart
+
+# Executables
+*.exe
+*.dll
+*.so
+*.dylib
