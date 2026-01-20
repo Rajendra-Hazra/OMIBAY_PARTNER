@@ -32,8 +32,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _onlineSeconds = 0;
   bool _isInitialLoad = true;
   List<Map<String, dynamic>> _activeJobs = [];
-  DateTime? _lastBackPressTime;
-  bool _canPop = false;
 
   @override
   void initState() {
@@ -260,84 +258,41 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: _canPop,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-
-        final now = DateTime.now();
-        if (_lastBackPressTime == null ||
-            now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
-          _lastBackPressTime = now;
-
-          // Show localized snackbar message
-          ScaffoldMessenger.of(context).clearSnackBars();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context)!.pressBackAgainToExit),
-              duration: const Duration(seconds: 2),
-              behavior: SnackBarBehavior.floating,
-              margin: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          );
-
-          // Update state to allow exit on next press within 2 seconds
-          setState(() {
-            _canPop = true;
-          });
-
-          // Reset _canPop after 2 seconds
-          Future.delayed(const Duration(seconds: 2), () {
-            if (mounted) {
-              setState(() {
-                _canPop = false;
-              });
-            }
-          });
-        } else {
-          // Second back press within 2 seconds - exit the app
-          Navigator.of(context).pop();
-        }
-      },
-      child: Scaffold(
-        body: SafeArea(
-          top: false,
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                _buildHeader(context),
-                const SizedBox(height: 12),
-                _buildStatusToggle(),
-                const SizedBox(height: 10),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (!_isOnline) ...[
-                        _buildOfflinePrompt(),
-                        const SizedBox(height: 12),
-                      ],
-                      _buildSectionTitle(
-                        AppLocalizations.of(context)!.activeJobs,
-                      ),
-                      _activeJobs.isEmpty
-                          ? _buildNoJobsCard()
-                          : _buildActiveJobsList(),
-                      const SizedBox(height: 24),
-                      _buildPerformanceCard(),
-                      const SizedBox(height: 24),
-                      _buildChallengesAndReferralCard(),
-                      const SizedBox(height: 24),
-                      _buildProTipsCard(),
+    return Scaffold(
+      body: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              _buildHeader(context),
+              const SizedBox(height: 12),
+              _buildStatusToggle(),
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (!_isOnline) ...[
+                      _buildOfflinePrompt(),
+                      const SizedBox(height: 12),
                     ],
-                  ),
+                    _buildSectionTitle(
+                      AppLocalizations.of(context)!.activeJobs,
+                    ),
+                    _activeJobs.isEmpty
+                        ? _buildNoJobsCard()
+                        : _buildActiveJobsList(),
+                    const SizedBox(height: 24),
+                    _buildPerformanceCard(),
+                    const SizedBox(height: 24),
+                    _buildChallengesAndReferralCard(),
+                    const SizedBox(height: 24),
+                    _buildProTipsCard(),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

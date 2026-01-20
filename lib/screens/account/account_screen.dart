@@ -121,54 +121,46 @@ class _AccountScreenState extends State<AccountScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        // Navigate back to Home tab (index 0)
-        Navigator.pushReplacementNamed(context, '/home');
-      },
-      child: Scaffold(
-        body: Container(
-          decoration: const BoxDecoration(gradient: AppColors.bgGradient),
-          child: SafeArea(
-            top: false,
-            bottom: false,
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                children: [
-                  _buildHeader(context),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0,
-                      vertical: 16.0,
-                    ),
-                    child: Column(
-                      children: [
-                        _buildProfileCard(context),
-                        const SizedBox(height: 20),
-                        _buildStatsSection(context),
-                        const SizedBox(height: 20),
-                        _buildQuickActionGrid(context),
-                        const SizedBox(height: 24),
-                        _buildAccountSettingsSection(context),
-                        const SizedBox(height: 24),
-                        Text(
-                          '${AppLocalizations.of(context)!.version} ${AppLocalizations.of(context)!.appVersionValue}',
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        _buildLogoutButton(),
-                        const SizedBox(height: 40),
-                      ],
-                    ),
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(gradient: AppColors.bgGradient),
+        child: SafeArea(
+          top: false,
+          bottom: false,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              children: [
+                _buildHeader(context),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20.0,
+                    vertical: 16.0,
                   ),
-                ],
-              ),
+                  child: Column(
+                    children: [
+                      _buildProfileCard(context),
+                      const SizedBox(height: 20),
+                      _buildStatsSection(context),
+                      const SizedBox(height: 20),
+                      _buildQuickActionGrid(context),
+                      const SizedBox(height: 24),
+                      _buildAccountSettingsSection(context),
+                      const SizedBox(height: 24),
+                      Text(
+                        '${AppLocalizations.of(context)!.version} ${AppLocalizations.of(context)!.appVersionValue}',
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      _buildLogoutButton(),
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),

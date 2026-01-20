@@ -83,31 +83,23 @@ class _JobsListScreenState extends State<JobsListScreen>
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        // Navigate back to Home tab (index 0)
-        Navigator.pushReplacementNamed(context, '/home');
-      },
-      child: Scaffold(
-        body: SafeArea(
-          top: false,
-          child: Column(
-            children: [
-              _buildHeader(context),
-              _buildTabs(),
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildJobsList(isAccepted: true),
-                    _buildJobsList(isAccepted: false),
-                  ],
-                ),
+    return Scaffold(
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            _buildHeader(context),
+            _buildTabs(),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildJobsList(isAccepted: true),
+                  _buildJobsList(isAccepted: false),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
