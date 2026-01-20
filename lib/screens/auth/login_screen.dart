@@ -102,10 +102,15 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
+  /// Request permissions sequentially: SMS first, then Notification
   Future<void> _handlePermissions() async {
-    // Request other permissions on Mobile only
+    // Request permissions on Mobile only
     if (!kIsWeb) {
-      await [Permission.sms, Permission.notification].request();
+      // First, request SMS permission
+      await Permission.sms.request();
+
+      // Then, request Notification permission
+      await Permission.notification.request();
     }
   }
 
@@ -115,6 +120,11 @@ class _LoginScreenState extends State<LoginScreen> {
     _phoneController.addListener(_validatePhone);
     _otpController.addListener(() {
       setState(() {}); // Update UI when OTP changes
+    });
+
+    // Request permissions when login screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _handlePermissions();
     });
   }
 
@@ -277,9 +287,6 @@ class _LoginScreenState extends State<LoginScreen> {
   // Send OTP (Mocked for static operation)
   Future<void> _sendOtp() async {
     if (!_isPhoneValid || _isLoading) return;
-
-    // Request permissions on web and mobile
-    await _handlePermissions();
 
     setState(() {
       _isLoading = true;
