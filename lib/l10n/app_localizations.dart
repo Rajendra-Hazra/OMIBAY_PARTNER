@@ -374,6 +374,12 @@ abstract class AppLocalizations {
   /// **'Save Profile'**
   String get saveProfile;
 
+  /// No description provided for @pressBackAgainToExit.
+  ///
+  /// In en, this message translates to:
+  /// **'Press back again to exit'**
+  String get pressBackAgainToExit;
+
   /// No description provided for @appSlogan.
   ///
   /// In en, this message translates to:

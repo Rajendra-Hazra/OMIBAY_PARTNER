@@ -162,6 +162,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveProfile => 'Save Profile';
 
   @override
+  String get pressBackAgainToExit => 'Press back again to exit';
+
+  @override
   String get appSlogan => 'Own Work. Own Boss';
 
   @override

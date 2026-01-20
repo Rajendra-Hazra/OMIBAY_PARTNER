@@ -221,58 +221,66 @@ class _EarningsScreenState extends State<EarningsScreen> {
       );
     }
 
-    return Scaffold(
-      body: SafeArea(
-        top: false,
-        child: RefreshIndicator(
-          onRefresh: _loadData,
-          color: AppColors.primaryOrangeStart,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              children: [
-                _buildHeader(context),
-                _buildWalletHeader(context),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildSectionTitle(l10n.earnings),
-                      _buildPerformanceGrid(),
-                      const SizedBox(height: 24),
-                      _buildMonthlyEarningsChart(),
-                      const SizedBox(height: 24),
-                      _buildSectionTitle(l10n.incentivesAndOffers),
-                      _buildBonusCard(),
-                      const SizedBox(height: 16),
-                      _buildReferCard(),
-                      const SizedBox(height: 24),
-                      Row(
-                        children: [
-                          _buildSectionTitle(l10n.transactionHistory),
-                          const Spacer(),
-                          if (_transactions.isNotEmpty) ...[
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pushNamed(
-                                  context,
-                                  '/withdrawal-history',
-                                );
-                              },
-                              child: Text(
-                                AppLocalizations.of(context)!.viewAll,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        // Navigate back to Home tab (index 0)
+        Navigator.pushReplacementNamed(context, '/home');
+      },
+      child: Scaffold(
+        body: SafeArea(
+          top: false,
+          child: RefreshIndicator(
+            onRefresh: _loadData,
+            color: AppColors.primaryOrangeStart,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                children: [
+                  _buildHeader(context),
+                  _buildWalletHeader(context),
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionTitle(l10n.earnings),
+                        _buildPerformanceGrid(),
+                        const SizedBox(height: 24),
+                        _buildMonthlyEarningsChart(),
+                        const SizedBox(height: 24),
+                        _buildSectionTitle(l10n.incentivesAndOffers),
+                        _buildBonusCard(),
+                        const SizedBox(height: 16),
+                        _buildReferCard(),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            _buildSectionTitle(l10n.transactionHistory),
+                            const Spacer(),
+                            if (_transactions.isNotEmpty) ...[
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/withdrawal-history',
+                                  );
+                                },
+                                child: Text(
+                                  AppLocalizations.of(context)!.viewAll,
+                                ),
                               ),
-                            ),
+                            ],
                           ],
-                        ],
-                      ),
-                      _buildTransactionList(),
-                      const SizedBox(height: 20),
-                    ],
+                        ),
+                        _buildTransactionList(),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -403,6 +411,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.addBankAccountDetails),
+          duration: const Duration(seconds: 2),
           action: SnackBarAction(
             label: l10n.add,
             onPressed: () => Navigator.pushNamed(
@@ -418,6 +427,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.addUpiId),
+          duration: const Duration(seconds: 2),
           action: SnackBarAction(
             label: l10n.add,
             onPressed: () => Navigator.pushNamed(
@@ -478,6 +488,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(l10n.invalidAmountOrInsufficientBalance),
+                    duration: const Duration(seconds: 2),
                   ),
                 );
                 return;
@@ -504,7 +515,10 @@ class _EarningsScreenState extends State<EarningsScreen> {
 
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(l10n.withdrawalProcessed)),
+                  SnackBar(
+                    content: Text(l10n.withdrawalProcessed),
+                    duration: const Duration(seconds: 2),
+                  ),
                 );
               }
             },
@@ -597,9 +611,12 @@ class _EarningsScreenState extends State<EarningsScreen> {
               final double amount =
                   double.tryParse(_amountController.text) ?? 0.0;
               if (amount <= 0) {
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text(l10n.invalidAmount)));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(l10n.invalidAmount),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
                 return;
               }
 
@@ -621,7 +638,10 @@ class _EarningsScreenState extends State<EarningsScreen> {
 
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(l10n.paymentProcessedSuccessfully)),
+                  SnackBar(
+                    content: Text(l10n.paymentProcessedSuccessfully),
+                    duration: const Duration(seconds: 2),
+                  ),
                 );
               }
             },

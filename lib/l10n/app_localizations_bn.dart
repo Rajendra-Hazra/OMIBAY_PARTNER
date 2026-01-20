@@ -162,6 +162,9 @@ class AppLocalizationsBn extends AppLocalizations {
   String get saveProfile => 'প্রোফাইল সংরক্ষণ করুন';
 
   @override
+  String get pressBackAgainToExit => 'প্রস্থান করতে আবার পেছনে টিপুন';
+
+  @override
   String get appSlogan => 'নিজের কাজ। নিজের বস।';
 
   @override
