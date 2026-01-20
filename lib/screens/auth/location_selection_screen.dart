@@ -360,6 +360,20 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final screenWidth = screenSize.width;
+    final screenHeight = screenSize.height;
+
+    // Responsive sizing
+    final horizontalPadding = (screenWidth * 0.06).clamp(16.0, 24.0);
+    final verticalPadding = (screenHeight * 0.02).clamp(12.0, 20.0);
+    final headingFontSize = (screenWidth * 0.055).clamp(20.0, 24.0);
+    final buttonHeight = (screenHeight * 0.065).clamp(56.0, 64.0);
+    final buttonFontSize = (screenWidth * 0.04).clamp(14.0, 16.0);
+    final locationIconSize = (screenWidth * 0.07).clamp(20.0, 28.0);
+    final cityFontSize = (screenWidth * 0.05).clamp(18.0, 22.0);
+    final detailsFontSize = (screenWidth * 0.035).clamp(13.0, 15.0);
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -378,9 +392,9 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                 width: double.infinity,
                 padding: EdgeInsets.only(
                   top: MediaQuery.of(context).padding.top + 10,
-                  left: 10,
-                  right: 10,
-                  bottom: 16,
+                  left: screenWidth * 0.02,
+                  right: screenWidth * 0.02,
+                  bottom: verticalPadding,
                 ),
                 decoration: const BoxDecoration(
                   gradient: AppColors.primaryGradient,
@@ -392,17 +406,22 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                      icon: Icon(
+                        Icons.arrow_back_ios_new,
+                        size: (screenWidth * 0.05).clamp(18.0, 22.0),
+                      ),
                       onPressed: () => Navigator.pop(context),
                       color: Colors.white,
                     ),
-                    Text(
-                      AppLocalizations.of(context)!.locationSelection,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                    Expanded(
+                      child: Text(
+                        AppLocalizations.of(context)!.locationSelection,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: (screenWidth * 0.045).clamp(16.0, 20.0),
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                     // Help button
@@ -411,22 +430,26 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                         onTap: _showHelpOptions,
                         borderRadius: BorderRadius.circular(8),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: screenWidth * 0.03,
+                            vertical: screenHeight * 0.01,
                           ),
                           child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.help_outline,
-                                size: 20,
+                                size: (screenWidth * 0.05).clamp(18.0, 22.0),
                                 color: Colors.white,
                               ),
-                              const SizedBox(width: 6),
+                              SizedBox(width: screenWidth * 0.015),
                               Text(
                                 AppLocalizations.of(context)!.help,
-                                style: const TextStyle(
-                                  fontSize: 16,
+                                style: TextStyle(
+                                  fontSize: (screenWidth * 0.04).clamp(
+                                    14.0,
+                                    18.0,
+                                  ),
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white,
                                 ),
@@ -440,7 +463,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
               ),
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(horizontalPadding.clamp(20.0, 28.0)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -449,13 +472,13 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                       Text(
                         AppLocalizations.of(context)!.confirmLocationToEarn,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 22,
+                        style: TextStyle(
+                          fontSize: headingFontSize,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
                         ),
                       ),
-                      const SizedBox(height: 32),
+                      SizedBox(height: screenHeight * 0.04),
 
                       // Search Bar
                       Container(
@@ -471,27 +494,29 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                             hintText: AppLocalizations.of(
                               context,
                             )!.searchForLocation,
-                            prefixIcon: const Icon(
+                            hintStyle: TextStyle(fontSize: detailsFontSize),
+                            prefixIcon: Icon(
                               Icons.search,
                               color: Colors.grey,
+                              size: locationIconSize * 0.85,
                             ),
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 15,
+                            contentPadding: EdgeInsets.symmetric(
+                              vertical: screenHeight * 0.018,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: screenHeight * 0.025),
 
                       // Use Current Location Option
                       InkWell(
                         onTap: _useCurrentLocation,
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: screenWidth * 0.04,
+                            vertical: screenHeight * 0.018,
                           ),
                           decoration: BoxDecoration(
                             color: AppColors.primaryOrangeStart.withValues(
@@ -506,27 +531,30 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                           ),
                           child: Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.my_location,
                                 color: AppColors.primaryOrangeStart,
-                                size: 20,
+                                size: locationIconSize * 0.8,
                               ),
-                              const SizedBox(width: 12),
-                              Text(
-                                AppLocalizations.of(
-                                  context,
-                                )!.useCurrentLocation,
-                                style: const TextStyle(
-                                  color: AppColors.primaryOrangeStart,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
+                              SizedBox(width: screenWidth * 0.03),
+                              Expanded(
+                                child: Text(
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.useCurrentLocation,
+                                  style: TextStyle(
+                                    color: AppColors.primaryOrangeStart,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: buttonFontSize,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ),
-                      const SizedBox(height: 32),
+                      SizedBox(height: screenHeight * 0.04),
 
                       // Location Details Section (Redesigned Style)
                       Container(
@@ -559,23 +587,25 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                               ),
                               Expanded(
                                 child: Padding(
-                                  padding: const EdgeInsets.all(20),
+                                  padding: EdgeInsets.all(screenWidth * 0.05),
                                   child: Row(
                                     children: [
                                       Container(
-                                        padding: const EdgeInsets.all(12),
+                                        padding: EdgeInsets.all(
+                                          screenWidth * 0.03,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: AppColors.primaryOrangeStart
                                               .withValues(alpha: 0.1),
                                           shape: BoxShape.circle,
                                         ),
-                                        child: const Icon(
+                                        child: Icon(
                                           Icons.location_on_rounded,
                                           color: AppColors.primaryOrangeStart,
-                                          size: 28,
+                                          size: locationIconSize,
                                         ),
                                       ),
-                                      const SizedBox(width: 16),
+                                      SizedBox(width: screenWidth * 0.04),
                                       Expanded(
                                         child: Column(
                                           crossAxisAlignment:
@@ -583,13 +613,18 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                                           children: [
                                             Row(
                                               children: [
-                                                Text(
-                                                  _city,
-                                                  style: const TextStyle(
-                                                    fontSize: 20,
-                                                    fontWeight: FontWeight.bold,
-                                                    color:
-                                                        AppColors.textPrimary,
+                                                Flexible(
+                                                  child: Text(
+                                                    _city,
+                                                    style: TextStyle(
+                                                      fontSize: cityFontSize,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color:
+                                                          AppColors.textPrimary,
+                                                    ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
                                                   ),
                                                 ),
                                                 const SizedBox(width: 8),
@@ -612,10 +647,12 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                                                     AppLocalizations.of(
                                                       context,
                                                     )!.selected,
-                                                    style: const TextStyle(
+                                                    style: TextStyle(
                                                       color: AppColors
                                                           .successGreen,
-                                                      fontSize: 10,
+                                                      fontSize:
+                                                          (detailsFontSize *
+                                                          0.75),
                                                       fontWeight:
                                                           FontWeight.bold,
                                                     ),
@@ -627,10 +664,12 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                                             Text(
                                               '$_state, $_country, $_pincode',
                                               style: TextStyle(
-                                                fontSize: 14,
+                                                fontSize: detailsFontSize,
                                                 color: AppColors.textSecondary,
                                                 height: 1.4,
                                               ),
+                                              overflow: TextOverflow.ellipsis,
+                                              maxLines: 2,
                                             ),
                                           ],
                                         ),
@@ -643,11 +682,11 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: screenHeight * 0.03),
 
                       // Why we need your location Note
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(screenWidth * 0.04),
                         decoration: BoxDecoration(
                           color: Colors.blue[50],
                           borderRadius: BorderRadius.circular(12),
@@ -661,17 +700,19 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                                 Icon(
                                   Icons.info_outline,
                                   color: Colors.blue[700],
-                                  size: 18,
+                                  size: locationIconSize * 0.65,
                                 ),
                                 const SizedBox(width: 8),
-                                Text(
-                                  AppLocalizations.of(
-                                    context,
-                                  )!.whyWeNeedLocation,
-                                  style: TextStyle(
-                                    color: Colors.blue[800],
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
+                                Flexible(
+                                  child: Text(
+                                    AppLocalizations.of(
+                                      context,
+                                    )!.whyWeNeedLocation,
+                                    style: TextStyle(
+                                      color: Colors.blue[800],
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: detailsFontSize,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -681,7 +722,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                               AppLocalizations.of(context)!.locationExplanation,
                               style: TextStyle(
                                 color: Colors.blue[900],
-                                fontSize: 13,
+                                fontSize: detailsFontSize * 0.9,
                                 height: 1.5,
                               ),
                             ),
@@ -689,12 +730,12 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 32),
+                      SizedBox(height: screenHeight * 0.04),
 
                       // Bottom Button
                       SizedBox(
                         width: double.infinity,
-                        height: 56,
+                        height: buttonHeight,
                         child: ElevatedButton(
                           onPressed: _confirmLocation,
                           style: ElevatedButton.styleFrom(
@@ -709,14 +750,15 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                             AppLocalizations.of(
                               context,
                             )!.useThisLocationForEarning,
-                            style: const TextStyle(
-                              fontSize: 16,
+                            style: TextStyle(
+                              fontSize: buttonFontSize,
                               fontWeight: FontWeight.bold,
                             ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: screenHeight * 0.03),
                     ],
                   ),
                 ),

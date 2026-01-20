@@ -258,37 +258,68 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final paddingScale = (screenWidth / 375).clamp(0.8, 1.2);
+    final hPadding = 20.0 * paddingScale;
+    final titleFontSize = (screenWidth * 0.05).clamp(18.0, 24.0);
+    final bodyFontSize = (screenWidth * 0.038).clamp(13.0, 16.0);
+    final smallFontSize = (screenWidth * 0.032).clamp(11.0, 14.0);
+    final borderRadius = (screenWidth * 0.06).clamp(16.0, 24.0);
+
     return Scaffold(
       body: SafeArea(
         top: false,
         child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
           child: Column(
             children: [
-              _buildHeader(context),
-              const SizedBox(height: 12),
-              _buildStatusToggle(),
-              const SizedBox(height: 10),
+              _buildHeader(context, titleFontSize, borderRadius, hPadding),
+              SizedBox(height: 12 * paddingScale),
+              _buildStatusToggle(paddingScale, bodyFontSize, screenWidth),
+              SizedBox(height: 10 * paddingScale),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 16 * paddingScale),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (!_isOnline) ...[
-                      _buildOfflinePrompt(),
-                      const SizedBox(height: 12),
+                      _buildOfflinePrompt(smallFontSize),
+                      SizedBox(height: 12 * paddingScale),
                     ],
                     _buildSectionTitle(
                       AppLocalizations.of(context)!.activeJobs,
+                      titleFontSize,
                     ),
                     _activeJobs.isEmpty
-                        ? _buildNoJobsCard()
-                        : _buildActiveJobsList(),
-                    const SizedBox(height: 24),
-                    _buildPerformanceCard(),
-                    const SizedBox(height: 24),
-                    _buildChallengesAndReferralCard(),
-                    const SizedBox(height: 24),
-                    _buildProTipsCard(),
+                        ? _buildNoJobsCard(
+                            borderRadius,
+                            bodyFontSize,
+                            smallFontSize,
+                          )
+                        : _buildActiveJobsList(
+                            borderRadius,
+                            bodyFontSize,
+                            smallFontSize,
+                          ),
+                    SizedBox(height: 24 * paddingScale),
+                    _buildPerformanceCard(
+                      borderRadius,
+                      bodyFontSize,
+                      smallFontSize,
+                    ),
+                    SizedBox(height: 24 * paddingScale),
+                    _buildChallengesAndReferralCard(
+                      borderRadius,
+                      bodyFontSize,
+                      smallFontSize,
+                    ),
+                    SizedBox(height: 24 * paddingScale),
+                    _buildProTipsCard(
+                      borderRadius,
+                      bodyFontSize,
+                      smallFontSize,
+                    ),
+                    SizedBox(height: 24 * paddingScale),
                   ],
                 ),
               ),
@@ -299,20 +330,25 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(
+    BuildContext context,
+    double fontSize,
+    double borderRadius,
+    double horizontalPadding,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 10,
-        left: 20,
-        right: 20,
+        left: horizontalPadding,
+        right: horizontalPadding,
         bottom: 15,
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: AppColors.primaryGradient,
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(24),
-          bottomRight: Radius.circular(24),
+          bottomLeft: Radius.circular(borderRadius),
+          bottomRight: Radius.circular(borderRadius),
         ),
       ),
       child: Row(
@@ -327,7 +363,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
             ),
             child: CircleAvatar(
-              radius: 22,
+              radius: fontSize * 1.2,
               backgroundColor: Colors.white24,
               backgroundImage: _photoUrl.startsWith('http')
                   ? NetworkImage(_photoUrl)
@@ -339,20 +375,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  l10n.hello(
-                    _displayName.isEmpty
-                        ? l10n.partner
-                        : LocalizationHelper.getLocalizedCustomerName(
-                            context,
-                            _displayName,
-                          ).split(' ').first,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    l10n.hello(
+                      _displayName.isEmpty
+                          ? l10n.partner
+                          : LocalizationHelper.getLocalizedCustomerName(
+                              context,
+                              _displayName,
+                            ).split(' ').first,
+                    ),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: fontSize,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 Row(
@@ -411,9 +449,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildStatusToggle() {
+  Widget _buildStatusToggle(
+    double paddingScale,
+    double fontSize,
+    double screenWidth,
+  ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(horizontal: 16 * paddingScale),
       child: GestureDetector(
         onTap: () {
           setState(() {
@@ -447,7 +489,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         },
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
@@ -473,7 +515,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
-                    vertical: 12,
+                    vertical: 8,
                   ),
                   decoration: BoxDecoration(
                     gradient: !_isOnline
@@ -509,7 +551,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       style: TextStyle(
                         color: !_isOnline ? Colors.white : Colors.grey,
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        fontSize: fontSize,
                       ),
                     ),
                   ),
@@ -517,8 +559,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
               const SizedBox(width: 8),
               Container(
-                width: 100,
-                height: 56,
+                width: (screenWidth * 0.25).clamp(80.0, 100.0),
+                height: 44,
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 decoration: BoxDecoration(
                   color: _isOnline
@@ -545,8 +587,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           ? Alignment.centerRight
                           : Alignment.centerLeft,
                       child: Container(
-                        width: 48,
-                        height: 48,
+                        width: 36,
+                        height: 36,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: LinearGradient(
@@ -571,7 +613,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         child: const Icon(
                           Icons.power_settings_new,
                           color: Colors.white,
-                          size: 26,
+                          size: 22,
                         ),
                       ),
                     ),
@@ -583,7 +625,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
-                    vertical: 12,
+                    vertical: 8,
                   ),
                   decoration: BoxDecoration(
                     gradient: _isOnline
@@ -619,7 +661,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       style: TextStyle(
                         color: _isOnline ? Colors.white : Colors.grey,
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        fontSize: fontSize,
                       ),
                     ),
                   ),
@@ -942,20 +984,34 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildActiveJobsList() {
+  Widget _buildActiveJobsList(
+    double borderRadius,
+    double bodyFontSize,
+    double smallFontSize,
+  ) {
     return Column(
       children: _activeJobs
           .map(
             (job) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _buildActiveJobCard(job),
+              child: _buildActiveJobCard(
+                job,
+                borderRadius,
+                bodyFontSize,
+                smallFontSize,
+              ),
             ),
           )
           .toList(),
     );
   }
 
-  Widget _buildActiveJobCard(Map<String, dynamic> job) {
+  Widget _buildActiveJobCard(
+    Map<String, dynamic> job,
+    double borderRadius,
+    double bodyFontSize,
+    double smallFontSize,
+  ) {
     // Helper to get localized service name
     String getServiceName() {
       return LocalizationHelper.getLocalizedServiceName(
@@ -1011,11 +1067,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 children: [
                   Text(
                     getServiceName(),
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
-                      fontSize: 15,
+                      fontSize: bodyFontSize,
                       fontWeight: FontWeight.bold,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -1026,7 +1084,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     ),
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.5),
-                      fontSize: 12,
+                      fontSize: smallFontSize * 0.9,
                     ),
                   ),
                 ],
@@ -1039,10 +1097,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ),
                 child: Text(
                   AppLocalizations.of(context)!.ongoing,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppColors.primaryOrangeStart,
                     fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                    fontSize: smallFontSize * 0.9,
                   ),
                 ),
               ),
@@ -1058,12 +1116,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     context,
                     job['customer'],
                   ),
+                  smallFontSize,
                 ),
               ),
               Expanded(
                 child: _buildActiveJobInfo(
                   Icons.payments_outlined,
                   '₹${LocalizationHelper.convertBengaliToEnglish(job['price'] ?? '0')}',
+                  smallFontSize,
                   color: AppColors.primaryOrangeStart,
                 ),
               ),
@@ -1076,6 +1136,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 child: _buildActiveJobInfo(
                   Icons.event_available,
                   getTimeType(),
+                  smallFontSize,
                 ),
               ),
               Expanded(
@@ -1085,6 +1146,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     job['distance'] ??
                         '${LocalizationHelper.convertBengaliToEnglish('2.4')} km',
                   ),
+                  smallFontSize,
                 ),
               ),
             ],
@@ -1093,10 +1155,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           _buildActiveJobInfo(
             Icons.location_on_outlined,
             LocalizationHelper.getLocalizedLocation(context, job['location']),
+            smallFontSize,
             isExpanded: true,
           ),
           const SizedBox(height: 8),
-          _buildActiveJobInfo(Icons.timer_outlined, getEta()),
+          _buildActiveJobInfo(Icons.timer_outlined, getEta(), smallFontSize),
           const SizedBox(height: 12),
           ElevatedButton(
             onPressed: () {
@@ -1121,9 +1184,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
             child: Text(
               AppLocalizations.of(context)!.viewDetails,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
+                fontSize: bodyFontSize,
               ),
             ),
           ),
@@ -1134,19 +1198,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Widget _buildActiveJobInfo(
     IconData icon,
-    String text, {
+    String text,
+    double fontSize, {
     Color? color,
     bool isExpanded = false,
   }) {
     final content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: color ?? Colors.white70, size: 16),
+        Icon(icon, color: color ?? Colors.white70, size: fontSize * 1.25),
         const SizedBox(width: 8),
         Flexible(
           child: Text(
             text,
-            style: TextStyle(color: color ?? Colors.white, fontSize: 13),
+            style: TextStyle(color: color ?? Colors.white, fontSize: fontSize),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -1157,22 +1222,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     return isExpanded ? Row(children: [Expanded(child: content)]) : content;
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, double fontSize) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Text(
         title,
-        style: const TextStyle(
-          fontSize: 19,
+        style: TextStyle(
+          fontSize: fontSize,
           fontWeight: FontWeight.w800,
-          color: Color(0xFF0A192F),
+          color: const Color(0xFF0A192F),
           letterSpacing: -0.5,
         ),
       ),
     );
   }
 
-  Widget _buildOfflinePrompt() {
+  Widget _buildOfflinePrompt(double fontSize) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -1185,7 +1250,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           Icon(
             Icons.info_outline_rounded,
             color: Colors.orange.shade900,
-            size: 20,
+            size: fontSize * 1.5,
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -1193,7 +1258,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               AppLocalizations.of(context)!.goOnlineToStart,
               style: TextStyle(
                 color: Colors.orange.shade900,
-                fontSize: 13,
+                fontSize: fontSize,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -1203,13 +1268,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildNoJobsCard() {
+  Widget _buildNoJobsCard(
+    double borderRadius,
+    double bodyFontSize,
+    double smallFontSize,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(color: Colors.grey.shade200, width: 1.5),
         boxShadow: [
           BoxShadow(
@@ -1230,17 +1299,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
             child: Icon(
               Icons.work_outline_rounded,
-              size: 40,
+              size: bodyFontSize * 3,
               color: Colors.grey.shade400,
             ),
           ),
           const SizedBox(height: 20),
           Text(
             AppLocalizations.of(context)!.noActiveJobs,
-            style: const TextStyle(
-              fontSize: 18,
+            style: TextStyle(
+              fontSize: bodyFontSize * 1.2,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF0A192F),
+              color: const Color(0xFF0A192F),
             ),
           ),
           const SizedBox(height: 8),
@@ -1248,7 +1317,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             AppLocalizations.of(context)!.goOnlineToReceiveJobs,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: smallFontSize,
               color: Colors.grey.shade600,
               height: 1.4,
             ),
@@ -1258,12 +1327,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildPerformanceCard() {
+  Widget _buildPerformanceCard(
+    double borderRadius,
+    double bodyFontSize,
+    double smallFontSize,
+  ) {
     return Card(
       elevation: 0,
       color: const Color(0xFF0A192F),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(borderRadius * 0.6),
         side: BorderSide(color: Colors.white.withValues(alpha: 0.1), width: 1),
       ),
       child: Padding(
@@ -1280,8 +1353,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 const SizedBox(width: 10),
                 Text(
                   AppLocalizations.of(context)!.todaysPerformance,
-                  style: const TextStyle(
-                    fontSize: 18,
+                  style: TextStyle(
+                    fontSize: bodyFontSize * 1.1,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -1298,6 +1371,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       '₹${LocalizationHelper.convertBengaliToEnglish(_todayBusiness.toStringAsFixed(0))}',
                       Icons.account_balance_wallet_rounded,
                       const Color(0xFF34D399),
+                      bodyFontSize,
+                      smallFontSize,
                     ),
                   ),
                 ),
@@ -1311,6 +1386,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       ),
                       Icons.check_circle_rounded,
                       const Color(0xFF60A5FA),
+                      bodyFontSize,
+                      smallFontSize,
                     ),
                   ),
                 ),
@@ -1326,6 +1403,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       _formatOnlineTime(),
                       Icons.timer_rounded,
                       const Color(0xFFFB923C),
+                      bodyFontSize,
+                      smallFontSize,
                     ),
                   ),
                 ),
@@ -1339,6 +1418,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       ),
                       Icons.star_rounded,
                       const Color(0xFFC084FC),
+                      bodyFontSize,
+                      smallFontSize,
                     ),
                   ),
                 ),
@@ -1352,7 +1433,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Widget _buildStatSubContainer(Widget child) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
@@ -1377,33 +1458,45 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     String value,
     IconData icon,
     Color color,
+    double bodyFontSize,
+    double smallFontSize,
   ) {
     return Column(
       children: [
-        Icon(icon, color: color, size: 28),
+        Icon(icon, color: color, size: bodyFontSize * 1.5),
         const SizedBox(height: 8),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: bodyFontSize * 1.1,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
         ),
         Text(
           label,
-          style: const TextStyle(fontSize: 13, color: Colors.white60),
+          style: TextStyle(fontSize: smallFontSize, color: Colors.white60),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
         ),
       ],
     );
   }
 
-  Widget _buildChallengesAndReferralCard() {
+  Widget _buildChallengesAndReferralCard(
+    double borderRadius,
+    double bodyFontSize,
+    double smallFontSize,
+  ) {
     return Card(
       elevation: 0,
       color: const Color(0xFF0A192F),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(borderRadius * 0.6),
         side: BorderSide(color: Colors.white.withValues(alpha: 0.1), width: 1),
       ),
       child: Column(
@@ -1422,19 +1515,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         color: Colors.orange.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.emoji_events,
                         color: Colors.orange,
-                        size: 20,
+                        size: bodyFontSize,
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Text(
-                      AppLocalizations.of(context)!.weeklyBonusChallenge,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.white,
+                    Expanded(
+                      child: Text(
+                        AppLocalizations.of(context)!.weeklyBonusChallenge,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: bodyFontSize,
+                          color: Colors.white,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -1456,20 +1553,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           Expanded(
                             child: Text(
                               AppLocalizations.of(context)!.complete15Jobs,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w500,
                                 color: Colors.white,
-                                fontSize: 13,
+                                fontSize: smallFontSize,
                               ),
                             ),
                           ),
                           const SizedBox(width: 8),
                           Text(
                             AppLocalizations.of(context)!.earnExtraReward,
-                            style: const TextStyle(
-                              color: Color(0xFF34D399),
+                            style: TextStyle(
+                              color: const Color(0xFF34D399),
                               fontWeight: FontWeight.bold,
-                              fontSize: 13,
+                              fontSize: smallFontSize,
                             ),
                           ),
                         ],
@@ -1492,7 +1589,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             context,
                           )!.jobsDoneCount(_todayJobsDone.toString()),
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: smallFontSize * 0.9,
                             color: Colors.white.withValues(alpha: 0.6),
                           ),
                         ),
@@ -1512,17 +1609,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               children: [
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.card_giftcard_rounded,
-                      color: Color(0xFF60A5FA),
-                      size: 24,
+                      color: const Color(0xFF60A5FA),
+                      size: bodyFontSize * 1.5,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       AppLocalizations.of(context)!.shareAndEarn,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        fontSize: bodyFontSize,
                         color: Colors.white,
                       ),
                     ),
@@ -1533,7 +1630,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   AppLocalizations.of(context)!.inviteYourFriends,
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: 14,
+                    fontSize: smallFontSize,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -1555,9 +1652,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.share_outlined, size: 18),
+                      Icon(Icons.share_outlined, size: smallFontSize * 1.5),
                       const SizedBox(width: 8),
-                      Text(AppLocalizations.of(context)!.invite),
+                      Text(
+                        AppLocalizations.of(context)!.invite,
+                        style: TextStyle(fontSize: bodyFontSize),
+                      ),
                     ],
                   ),
                 ),
@@ -1569,12 +1669,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildProTipsCard() {
+  Widget _buildProTipsCard(
+    double borderRadius,
+    double bodyFontSize,
+    double smallFontSize,
+  ) {
     return Card(
       elevation: 0,
       color: Colors.orange.shade50,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(borderRadius * 0.6),
         side: BorderSide(color: Colors.orange.shade200, width: 1),
       ),
       child: Padding(
@@ -1590,20 +1694,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     Icon(
                       Icons.lightbulb_outline,
                       color: Colors.orange.shade800,
+                      size: bodyFontSize * 1.5,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       AppLocalizations.of(context)!.proTips,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        fontSize: bodyFontSize,
                         color: Colors.orange.shade900,
                       ),
                     ),
                   ],
                 ),
                 TextButton(
-                  onPressed: _showAllProTips,
+                  onPressed: () => _showAllProTips(bodyFontSize, smallFontSize),
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     minimumSize: Size.zero,
@@ -1614,23 +1719,35 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     style: TextStyle(
                       color: Colors.orange.shade800,
                       fontWeight: FontWeight.bold,
-                      fontSize: 13,
+                      fontSize: smallFontSize,
                     ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            _buildTipItem(1, AppLocalizations.of(context)!.proTip1),
-            _buildTipItem(2, AppLocalizations.of(context)!.proTip2),
-            _buildTipItem(3, AppLocalizations.of(context)!.proTip3),
+            _buildTipItem(
+              1,
+              AppLocalizations.of(context)!.proTip1,
+              smallFontSize,
+            ),
+            _buildTipItem(
+              2,
+              AppLocalizations.of(context)!.proTip2,
+              smallFontSize,
+            ),
+            _buildTipItem(
+              3,
+              AppLocalizations.of(context)!.proTip3,
+              smallFontSize,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTipItem(int num, String text) {
+  Widget _buildTipItem(int num, String text, double fontSize) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Row(
@@ -1647,7 +1764,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.orange.shade800,
-                fontSize: 12,
+                fontSize: fontSize * 0.9,
               ),
             ),
           ),
@@ -1656,7 +1773,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             child: Text(
               text,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: fontSize,
                 color: Colors.orange.shade900.withValues(alpha: 0.8),
                 height: 1.4,
               ),
@@ -1667,7 +1784,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  void _showAllProTips() {
+  void _showAllProTips(double bodyFontSize, double smallFontSize) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1706,14 +1823,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     child: Icon(
                       Icons.lightbulb,
                       color: Colors.orange.shade800,
-                      size: 24,
+                      size: bodyFontSize * 1.5,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Text(
                     AppLocalizations.of(context)!.allProTips,
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: bodyFontSize * 1.25,
                       fontWeight: FontWeight.bold,
                       color: Colors.orange.shade900,
                     ),
@@ -1731,16 +1848,56 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 children: [
-                  _buildTipItem(1, AppLocalizations.of(context)!.proTip1),
-                  _buildTipItem(2, AppLocalizations.of(context)!.proTip2),
-                  _buildTipItem(3, AppLocalizations.of(context)!.proTip3),
-                  _buildTipItem(4, AppLocalizations.of(context)!.proTip4),
-                  _buildTipItem(5, AppLocalizations.of(context)!.proTip5),
-                  _buildTipItem(6, AppLocalizations.of(context)!.proTip6),
-                  _buildTipItem(7, AppLocalizations.of(context)!.proTip7),
-                  _buildTipItem(8, AppLocalizations.of(context)!.proTip8),
-                  _buildTipItem(9, AppLocalizations.of(context)!.proTip9),
-                  _buildTipItem(10, AppLocalizations.of(context)!.proTip10),
+                  _buildTipItem(
+                    1,
+                    AppLocalizations.of(context)!.proTip1,
+                    smallFontSize,
+                  ),
+                  _buildTipItem(
+                    2,
+                    AppLocalizations.of(context)!.proTip2,
+                    smallFontSize,
+                  ),
+                  _buildTipItem(
+                    3,
+                    AppLocalizations.of(context)!.proTip3,
+                    smallFontSize,
+                  ),
+                  _buildTipItem(
+                    4,
+                    AppLocalizations.of(context)!.proTip4,
+                    smallFontSize,
+                  ),
+                  _buildTipItem(
+                    5,
+                    AppLocalizations.of(context)!.proTip5,
+                    smallFontSize,
+                  ),
+                  _buildTipItem(
+                    6,
+                    AppLocalizations.of(context)!.proTip6,
+                    smallFontSize,
+                  ),
+                  _buildTipItem(
+                    7,
+                    AppLocalizations.of(context)!.proTip7,
+                    smallFontSize,
+                  ),
+                  _buildTipItem(
+                    8,
+                    AppLocalizations.of(context)!.proTip8,
+                    smallFontSize,
+                  ),
+                  _buildTipItem(
+                    9,
+                    AppLocalizations.of(context)!.proTip9,
+                    smallFontSize,
+                  ),
+                  _buildTipItem(
+                    10,
+                    AppLocalizations.of(context)!.proTip10,
+                    smallFontSize,
+                  ),
                   const SizedBox(height: 30),
                 ],
               ),

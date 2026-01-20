@@ -542,6 +542,21 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final screenWidth = screenSize.width;
+    final screenHeight = screenSize.height;
+
+    // Responsive values
+    final horizontalPadding = (screenWidth * 0.05).clamp(16.0, 24.0);
+    final verticalPadding = (screenHeight * 0.02).clamp(12.0, 20.0);
+    final titleFontSize = (screenWidth * 0.05).clamp(16.0, 20.0);
+    final bodyFontSize = (screenWidth * 0.04).clamp(13.0, 16.0);
+    final iconSize = (screenWidth * 0.05).clamp(18.0, 22.0);
+    final borderRadius = (screenWidth * 0.04).clamp(12.0, 16.0);
+    final cardPadding = (screenWidth * 0.05).clamp(16.0, 20.0);
+    final spacing = (screenWidth * 0.05).clamp(16.0, 20.0);
+    final buttonHeight = (screenHeight * 0.06).clamp(56.0, 64.0);
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -556,9 +571,9 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
             children: [
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 16,
+                padding: EdgeInsets.symmetric(
+                  horizontal: horizontalPadding * 0.5,
+                  vertical: verticalPadding,
                 ),
                 decoration: const BoxDecoration(
                   gradient: AppColors.primaryGradient,
@@ -570,7 +585,10 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                      icon: Icon(
+                        Icons.arrow_back_ios_new,
+                        size: iconSize * 0.9,
+                      ),
                       onPressed: () => Navigator.pop(context),
                       color: Colors.white,
                     ),
@@ -578,8 +596,8 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
                       child: Text(
                         AppLocalizations.of(context)!.workVerification,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 18,
+                        style: TextStyle(
+                          fontSize: titleFontSize,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
@@ -590,22 +608,23 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
                         onTap: _showHelpOptions,
                         borderRadius: BorderRadius.circular(8),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: horizontalPadding * 0.6,
+                            vertical: verticalPadding * 0.5,
                           ),
                           child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.help_outline,
-                                size: 20,
+                                size: iconSize,
                                 color: Colors.white,
                               ),
-                              const SizedBox(width: 6),
+                              SizedBox(width: spacing * 0.3),
                               Text(
                                 AppLocalizations.of(context)!.help,
-                                style: const TextStyle(
-                                  fontSize: 16,
+                                style: TextStyle(
+                                  fontSize: bodyFontSize,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white,
                                 ),
@@ -619,11 +638,19 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
               ),
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(horizontalPadding),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildServiceSelectionSection(),
+                      _buildServiceSelectionSection(
+                        context,
+                        cardPadding,
+                        spacing,
+                        titleFontSize,
+                        bodyFontSize,
+                        iconSize,
+                        borderRadius,
+                      ),
                       ..._selectedServices
                           .where(
                             (id) =>
@@ -636,9 +663,16 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
                               orElse: () => _services[0],
                             );
                             return _buildServiceSpecificSection(
+                              context: context,
                               id: service.id,
                               name: _getLocalizedName(context, service.id),
                               icon: service.icon,
+                              cardPadding: cardPadding,
+                              spacing: spacing,
+                              titleFontSize: titleFontSize,
+                              bodyFontSize: bodyFontSize,
+                              iconSize: iconSize,
+                              borderRadius: borderRadius,
                             );
                           }),
                       ..._selectedApplianceSubOptions.map((applianceId) {
@@ -646,46 +680,60 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
                           (a) => a.id == applianceId,
                         );
                         return _buildServiceSpecificSection(
+                          context: context,
                           id: appliance.id,
                           name: _getLocalizedName(context, appliance.id),
                           icon: Icons.settings_suggest_outlined,
+                          cardPadding: cardPadding,
+                          spacing: spacing,
+                          titleFontSize: titleFontSize,
+                          bodyFontSize: bodyFontSize,
+                          iconSize: iconSize,
+                          borderRadius: borderRadius,
                         );
                       }),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _isFormValid && !_isLoading
-                              ? _saveData
-                              : null,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryOrangeStart,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                      SizedBox(height: spacing * 1.2),
+                      Padding(
+                        padding: EdgeInsets.only(bottom: verticalPadding),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: buttonHeight,
+                          child: ElevatedButton(
+                            onPressed: _isFormValid && !_isLoading
+                                ? _saveData
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryOrangeStart,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  borderRadius * 0.75,
+                                ),
+                              ),
+                              elevation: 0,
+                              disabledBackgroundColor: Colors.grey[300],
                             ),
-                            elevation: 0,
-                            disabledBackgroundColor: Colors.grey[300],
-                          ),
-                          child: _isLoading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
+                            child: _isLoading
+                                ? SizedBox(
+                                    height: iconSize,
+                                    width: iconSize,
+                                    child: const CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                : Text(
+                                    AppLocalizations.of(
+                                      context,
+                                    )!.saveAndContinue,
+                                    style: TextStyle(
+                                      fontSize: bodyFontSize,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                )
-                              : Text(
-                                  AppLocalizations.of(context)!.saveAndContinue,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                          ),
                         ),
                       ),
                     ],
@@ -971,17 +1019,24 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
   }
 
   Widget _buildServiceSpecificSection({
+    required BuildContext context,
     required String id,
     required String name,
     required IconData icon,
+    required double cardPadding,
+    required double spacing,
+    required double titleFontSize,
+    required double bodyFontSize,
+    required double iconSize,
+    required double borderRadius,
   }) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(top: 20),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.only(top: spacing),
+      padding: EdgeInsets.all(cardPadding),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -995,20 +1050,28 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
         children: [
           Row(
             children: [
-              Icon(icon, color: AppColors.primaryOrangeStart, size: 24),
-              const SizedBox(width: 12),
-              Text(
-                AppLocalizations.of(context)!.serviceDetails(name),
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+              Icon(
+                icon,
+                color: AppColors.primaryOrangeStart,
+                size: iconSize * 1.2,
+              ),
+              SizedBox(width: spacing * 0.6),
+              Expanded(
+                child: Text(
+                  AppLocalizations.of(context)!.serviceDetails(name),
+                  style: TextStyle(
+                    fontSize: titleFontSize,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: spacing),
           _buildTextField(
+            context: context,
             label: AppLocalizations.of(context)!.totalExperience,
             hint: 'e.g., 5',
             controller: _getExperienceController(id),
@@ -1018,31 +1081,52 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
               FilteringTextInputFormatter.digitsOnly,
             ],
             prefixIcon: Icons.history,
+            bodyFontSize: bodyFontSize,
+            iconSize: iconSize,
+            borderRadius: borderRadius,
+            spacing: spacing,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: spacing * 0.8),
           _buildTextField(
+            context: context,
             label: AppLocalizations.of(context)!.specialSkills,
             hint: 'e.g., Industrial Wiring',
             controller: _getSkillsController(id),
             prefixIcon: Icons.stars_outlined,
+            bodyFontSize: bodyFontSize,
+            iconSize: iconSize,
+            borderRadius: borderRadius,
+            spacing: spacing,
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: spacing),
           Text(
             AppLocalizations.of(context)!.workVideo,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w600,
-              fontSize: 14,
+              fontSize: bodyFontSize,
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 12),
-          _buildVideoUploadCard(id),
+          SizedBox(height: spacing * 0.6),
+          _buildVideoUploadCard(
+            id,
+            context,
+            borderRadius,
+            iconSize,
+            bodyFontSize,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildVideoUploadCard(String serviceId) {
+  Widget _buildVideoUploadCard(
+    String serviceId,
+    BuildContext context,
+    double borderRadius,
+    double iconSize,
+    double bodyFontSize,
+  ) {
     final videoPath = _serviceVideoPaths[serviceId];
     final controller = _videoControllers[serviceId];
 
@@ -1133,16 +1217,22 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
                   Icon(
                     Icons.video_call_outlined,
                     color: AppColors.primaryOrangeStart,
-                    size: 32,
+                    size: iconSize * 1.6,
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: iconSize * 0.4),
                   Text(
                     AppLocalizations.of(context)!.uploadServiceVideo,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: bodyFontSize,
+                    ),
                   ),
                   Text(
                     AppLocalizations.of(context)!.minMaxVideoDuration,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: bodyFontSize * 0.86,
+                      color: Colors.grey,
+                    ),
                   ),
                 ],
               ),
@@ -1150,13 +1240,21 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
     );
   }
 
-  Widget _buildServiceSelectionSection() {
+  Widget _buildServiceSelectionSection(
+    BuildContext context,
+    double cardPadding,
+    double spacing,
+    double titleFontSize,
+    double bodyFontSize,
+    double iconSize,
+    double borderRadius,
+  ) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(cardPadding),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -1171,51 +1269,56 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(cardPadding * 0.5),
                 decoration: BoxDecoration(
                   color: AppColors.primaryOrangeStart.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(cardPadding * 0.5),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.work_outline,
                   color: AppColors.primaryOrangeStart,
-                  size: 22,
+                  size: iconSize * 1.1,
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: spacing * 0.6),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       AppLocalizations.of(context)!.workSelection,
-                      style: const TextStyle(
-                        fontSize: 18,
+                      style: TextStyle(
+                        fontSize: titleFontSize,
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: spacing * 0.1),
                     Text(
                       AppLocalizations.of(context)!.selectServicesProvide,
-                      style: const TextStyle(fontSize: 13, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: bodyFontSize * 0.93,
+                        color: Colors.grey,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: spacing),
           // Service Selection Section
           Text(
             AppLocalizations.of(context)!.selectServices,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w600,
-              fontSize: 14,
+              fontSize: bodyFontSize,
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: spacing * 0.6),
           Wrap(
             spacing: 10,
             runSpacing: 10,
@@ -1235,8 +1338,13 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
               );
             }).toList(),
           ),
-          const SizedBox(height: 16),
-          _buildAppliancesSection(),
+          SizedBox(height: spacing * 0.8),
+          _buildAppliancesSection(
+            context,
+            iconSize,
+            bodyFontSize,
+            borderRadius,
+          ),
         ],
       ),
     );
@@ -1332,7 +1440,12 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
     );
   }
 
-  Widget _buildAppliancesSection() {
+  Widget _buildAppliancesSection(
+    BuildContext context,
+    double iconSize,
+    double bodyFontSize,
+    double borderRadius,
+  ) {
     final isSelected = _selectedServices.contains('appliances_repair');
 
     return Container(
@@ -1395,7 +1508,7 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
                     ),
                     child: Icon(
                       Icons.home_repair_service,
-                      size: 20,
+                      size: iconSize,
                       color: isSelected
                           ? AppColors.primaryOrangeStart
                           : Colors.grey[600],
@@ -1409,12 +1522,13 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
                         Text(
                           AppLocalizations.of(context)!.appliancesRepair,
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: bodyFontSize,
                             fontWeight: FontWeight.w600,
                             color: isSelected
                                 ? AppColors.primaryOrangeStart
                                 : AppColors.textPrimary,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                         if (_selectedApplianceSubOptions.isNotEmpty)
                           Text(
@@ -1422,7 +1536,7 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
                               _selectedApplianceSubOptions.length,
                             ),
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: bodyFontSize * 0.86,
                               color: Colors.grey[600],
                             ),
                           ),
@@ -1480,7 +1594,7 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
                   Text(
                     AppLocalizations.of(context)!.selectAppliancesRepair,
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: bodyFontSize * 0.93,
                       color: Colors.grey[600],
                       fontWeight: FontWeight.w500,
                     ),
@@ -1621,9 +1735,14 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
   }
 
   Widget _buildTextField({
+    required BuildContext context,
     required String label,
     required String hint,
     required TextEditingController controller,
+    required double bodyFontSize,
+    required double iconSize,
+    required double borderRadius,
+    required double spacing,
     TextInputType keyboardType = TextInputType.text,
     List<TextInputFormatter>? inputFormatters,
     IconData? prefixIcon,
@@ -1633,40 +1752,44 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w600,
-            fontSize: 14,
+            fontSize: bodyFontSize,
             color: AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: spacing * 0.4),
         TextField(
           controller: controller,
           keyboardType: keyboardType,
           inputFormatters: inputFormatters,
           onChanged: (_) => setState(() {}),
+          style: TextStyle(fontSize: bodyFontSize),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+            hintStyle: TextStyle(
+              color: Colors.grey[400],
+              fontSize: bodyFontSize * 0.93,
+            ),
             prefixIcon: prefixIcon != null
-                ? Icon(prefixIcon, color: Colors.grey[500], size: 20)
+                ? Icon(prefixIcon, color: Colors.grey[500], size: iconSize)
                 : null,
             filled: true,
             fillColor: Colors.grey[50],
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: spacing * 0.8,
+              vertical: spacing * 0.7,
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(borderRadius * 0.75),
               borderSide: BorderSide(color: Colors.grey[300]!),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(borderRadius * 0.75),
               borderSide: BorderSide(color: Colors.grey[300]!),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(borderRadius * 0.75),
               borderSide: const BorderSide(
                 color: AppColors.primaryOrangeStart,
                 width: 1.5,

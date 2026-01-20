@@ -356,6 +356,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -372,7 +375,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
+            padding: EdgeInsets.all(screenWidth * 0.06), // 6% of screen width
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -381,7 +384,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   textAlign: TextAlign.center,
                   text: TextSpan(
                     style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      fontSize: 28,
+                      fontSize: (screenWidth * 0.07).clamp(24, 32),
                       fontWeight: FontWeight.bold,
                     ),
                     children: [
@@ -401,16 +404,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 8),
                 Text(
                   AppLocalizations.of(context)!.loginSubtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppColors.textSecondary,
-                    fontSize: 16,
+                    fontSize: (screenWidth * 0.04).clamp(14, 18),
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 48),
-                _buildStepContent(),
-                const SizedBox(height: 48),
-                _buildFooter(),
+                const SizedBox(height: 40),
+                _buildStepContent(screenWidth, screenHeight),
+                const SizedBox(height: 40),
+                _buildFooter(screenWidth),
+                const SizedBox(height: 20),
               ],
             ),
           ),
@@ -419,23 +423,23 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildStepContent() {
+  Widget _buildStepContent(double screenWidth, double screenHeight) {
     switch (_currentStep) {
       case LoginStep.phone:
-        return _buildPhoneStep();
+        return _buildPhoneStep(screenWidth, screenHeight);
       case LoginStep.otp:
-        return _buildOtpStep();
+        return _buildOtpStep(screenWidth, screenHeight);
       case LoginStep.gmail:
-        return _buildGmailStep();
+        return _buildGmailStep(screenWidth, screenHeight);
       case LoginStep.recovery:
-        return _buildRecoveryStep();
+        return _buildRecoveryStep(screenWidth, screenHeight);
     }
   }
 
-  Widget _buildPhoneStep() {
+  Widget _buildPhoneStep(double screenWidth, double screenHeight) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(screenWidth * 0.06),
         child: Column(
           children: [
             // Combined Indian Flag and Phone Number Container
@@ -451,9 +455,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   // Indian Flag and +91 prefix
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: screenWidth * 0.03,
+                      vertical: screenHeight * 0.015,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.grey[50],
@@ -466,8 +470,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         // Fixed Indian Flag representation
                         Container(
-                          width: 24,
-                          height: 16,
+                          width: screenWidth * 0.06,
+                          height: screenWidth * 0.04,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(2),
                             boxShadow: [
@@ -490,8 +494,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   color: Colors.white,
                                   child: Center(
                                     child: Container(
-                                      width: 4,
-                                      height: 4,
+                                      width: screenWidth * 0.01,
+                                      height: screenWidth * 0.01,
                                       decoration: const BoxDecoration(
                                         color: Color(0xFF000080),
                                         shape: BoxShape.circle,
@@ -508,12 +512,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: screenWidth * 0.02),
                         Text(
                           AppLocalizations.of(context)!.indiaCountryCode,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 15,
+                            fontSize: (screenWidth * 0.038).clamp(14, 16),
                           ),
                         ),
                       ],
@@ -537,8 +541,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         counterText: '',
                         errorText: null,
                         contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
+                          horizontal: 16,
+                          vertical: 16,
                         ),
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
@@ -552,7 +556,7 @@ class _LoginScreenState extends State<LoginScreen> {
             // Error message below the combined container
             if (_phoneError != null)
               Padding(
-                padding: const EdgeInsets.only(top: 8, left: 12),
+                padding: EdgeInsets.only(top: 8, left: screenWidth * 0.03),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -567,7 +571,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: ElevatedButton(
                 onPressed: (_isPhoneValid && !_isLoading) ? _sendOtp : null,
                 style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 50),
+                  minimumSize: const Size(double.infinity, 56),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -593,7 +597,7 @@ class _LoginScreenState extends State<LoginScreen> {
             OutlinedButton(
               onPressed: _isLoading ? null : _signInWithGoogle,
               style: OutlinedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
+                minimumSize: const Size(double.infinity, 56),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -610,23 +614,23 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         SvgPicture.asset(
                           'images/google_logo.svg',
-                          width: 20,
-                          height: 20,
-                          placeholderBuilder: (context) => const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: Icon(
+                          width: screenWidth * 0.05,
+                          height: screenWidth * 0.05,
+                          placeholderBuilder: (context) => SizedBox(
+                            width: screenWidth * 0.05,
+                            height: screenWidth * 0.05,
+                            child: const Icon(
                               Icons.image,
                               size: 20,
                               color: Colors.grey,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: screenWidth * 0.03),
                         Text(
                           AppLocalizations.of(context)!.continueWithGoogle,
-                          style: const TextStyle(
-                            fontSize: 16,
+                          style: TextStyle(
+                            fontSize: (screenWidth * 0.04).clamp(14, 16),
                             fontWeight: FontWeight.w500,
                             color: Colors.black,
                           ),
@@ -634,7 +638,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: screenHeight * 0.02),
             Center(
               child: TextButton.icon(
                 onPressed: _isLoading ? null : () => _showFindAccountDialog(),
@@ -669,10 +673,10 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildOtpStep() {
+  Widget _buildOtpStep(double screenWidth, double screenHeight) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(screenWidth * 0.06),
         child: Column(
           children: [
             Row(
@@ -691,16 +695,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   tooltip: AppLocalizations.of(context)!.backToPhoneNumber,
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: screenWidth * 0.02),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         AppLocalizations.of(context)!.enterOtp,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 18,
+                          fontSize: (screenWidth * 0.045).clamp(16, 20),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -724,10 +728,10 @@ class _LoginScreenState extends State<LoginScreen> {
               controller: _otpController,
               inputFormatters: [EnglishDigitFormatter()],
               defaultPinTheme: PinTheme(
-                width: 45,
-                height: 50,
-                textStyle: const TextStyle(
-                  fontSize: 20,
+                width: 50,
+                height: 56,
+                textStyle: TextStyle(
+                  fontSize: (screenWidth * 0.05).clamp(18, 22),
                   fontWeight: FontWeight.bold,
                 ),
                 decoration: BoxDecoration(
@@ -744,7 +748,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ? _verifyOtp
                     : null,
                 style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 50),
+                  minimumSize: const Size(double.infinity, 56),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -765,7 +769,12 @@ class _LoginScreenState extends State<LoginScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(AppLocalizations.of(context)!.didntReceiveOtp),
+                Flexible(
+                  child: Text(
+                    AppLocalizations.of(context)!.didntReceiveOtp,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
                 TextButton(
                   onPressed: (_timerSeconds == 0 && !_isLoading)
                       ? _sendOtp
@@ -786,14 +795,17 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildGmailStep() {
+  Widget _buildGmailStep(double screenWidth, double screenHeight) {
     return Column(
       children: [
         Text(
           AppLocalizations.of(context)!.selectYourAccount,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: (screenWidth * 0.045).clamp(16, 20),
+          ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: screenHeight * 0.02),
         _buildAccountCard('John Doe', 'john.doe@gmail.com'),
         _buildAccountCard('Jane Smith', 'jane.smith@gmail.com'),
       ],
@@ -816,23 +828,26 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildRecoveryStep() {
+  Widget _buildRecoveryStep(double screenWidth, double screenHeight) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(screenWidth * 0.06),
         child: Column(
           children: [
-            const Icon(
+            Icon(
               Icons.check_circle,
               color: AppColors.successGreen,
-              size: 64,
+              size: screenWidth * 0.16,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: screenHeight * 0.02),
             Text(
               AppLocalizations.of(context)!.accountRecovered,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: (screenWidth * 0.05).clamp(18, 22),
+              ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: screenHeight * 0.01),
             Text(
               AppLocalizations.of(context)!.accountVerifiedSuccess,
               textAlign: TextAlign.center,
@@ -845,7 +860,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: () =>
                     Navigator.pushReplacementNamed(context, '/verification'),
                 style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 50),
+                  minimumSize: const Size(double.infinity, 56),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -859,7 +874,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildFooter() {
+  Widget _buildFooter(double screenWidth) {
     return Column(
       children: [
         Text(
@@ -938,9 +953,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         color: AppColors.textSecondary,
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
                     // Toggle between Phone and Email
                     Container(
+                      height: 48,
                       decoration: BoxDecoration(
                         color: Colors.grey[100],
                         borderRadius: BorderRadius.circular(12),
@@ -958,9 +974,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 });
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
+                                alignment: Alignment.center,
                                 decoration: BoxDecoration(
                                   color: _findAccountMethod == 'phone'
                                       ? Colors.white
@@ -978,30 +992,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ]
                                       : null,
                                 ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.phone,
-                                      size: 18,
-                                      color: _findAccountMethod == 'phone'
-                                          ? AppColors.primaryOrangeStart
-                                          : Colors.grey,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      AppLocalizations.of(context)!.phone,
-                                      style: TextStyle(
-                                        fontWeight:
-                                            _findAccountMethod == 'phone'
-                                            ? FontWeight.w600
-                                            : FontWeight.normal,
-                                        color: _findAccountMethod == 'phone'
-                                            ? AppColors.textPrimary
-                                            : Colors.grey,
-                                      ),
-                                    ),
-                                  ],
+                                child: Text(
+                                  AppLocalizations.of(context)!.phone,
+                                  style: TextStyle(
+                                    fontWeight: _findAccountMethod == 'phone'
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    color: _findAccountMethod == 'phone'
+                                        ? AppColors.primaryOrangeStart
+                                        : AppColors.textSecondary,
+                                  ),
                                 ),
                               ),
                             ),
@@ -1017,9 +1017,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 });
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
+                                alignment: Alignment.center,
                                 decoration: BoxDecoration(
                                   color: _findAccountMethod == 'email'
                                       ? Colors.white
@@ -1037,30 +1035,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ]
                                       : null,
                                 ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.email,
-                                      size: 18,
-                                      color: _findAccountMethod == 'email'
-                                          ? AppColors.primaryOrangeStart
-                                          : Colors.grey,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      AppLocalizations.of(context)!.email,
-                                      style: TextStyle(
-                                        fontWeight:
-                                            _findAccountMethod == 'email'
-                                            ? FontWeight.w600
-                                            : FontWeight.normal,
-                                        color: _findAccountMethod == 'email'
-                                            ? AppColors.textPrimary
-                                            : Colors.grey,
-                                      ),
-                                    ),
-                                  ],
+                                child: Text(
+                                  AppLocalizations.of(context)!.email,
+                                  style: TextStyle(
+                                    fontWeight: _findAccountMethod == 'email'
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    color: _findAccountMethod == 'email'
+                                        ? AppColors.primaryOrangeStart
+                                        : AppColors.textSecondary,
+                                  ),
                                 ),
                               ),
                             ),

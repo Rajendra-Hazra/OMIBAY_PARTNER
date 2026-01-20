@@ -81,24 +81,41 @@ class _WithdrawalHistoryScreenState extends State<WithdrawalHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final paddingScale = (screenWidth / 375).clamp(0.8, 1.2);
+    final hPadding = 20.0 * paddingScale;
+    final titleFontSize = (screenWidth * 0.05).clamp(18.0, 24.0);
+    final bodyFontSize = (screenWidth * 0.038).clamp(13.0, 16.0);
+    final smallFontSize = (screenWidth * 0.032).clamp(11.0, 14.0);
+    final borderRadius = (screenWidth * 0.06).clamp(16.0, 24.0);
+
     return Scaffold(
       body: SafeArea(
         top: false,
         child: Column(
           children: [
-            _buildHeader(context),
+            _buildHeader(context, titleFontSize, borderRadius, hPadding),
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryOrangeStart,
+                      ),
+                    )
                   : _transactions.isEmpty
-                  ? _buildEmptyState()
+                  ? _buildEmptyState(bodyFontSize)
                   : ListView.separated(
                       padding: EdgeInsets.zero,
                       itemCount: _transactions.length,
                       separatorBuilder: (context, index) =>
-                          const Divider(height: 1, indent: 70),
+                          Divider(height: 1, indent: 70 * paddingScale),
                       itemBuilder: (context, index) {
-                        return _buildHistoryItem(_transactions[index]);
+                        return _buildHistoryItem(
+                          _transactions[index],
+                          bodyFontSize,
+                          smallFontSize,
+                          paddingScale,
+                        );
                       },
                     ),
             ),
@@ -108,38 +125,47 @@ class _WithdrawalHistoryScreenState extends State<WithdrawalHistoryScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(double fontSize) {
     final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.history_rounded, size: 64, color: Colors.grey[300]),
+          Icon(
+            Icons.history_rounded,
+            size: fontSize * 4,
+            color: Colors.grey[300],
+          ),
           const SizedBox(height: 16),
           Text(
             l10n.noTransactionHistoryFound,
-            style: TextStyle(color: Colors.grey[500], fontSize: 16),
+            style: TextStyle(color: Colors.grey[500], fontSize: fontSize),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(
+    BuildContext context,
+    double fontSize,
+    double borderRadius,
+    double horizontalPadding,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 10,
-        left: 10,
-        right: 20,
+        left: horizontalPadding * 0.5,
+        right: horizontalPadding,
         bottom: 20,
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: AppColors.primaryGradient,
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(24),
-          bottomRight: Radius.circular(24),
+          bottomLeft: Radius.circular(borderRadius),
+          bottomRight: Radius.circular(borderRadius),
         ),
       ),
       child: Row(
@@ -155,9 +181,9 @@ class _WithdrawalHistoryScreenState extends State<WithdrawalHistoryScreen> {
           Expanded(
             child: Text(
               l10n.transactionHistory,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 20,
+                fontSize: fontSize,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.5,
               ),
@@ -177,7 +203,12 @@ class _WithdrawalHistoryScreenState extends State<WithdrawalHistoryScreen> {
     );
   }
 
-  Widget _buildHistoryItem(Map<String, dynamic> transaction) {
+  Widget _buildHistoryItem(
+    Map<String, dynamic> transaction,
+    double bodyFontSize,
+    double smallFontSize,
+    double paddingScale,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     final bool isCredit = transaction['isCredit'] ?? true;
     final bool isJob = transaction['isJob'] ?? false;
@@ -194,7 +225,10 @@ class _WithdrawalHistoryScreenState extends State<WithdrawalHistoryScreen> {
         );
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        padding: EdgeInsets.symmetric(
+          vertical: 16 * paddingScale,
+          horizontal: 16 * paddingScale,
+        ),
         child: Row(
           children: [
             Container(
@@ -208,6 +242,7 @@ class _WithdrawalHistoryScreenState extends State<WithdrawalHistoryScreen> {
                     ? Icons.check_circle_rounded
                     : Icons.remove_circle_rounded,
                 color: isCredit ? Colors.green : Colors.red,
+                size: bodyFontSize * 1.5,
               ),
             ),
             const SizedBox(width: 16),
@@ -220,7 +255,10 @@ class _WithdrawalHistoryScreenState extends State<WithdrawalHistoryScreen> {
                       context,
                       transaction,
                     ),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: bodyFontSize,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -230,31 +268,39 @@ class _WithdrawalHistoryScreenState extends State<WithdrawalHistoryScreen> {
                       context,
                       transaction,
                     ),
-                    style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: smallFontSize * 0.9,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     transaction['time'] ?? 'Just now',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.textSecondary,
-                      fontSize: 12,
+                      fontSize: smallFontSize,
                     ),
                   ),
                 ],
               ),
             ),
+            const SizedBox(width: 8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  LocalizationHelper.convertBengaliToEnglish(
-                    transaction['amount'] ?? '${l10n.currencySymbol}0',
-                  ),
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: isCredit ? AppColors.successGreen : Colors.red,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    LocalizationHelper.convertBengaliToEnglish(
+                      transaction['amount'] ?? '${l10n.currencySymbol}0',
+                    ),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: bodyFontSize,
+                      color: isCredit ? AppColors.successGreen : Colors.red,
+                    ),
                   ),
                 ),
                 if (isJob) ...[
@@ -263,7 +309,7 @@ class _WithdrawalHistoryScreenState extends State<WithdrawalHistoryScreen> {
                     status,
                     style: TextStyle(
                       color: statusColor.withValues(alpha: 0.8),
-                      fontSize: 12,
+                      fontSize: smallFontSize,
                       fontWeight: FontWeight.w500,
                     ),
                   ),

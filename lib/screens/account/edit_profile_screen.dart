@@ -951,6 +951,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final horizontalPadding = (screenWidth * 0.05).clamp(16.0, 24.0);
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       body: SafeArea(
@@ -964,7 +967,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ? const Center(child: CircularProgressIndicator())
                   : SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(horizontalPadding),
                       child: Column(
                         children: [
                           _buildAvatarSection(),
@@ -983,12 +986,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final horizontalPadding = (screenWidth * 0.05).clamp(16.0, 24.0);
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 10,
-        left: 10,
-        right: 20,
+        left: horizontalPadding * 0.5,
+        right: horizontalPadding,
         bottom: 15,
       ),
       decoration: const BoxDecoration(
@@ -1011,9 +1017,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           Expanded(
             child: Text(
               AppLocalizations.of(context)!.editProfile,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 22,
+                fontSize: (screenWidth * 0.055).clamp(18.0, 22.0),
                 fontWeight: FontWeight.bold,
               ),
               overflow: TextOverflow.ellipsis,
@@ -1031,11 +1037,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildAvatarSection() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final avatarRadius = (screenWidth * 0.13).clamp(40.0, 60.0);
+
     return Center(
       child: Stack(
         children: [
           CircleAvatar(
-            radius: 50,
+            radius: avatarRadius,
             backgroundColor: Colors.grey[200],
             backgroundImage: _localPhotoPath != null
                 ? (kIsWeb
@@ -1218,6 +1227,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   // Personal Information Section
   Widget _buildPersonalInformationSection() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardPadding = (screenWidth * 0.05).clamp(16.0, 24.0);
+
     // Check if user logged in via Google (needs phone verification)
     final bool needsPhoneVerification =
         _loginMethod == 'google' && !_isPhoneVerified;
@@ -1226,7 +1238,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(cardPadding),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -1256,12 +1268,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              Text(
-                AppLocalizations.of(context)!.personalInformation,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+              Expanded(
+                child: Text(
+                  AppLocalizations.of(context)!.personalInformation,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -1721,8 +1736,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildSaveButton() {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final buttonHeight = (screenHeight * 0.065).clamp(56.0, 64.0);
+
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -1733,18 +1751,36 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
         ],
       ),
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _saveProfile,
-        child: _isLoading
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+      child: SizedBox(
+        width: double.infinity,
+        height: buttonHeight,
+        child: ElevatedButton(
+          onPressed: _isLoading ? null : _saveProfile,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primaryOrangeStart,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 0,
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Text(
+                  AppLocalizations.of(context)!.saveProfile,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              )
-            : Text(AppLocalizations.of(context)!.saveProfile),
+        ),
       ),
     );
   }

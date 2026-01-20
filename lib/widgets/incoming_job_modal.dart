@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:audioplayers/audioplayers.dart';
-import 'package:flutter/foundation.dart';
 import '../l10n/app_localizations.dart';
 import '../core/app_colors.dart';
 import '../core/localization_helper.dart';
+import '../services/notification_service.dart';
 
+/// Incoming Job Modal - Uber/Ola style job alert dialog
+///
+/// This modal is displayed when a new job request arrives. The notification
+/// sound is handled by the system notification channel (not in-app audio)
+/// to ensure it works in background/terminated states.
+///
+/// Sound behavior:
+/// - Sound starts with the push notification (via notification channel)
+/// - Sound stops when user accepts, declines, or timeout occurs
 class IncomingJobModal extends StatefulWidget {
   final Map<String, dynamic> job;
   final VoidCallback onAccept;
@@ -25,35 +35,20 @@ class IncomingJobModal extends StatefulWidget {
 class _IncomingJobModalState extends State<IncomingJobModal> {
   int _secondsRemaining = 30;
   Timer? _timer;
-  AudioPlayer? _ringtonePlayer;
   bool _isProcessingAction = false;
-  bool _hasPlayedRingtone = false;
 
   @override
   void initState() {
     super.initState();
     _startTimer();
-    // Play ringtone after frame renders (works on mobile)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _playRingtone();
-    });
+    // Note: Sound is handled by the notification channel, not in-app
+    // The notification with custom sound was already shown by NotificationService
   }
 
   @override
   void dispose() {
     _timer?.cancel();
-    _stopRingtone();
     super.dispose();
-  }
-
-  Future<void> _stopRingtone() async {
-    try {
-      await _ringtonePlayer?.stop();
-      await _ringtonePlayer?.dispose();
-      _ringtonePlayer = null;
-    } catch (e) {
-      debugPrint('Error stopping ringtone: $e');
-    }
   }
 
   void _startTimer() {
@@ -64,52 +59,9 @@ class _IncomingJobModalState extends State<IncomingJobModal> {
         });
       } else {
         _timer?.cancel();
-        _handleAction(false);
+        _handleAction(false); // Timeout = decline
       }
     });
-  }
-
-  Future<void> _playRingtone() async {
-    // Skip audio on web due to format compatibility issues
-    if (kIsWeb) {
-      debugPrint('Skipping ringtone on web platform');
-      return;
-    }
-
-    if (_hasPlayedRingtone) return;
-    _hasPlayedRingtone = true;
-
-    try {
-      _ringtonePlayer = AudioPlayer();
-
-      // Configure audio context for mobile to ensure sound plays even if muted
-      await AudioPlayer.global.setAudioContext(
-        const AudioContext(
-          iOS: AudioContextIOS(
-            category: AVAudioSessionCategory.playback,
-            options: [
-              AVAudioSessionOptions.defaultToSpeaker,
-              AVAudioSessionOptions.mixWithOthers,
-            ],
-          ),
-          android: AudioContextAndroid(
-            isSpeakerphoneOn: true,
-            stayAwake: true,
-            contentType: AndroidContentType.music,
-            usageType: AndroidUsageType.alarm,
-            audioFocus: AndroidAudioFocus.gainTransient,
-          ),
-        ),
-      );
-
-      // Loop the ringtone until action is taken
-      await _ringtonePlayer!.setReleaseMode(ReleaseMode.loop);
-      await _ringtonePlayer!.setSource(AssetSource('audio/incoming_job.mp3'));
-      await _ringtonePlayer!.resume();
-      debugPrint('Ringtone started playing');
-    } catch (e) {
-      debugPrint('Error playing ringtone: $e');
-    }
   }
 
   Future<void> _handleAction(bool accepted) async {
@@ -118,59 +70,12 @@ class _IncomingJobModalState extends State<IncomingJobModal> {
 
     _timer?.cancel();
 
-    // Stop the ringtone immediately
-    await _stopRingtone();
+    // Cancel the notification and stop the notification channel sound immediately
+    // This stops the notification channel sound that was playing
+    await NotificationService.instance.cancelIncomingJobNotification();
 
-    // Skip audio on web due to format compatibility issues
-    if (!kIsWeb) {
-      // Create a new player for the action sound
-      final actionPlayer = AudioPlayer();
-
-      try {
-        // Configure audio context for mobile
-        await AudioPlayer.global.setAudioContext(
-          const AudioContext(
-            iOS: AudioContextIOS(
-              category: AVAudioSessionCategory.playback,
-              options: [
-                AVAudioSessionOptions.defaultToSpeaker,
-                AVAudioSessionOptions.mixWithOthers,
-              ],
-            ),
-            android: AudioContextAndroid(
-              isSpeakerphoneOn: true,
-              stayAwake: true,
-              contentType: AndroidContentType.music,
-              usageType: AndroidUsageType.notification,
-              audioFocus: AndroidAudioFocus.gainTransient,
-            ),
-          ),
-        );
-
-        // Use the same sound for both accept and decline (per project specification)
-        const String actionSoundPath = 'audio/accept.mp3';
-
-        await actionPlayer.setReleaseMode(ReleaseMode.stop);
-        await actionPlayer.setSource(AssetSource(actionSoundPath));
-        await actionPlayer.resume();
-        debugPrint('Action sound played: $actionSoundPath');
-
-        // Delay to let the sound be heard before closing
-        await Future.delayed(const Duration(milliseconds: 600));
-
-        try {
-          await actionPlayer.stop();
-          await actionPlayer.dispose();
-        } catch (e) {
-          debugPrint('Error disposing action player: $e');
-        }
-      } catch (e) {
-        debugPrint('Error playing action sound: $e');
-        try {
-          await actionPlayer.dispose();
-        } catch (_) {}
-      }
-    }
+    // Play accept/decline sound for user feedback (in-app only)
+    await _playActionSound(accepted);
 
     if (mounted) {
       if (accepted) {
@@ -178,6 +83,34 @@ class _IncomingJobModalState extends State<IncomingJobModal> {
       } else {
         widget.onDecline();
       }
+    }
+  }
+
+  /// Play accept or cancel sound based on user action
+  /// Note: Action sounds are only supported on mobile (Android/iOS)
+  Future<void> _playActionSound(bool accepted) async {
+    // Skip audio on web - not supported due to browser limitations
+    if (kIsWeb) {
+      debugPrint('Action sounds not supported on web');
+      return;
+    }
+
+    try {
+      final player = AudioPlayer();
+      final soundFile = accepted ? 'audio/accept.mp3' : 'audio/cancel.mp3';
+
+      await player.setReleaseMode(ReleaseMode.stop);
+      await player.setSource(AssetSource(soundFile));
+      await player.resume();
+
+      debugPrint('Action sound played: $soundFile');
+
+      // Wait for sound to play before closing modal
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      await player.dispose();
+    } catch (e) {
+      debugPrint('Error playing action sound: $e');
     }
   }
 

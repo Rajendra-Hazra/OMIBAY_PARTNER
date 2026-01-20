@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/number_symbols.dart';
 import 'package:intl/number_symbols_data.dart' as intl_symbols;
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'l10n/app_localizations.dart';
 import 'core/app_theme.dart';
+import 'services/notification_service.dart';
 import 'screens/splash/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/document_verification_screen.dart';
@@ -37,6 +41,9 @@ import 'screens/earnings/withdrawal_history_screen.dart';
 import 'screens/home/opportunity_map_screen.dart';
 import 'widgets/main_nav_wrapper.dart';
 
+// Global navigator key for notification handling
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 // Global locale notifier for language switching
 class LocaleNotifier extends ChangeNotifier {
   LocaleNotifier();
@@ -65,6 +72,17 @@ class LocaleNotifier extends ChangeNotifier {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase (skip on web until FirebaseOptions are configured)
+  if (!kIsWeb) {
+    await Firebase.initializeApp();
+
+    // Set up FCM background message handler (mobile only)
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+    // Initialize notification service (mobile only)
+    await NotificationService.instance.initialize(navKey: navigatorKey);
+  }
 
   // Force English digits globally for Bengali locale to ensure numeric numbers
   // always stay in English as per user preference.
@@ -124,6 +142,8 @@ class _MyAppState extends State<MyApp> {
       title: 'OmiBay Partner',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      // Global navigator key for notification handling
+      navigatorKey: navigatorKey,
       // Localization configuration
       locale: LocaleNotifier.instance.locale,
       localizationsDelegates: const [

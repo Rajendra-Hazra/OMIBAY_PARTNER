@@ -310,6 +310,20 @@ class _DocumentVerificationScreenState
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final screenWidth = screenSize.width;
+    final screenHeight = screenSize.height;
+
+    // Responsive values
+    final horizontalPadding = (screenWidth * 0.05).clamp(16.0, 24.0);
+    final verticalPadding = (screenHeight * 0.02).clamp(12.0, 20.0);
+    final titleFontSize = (screenWidth * 0.05).clamp(18.0, 22.0);
+    final subtitleFontSize = (screenWidth * 0.035).clamp(13.0, 15.0);
+    final bodyFontSize = (screenWidth * 0.04).clamp(13.0, 15.0);
+    final iconSize = (screenWidth * 0.05).clamp(18.0, 22.0);
+    final borderRadius = (screenWidth * 0.04).clamp(12.0, 16.0);
+    final cardSpacing = (screenWidth * 0.025).clamp(8.0, 12.0);
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -328,9 +342,9 @@ class _DocumentVerificationScreenState
                 width: double.infinity,
                 padding: EdgeInsets.only(
                   top: MediaQuery.of(context).padding.top + 10,
-                  left: 24,
-                  right: 24,
-                  bottom: 16,
+                  left: horizontalPadding,
+                  right: horizontalPadding,
+                  bottom: verticalPadding,
                 ),
                 decoration: const BoxDecoration(
                   gradient: AppColors.primaryGradient,
@@ -343,12 +357,15 @@ class _DocumentVerificationScreenState
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // OmiBay Partner text
-                    Text(
-                      AppLocalizations.of(context)!.appTitle,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                    Flexible(
+                      child: Text(
+                        AppLocalizations.of(context)!.appTitle,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: titleFontSize,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                     // Help button
@@ -356,22 +373,23 @@ class _DocumentVerificationScreenState
                       onTap: _showHelpOptions,
                       borderRadius: BorderRadius.circular(8),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: horizontalPadding * 0.5,
+                          vertical: verticalPadding * 0.5,
                         ),
                         child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.help_outline,
-                              size: 20,
+                              size: iconSize,
                               color: Colors.white,
                             ),
-                            const SizedBox(width: 6),
+                            SizedBox(width: cardSpacing * 0.5),
                             Text(
                               AppLocalizations.of(context)!.help,
-                              style: const TextStyle(
-                                fontSize: 16,
+                              style: TextStyle(
+                                fontSize: bodyFontSize,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white,
                               ),
@@ -383,7 +401,7 @@ class _DocumentVerificationScreenState
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: verticalPadding),
               // Signup Status Info
               InkWell(
                 onTap: () async {
@@ -398,12 +416,12 @@ class _DocumentVerificationScreenState
                     });
                   }
                 },
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(borderRadius),
                 child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 24),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
+                  margin: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding * 0.67,
+                    vertical: verticalPadding * 0.63,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -420,14 +438,14 @@ class _DocumentVerificationScreenState
                     children: [
                       Text(
                         AppLocalizations.of(context)!.signingUpTo,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppColors.textPrimary,
-                          fontSize: 14,
+                          fontSize: bodyFontSize * 0.93,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 8),
+                        padding: EdgeInsets.symmetric(horizontal: 4),
                         child: Text(
                           '·',
                           style: TextStyle(
@@ -442,15 +460,15 @@ class _DocumentVerificationScreenState
                           _selectedLocation ??
                               AppLocalizations.of(context)!.location,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppColors.textPrimary,
-                            fontSize: 14,
+                            fontSize: bodyFontSize * 0.93,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                       const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 8),
+                        padding: EdgeInsets.symmetric(horizontal: 4),
                         child: Text(
                           '·',
                           style: TextStyle(
@@ -466,64 +484,65 @@ class _DocumentVerificationScreenState
                               ? AppLocalizations.of(context)!.partner
                               : _nameController.text.split(' ').first,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppColors.textPrimary,
-                            fontSize: 14,
+                            fontSize: bodyFontSize * 0.93,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
-                      const Icon(
+                      Icon(
                         Icons.chevron_right,
-                        size: 20,
+                        size: iconSize,
                         color: AppColors.textSecondary,
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: cardSpacing),
               // Welcome Text
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     '${AppLocalizations.of(context)!.welcome} ${_nameController.text.isEmpty ? AppLocalizations.of(context)!.partner : _nameController.text.split(' ').first}!',
-                    style: const TextStyle(
-                      fontSize: 22,
+                    style: TextStyle(
+                      fontSize: titleFontSize,
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: verticalPadding * 0.5),
               // Subtitle
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     AppLocalizations.of(context)!.heresWhatYouNeedToDo,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.textSecondary,
-                      fontSize: 15,
+                      fontSize: subtitleFontSize,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: verticalPadding),
               // Main Content
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Profile Section
                       _buildDocumentSection(
+                        context: context,
                         sectionId: 'profile',
                         title: AppLocalizations.of(context)!.profile,
                         icon: Icons.person_outline,
@@ -543,10 +562,15 @@ class _DocumentVerificationScreenState
                             });
                           }
                         },
+                        cardSpacing: cardSpacing,
+                        bodyFontSize: bodyFontSize,
+                        iconSize: iconSize,
+                        borderRadius: borderRadius,
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: cardSpacing),
                       // Aadhar Card Section
                       _buildDocumentSection(
+                        context: context,
                         sectionId: 'aadhar',
                         title: AppLocalizations.of(context)!.aadharCard,
                         icon: Icons.badge_outlined,
@@ -563,10 +587,15 @@ class _DocumentVerificationScreenState
                             await _loadSavedData();
                           }
                         },
+                        cardSpacing: cardSpacing,
+                        bodyFontSize: bodyFontSize,
+                        iconSize: iconSize,
+                        borderRadius: borderRadius,
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: cardSpacing),
                       // PAN Card Section
                       _buildDocumentSection(
+                        context: context,
                         sectionId: 'pan',
                         title: AppLocalizations.of(context)!.panCardOptional,
                         icon: Icons.credit_card_outlined,
@@ -583,10 +612,15 @@ class _DocumentVerificationScreenState
                             await _loadSavedData();
                           }
                         },
+                        cardSpacing: cardSpacing,
+                        bodyFontSize: bodyFontSize,
+                        iconSize: iconSize,
+                        borderRadius: borderRadius,
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: cardSpacing),
                       // Driving License Section
                       _buildDocumentSection(
+                        context: context,
                         sectionId: 'dl',
                         title: AppLocalizations.of(
                           context,
@@ -605,10 +639,15 @@ class _DocumentVerificationScreenState
                             await _loadSavedData();
                           }
                         },
+                        cardSpacing: cardSpacing,
+                        bodyFontSize: bodyFontSize,
+                        iconSize: iconSize,
+                        borderRadius: borderRadius,
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: cardSpacing),
                       // Work Verification Section
                       _buildDocumentSection(
+                        context: context,
                         sectionId: 'work',
                         title: AppLocalizations.of(context)!.workVerification,
                         icon: Icons.work_outline,
@@ -624,10 +663,15 @@ class _DocumentVerificationScreenState
                             await _loadSavedData();
                           }
                         },
+                        cardSpacing: cardSpacing,
+                        bodyFontSize: bodyFontSize,
+                        iconSize: iconSize,
+                        borderRadius: borderRadius,
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: cardSpacing),
                       // Permission Section
                       _buildDocumentSection(
+                        context: context,
                         sectionId: 'permission',
                         title: AppLocalizations.of(context)!.permission,
                         icon: Icons.security_outlined,
@@ -645,8 +689,12 @@ class _DocumentVerificationScreenState
                             });
                           }
                         },
+                        cardSpacing: cardSpacing,
+                        bodyFontSize: bodyFontSize,
+                        iconSize: iconSize,
+                        borderRadius: borderRadius,
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: verticalPadding * 1.5),
                       // Skip for now (Dev Mode)
                       Center(
                         child: TextButton(
@@ -685,6 +733,7 @@ class _DocumentVerificationScreenState
   }
 
   Widget _buildDocumentSection({
+    required BuildContext context,
     required String sectionId,
     required String title,
     required IconData icon,
@@ -692,6 +741,10 @@ class _DocumentVerificationScreenState
     required bool isLocked,
     bool isPending = false,
     required VoidCallback onTap,
+    required double cardSpacing,
+    required double bodyFontSize,
+    required double iconSize,
+    required double borderRadius,
   }) {
     return AbsorbPointer(
       absorbing: isLocked,
@@ -700,7 +753,7 @@ class _DocumentVerificationScreenState
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(borderRadius),
             border: Border.all(
               color: isComplete
                   ? AppColors.successGreen
@@ -717,14 +770,17 @@ class _DocumentVerificationScreenState
           ),
           child: InkWell(
             onTap: isLocked ? null : onTap,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(borderRadius),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: EdgeInsets.symmetric(
+                horizontal: cardSpacing * 1.33,
+                vertical: cardSpacing,
+              ),
               child: Row(
                 children: [
                   // Icon
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: EdgeInsets.all(cardSpacing * 0.83),
                     decoration: BoxDecoration(
                       color: isComplete
                           ? AppColors.successGreen.withValues(alpha: 0.1)
@@ -746,10 +802,10 @@ class _DocumentVerificationScreenState
                                 : (isLocked
                                       ? Colors.grey[400]
                                       : AppColors.primaryOrangeStart)),
-                      size: 20,
+                      size: iconSize,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: cardSpacing),
                   // Text Content
                   Expanded(
                     child: Column(
@@ -758,22 +814,25 @@ class _DocumentVerificationScreenState
                       children: [
                         Row(
                           children: [
-                            Text(
-                              title,
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: isLocked
-                                    ? Colors.grey[400]
-                                    : AppColors.textPrimary,
+                            Expanded(
+                              child: Text(
+                                title,
+                                style: TextStyle(
+                                  fontSize: bodyFontSize,
+                                  fontWeight: FontWeight.w600,
+                                  color: isLocked
+                                      ? Colors.grey[400]
+                                      : AppColors.textPrimary,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             if (isComplete) ...[
-                              const SizedBox(width: 8),
+                              SizedBox(width: cardSpacing * 0.67),
                               Icon(
                                 Icons.check_circle,
                                 color: AppColors.successGreen,
-                                size: 16,
+                                size: iconSize * 0.8,
                               ),
                             ],
                           ],
@@ -784,7 +843,7 @@ class _DocumentVerificationScreenState
                               context,
                             )!.pendingForVerification,
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: bodyFontSize * 0.73,
                               color: AppColors.warningYellow,
                               fontWeight: FontWeight.w500,
                             ),
@@ -798,7 +857,7 @@ class _DocumentVerificationScreenState
                     color: isLocked
                         ? Colors.grey[300]
                         : AppColors.textSecondary,
-                    size: 20,
+                    size: iconSize,
                   ),
                 ],
               ),

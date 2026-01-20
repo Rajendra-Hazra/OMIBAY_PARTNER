@@ -7,71 +7,104 @@ class PrivacyPolicyScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final paddingScale = (screenWidth / 375).clamp(0.8, 1.2);
+    final hPadding = 24.0 * paddingScale;
+    final vPadding = 24.0 * paddingScale;
+    final headerTitleFontSize = (screenWidth * 0.05).clamp(18.0, 22.0);
+    final mainTitleFontSize = (screenWidth * 0.065).clamp(20.0, 28.0);
+    final sectionTitleFontSize = (screenWidth * 0.048).clamp(16.0, 20.0);
+    final bodyFontSize = (screenWidth * 0.038).clamp(13.0, 16.0);
+    final smallFontSize = (screenWidth * 0.032).clamp(11.0, 13.0);
+    final iconSize = (screenWidth * 0.055).clamp(18.0, 24.0);
+
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       body: SafeArea(
         top: false,
         child: Column(
           children: [
-            _buildHeader(context),
+            _buildHeader(context, headerTitleFontSize, iconSize),
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.all(24.0),
+                padding: EdgeInsets.symmetric(
+                  horizontal: hPadding,
+                  vertical: vPadding,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       l10n.privacyPolicyTitle,
-                      style: const TextStyle(
-                        fontSize: 24,
+                      style: TextStyle(
+                        fontSize: mainTitleFontSize,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16 * paddingScale),
                     Text(
                       l10n.lastUpdated('January 2024'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppColors.textSecondary,
-                        fontSize: 14,
+                        fontSize: bodyFontSize,
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32 * paddingScale),
                     _buildSection(
                       l10n.privacySection1Title,
                       l10n.privacySection1Content,
+                      sectionTitleFontSize,
+                      bodyFontSize,
+                      paddingScale,
                     ),
                     _buildSection(
                       l10n.privacySection2Title,
                       l10n.privacySection2Content,
+                      sectionTitleFontSize,
+                      bodyFontSize,
+                      paddingScale,
                     ),
                     _buildSection(
                       l10n.privacySection3Title,
                       l10n.privacySection3Content,
+                      sectionTitleFontSize,
+                      bodyFontSize,
+                      paddingScale,
                     ),
                     _buildSection(
                       l10n.privacySection4Title,
                       l10n.privacySection4Content,
+                      sectionTitleFontSize,
+                      bodyFontSize,
+                      paddingScale,
                     ),
                     _buildSection(
                       l10n.privacySection5Title,
                       l10n.privacySection5Content,
+                      sectionTitleFontSize,
+                      bodyFontSize,
+                      paddingScale,
                     ),
                     _buildSection(
                       l10n.privacySection6Title,
                       l10n.privacySection6Content,
+                      sectionTitleFontSize,
+                      bodyFontSize,
+                      paddingScale,
                     ),
-                    const SizedBox(height: 40),
+                    SizedBox(height: 40 * paddingScale),
                     Center(
                       child: Text(
                         l10n.privacyContact,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppColors.textSecondary,
-                          fontSize: 12,
+                          fontSize: smallFontSize,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24 * paddingScale),
                   ],
                 ),
               ),
@@ -82,7 +115,11 @@ class PrivacyPolicyScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(
+    BuildContext context,
+    double titleFontSize,
+    double iconSize,
+  ) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(
@@ -101,15 +138,15 @@ class PrivacyPolicyScreen extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+            icon: Icon(Icons.arrow_back_ios_new, size: iconSize * 0.9),
             onPressed: () => Navigator.pop(context),
             color: Colors.white,
           ),
           Expanded(
             child: Text(
               AppLocalizations.of(context)!.privacyPolicyTitle,
-              style: const TextStyle(
-                fontSize: 18,
+              style: TextStyle(
+                fontSize: titleFontSize,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
@@ -121,25 +158,31 @@ class PrivacyPolicyScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSection(String title, String content) {
+  Widget _buildSection(
+    String title,
+    String content,
+    double titleFontSize,
+    double contentFontSize,
+    double paddingScale,
+  ) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24.0),
+      padding: EdgeInsets.only(bottom: 24.0 * paddingScale),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 18,
+            style: TextStyle(
+              fontSize: titleFontSize,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12 * paddingScale),
           Text(
             content,
-            style: const TextStyle(
-              fontSize: 14,
+            style: TextStyle(
+              fontSize: contentFontSize,
               color: AppColors.textSecondary,
               height: 1.6,
             ),

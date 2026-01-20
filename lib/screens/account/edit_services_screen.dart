@@ -691,6 +691,18 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Responsive constants
+    final horizontalPadding = (screenWidth * 0.05).clamp(16.0, 24.0);
+    final verticalPadding = (screenHeight * 0.02).clamp(12.0, 20.0);
+    final headingFontSize = (screenWidth * 0.05).clamp(18.0, 22.0);
+    final bodyFontSize = (screenWidth * 0.038).clamp(14.0, 16.0);
+    final smallFontSize = (screenWidth * 0.032).clamp(11.0, 13.0);
+    final iconSize = (screenWidth * 0.06).clamp(24.0, 32.0);
+    final buttonHeight = (screenHeight * 0.06).clamp(56.0, 64.0);
+
     if (_isLoading) {
       return Scaffold(
         body: Container(
@@ -723,72 +735,95 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
           ),
           child: Column(
             children: [
-              _buildHeader(context),
+              _buildHeader(context, headingFontSize, bodyFontSize, iconSize),
               Expanded(
                 child: hasVerifiedServices
-                    ? _buildVerifiedServicesList()
-                    : _buildEmptyState(),
+                    ? _buildVerifiedServicesList(
+                        horizontalPadding,
+                        verticalPadding,
+                        headingFontSize,
+                        bodyFontSize,
+                        smallFontSize,
+                        iconSize,
+                      )
+                    : _buildEmptyState(
+                        horizontalPadding,
+                        headingFontSize,
+                        bodyFontSize,
+                        iconSize,
+                        buttonHeight,
+                      ),
               ),
             ],
           ),
         ),
       ),
-      bottomNavigationBar: SafeArea(child: _buildBottomBar()),
+      bottomNavigationBar: SafeArea(
+        child: _buildBottomBar(buttonHeight, iconSize),
+      ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(
+    double horizontalPadding,
+    double headingFontSize,
+    double bodyFontSize,
+    double iconSize,
+    double buttonHeight,
+  ) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
+      child: SingleChildScrollView(
+        padding: EdgeInsets.all(horizontalPadding),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all((iconSize * 0.8).clamp(16.0, 32.0)),
               decoration: BoxDecoration(
                 color: AppColors.primaryOrangeStart.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.work_off_outlined,
-                size: 64,
+                size: (iconSize * 2.5).clamp(48.0, 80.0),
                 color: AppColors.primaryOrangeStart.withValues(alpha: 0.7),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: (iconSize * 0.8).clamp(16.0, 32.0)),
             Text(
               AppLocalizations.of(context)!.noVerifiedServices,
-              style: const TextStyle(
-                fontSize: 22,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: headingFontSize,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: (iconSize * 0.4).clamp(8.0, 16.0)),
             Text(
               AppLocalizations.of(context)!.verifyAtLeastOneService,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 15,
+                fontSize: bodyFontSize,
                 color: Colors.grey[600],
                 height: 1.5,
               ),
             ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: _navigateToVerification,
-              icon: const Icon(Icons.verified_outlined),
-              label: Text(AppLocalizations.of(context)!.verifyYourServices),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryOrangeStart,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            SizedBox(height: (iconSize * 1.2).clamp(24.0, 48.0)),
+            SizedBox(
+              width: double.infinity,
+              height: buttonHeight,
+              child: ElevatedButton.icon(
+                onPressed: _navigateToVerification,
+                icon: Icon(Icons.verified_outlined, size: iconSize * 0.8),
+                label: Text(AppLocalizations.of(context)!.verifyYourServices),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryOrangeStart,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
                 ),
               ),
             ),
@@ -798,16 +833,23 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
     );
   }
 
-  Widget _buildVerifiedServicesList() {
+  Widget _buildVerifiedServicesList(
+    double horizontalPadding,
+    double verticalPadding,
+    double headingFontSize,
+    double bodyFontSize,
+    double smallFontSize,
+    double iconSize,
+  ) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(horizontalPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header Info
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(horizontalPadding * 0.8),
             decoration: BoxDecoration(
               color: AppColors.successGreen.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
@@ -817,16 +859,20 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
             ),
             child: Row(
               children: [
-                Icon(Icons.verified, color: AppColors.successGreen, size: 24),
-                const SizedBox(width: 12),
+                Icon(
+                  Icons.verified,
+                  color: AppColors.successGreen,
+                  size: iconSize * 0.8,
+                ),
+                SizedBox(width: horizontalPadding * 0.6),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         AppLocalizations.of(context)!.myServices,
-                        style: const TextStyle(
-                          fontSize: 16,
+                        style: TextStyle(
+                          fontSize: bodyFontSize,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
                         ),
@@ -834,7 +880,10 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
                       const SizedBox(height: 2),
                       Text(
                         '${AppLocalizations.of(context)!.verifiedCount(_totalVerifiedCount)}, ${AppLocalizations.of(context)!.pendingCount(_totalPendingCount)}',
-                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: smallFontSize,
+                          color: Colors.grey[600],
+                        ),
                       ),
                     ],
                   ),
@@ -842,47 +891,59 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: verticalPadding),
 
           // Verified Services List
           if (_verifiedServices.isNotEmpty) ...[
             Text(
               AppLocalizations.of(context)!.activeServices,
-              style: const TextStyle(
-                fontSize: 16,
+              style: TextStyle(
+                fontSize: bodyFontSize,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: verticalPadding * 0.6),
             ..._verifiedServices.map(
-              (service) => _buildServiceCard(service, false),
+              (service) => _buildServiceCard(
+                service,
+                false,
+                bodyFontSize,
+                smallFontSize,
+                iconSize,
+              ),
             ),
           ],
 
           // Verified Appliances List
           if (_verifiedAppliances.isNotEmpty) ...[
-            const SizedBox(height: 20),
+            SizedBox(height: verticalPadding),
             Text(
               AppLocalizations.of(context)!.activeApplianceServices,
-              style: const TextStyle(
-                fontSize: 16,
+              style: TextStyle(
+                fontSize: bodyFontSize,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: verticalPadding * 0.6),
             ..._verifiedAppliances.map(
-              (appliance) => _buildServiceCard(appliance, true),
+              (appliance) => _buildServiceCard(
+                appliance,
+                true,
+                bodyFontSize,
+                smallFontSize,
+                iconSize,
+              ),
             ),
           ],
 
           // Pending Services Section
           if (_pendingServices.isNotEmpty || _pendingAppliances.isNotEmpty) ...[
-            const SizedBox(height: 24),
+            SizedBox(height: verticalPadding * 1.2),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(horizontalPadding * 0.6),
               decoration: BoxDecoration(
                 color: Colors.orange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
@@ -890,47 +951,66 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.hourglass_empty, color: Colors.orange, size: 20),
-                  const SizedBox(width: 10),
+                  Icon(
+                    Icons.hourglass_empty,
+                    color: Colors.orange,
+                    size: iconSize * 0.6,
+                  ),
+                  SizedBox(width: horizontalPadding * 0.5),
                   Expanded(
                     child: Text(
                       AppLocalizations.of(context)!.verificationPendingNotify,
-                      style: TextStyle(fontSize: 13, color: Colors.orange[800]),
+                      style: TextStyle(
+                        fontSize: smallFontSize,
+                        color: Colors.orange[800],
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: verticalPadding * 0.8),
 
             if (_pendingServices.isNotEmpty) ...[
               Text(
                 AppLocalizations.of(context)!.pendingVerification,
-                style: const TextStyle(
-                  fontSize: 14,
+                style: TextStyle(
+                  fontSize: smallFontSize + 1,
                   fontWeight: FontWeight.w600,
                   color: Colors.orange,
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: verticalPadding * 0.6),
               ..._pendingServices.map(
-                (service) => _buildServiceCard(service, false),
+                (service) => _buildServiceCard(
+                  service,
+                  false,
+                  bodyFontSize,
+                  smallFontSize,
+                  iconSize,
+                ),
               ),
             ],
 
             if (_pendingAppliances.isNotEmpty) ...[
-              const SizedBox(height: 16),
+              SizedBox(height: verticalPadding * 0.8),
               Text(
                 AppLocalizations.of(context)!.pendingApplianceServices,
-                style: const TextStyle(
-                  fontSize: 14,
+                style: TextStyle(
+                  fontSize: smallFontSize + 1,
                   fontWeight: FontWeight.w600,
                   color: Colors.orange,
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: verticalPadding * 0.6),
               ..._pendingAppliances.map(
-                (appliance) => _buildServiceCard(appliance, true),
+                (appliance) => _buildServiceCard(
+                  appliance,
+                  true,
+                  bodyFontSize,
+                  smallFontSize,
+                  iconSize,
+                ),
               ),
             ],
           ],
@@ -941,7 +1021,13 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
     );
   }
 
-  Widget _buildServiceCard(PartnerService service, bool isAppliance) {
+  Widget _buildServiceCard(
+    PartnerService service,
+    bool isAppliance,
+    double bodyFontSize,
+    double smallFontSize,
+    double iconSize,
+  ) {
     final isPending = service.isPending;
     final statusColor = isPending ? Colors.orange : AppColors.successGreen;
     final statusText = isPending
@@ -981,10 +1067,10 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
               child: Icon(
                 service.icon,
                 color: isPending ? Colors.orange : AppColors.primaryOrangeStart,
-                size: 28,
+                size: iconSize * 0.9,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             // Service Details
             Expanded(
               child: Column(
@@ -995,8 +1081,8 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
                       Expanded(
                         child: Text(
                           _getLocalizedServiceName(service.name),
-                          style: const TextStyle(
-                            fontSize: 16,
+                          style: TextStyle(
+                            fontSize: bodyFontSize,
                             fontWeight: FontWeight.bold,
                             color: AppColors.textPrimary,
                           ),
@@ -1004,29 +1090,35 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
                           maxLines: 1,
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: statusColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(statusIcon, size: 14, color: statusColor),
-                            const SizedBox(width: 4),
-                            Text(
-                              statusText,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: statusColor,
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: statusColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(statusIcon, size: 12, color: statusColor),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  statusText,
+                                  style: TextStyle(
+                                    fontSize: smallFontSize * 0.85,
+                                    fontWeight: FontWeight.w600,
+                                    color: statusColor,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -1036,13 +1128,19 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
                     children: [
                       Icon(
                         Icons.work_history_outlined,
-                        size: 14,
+                        size: iconSize * 0.45,
                         color: Colors.grey[500],
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        service.experience,
-                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      Expanded(
+                        child: Text(
+                          service.experience,
+                          style: TextStyle(
+                            fontSize: smallFontSize,
+                            color: Colors.grey[600],
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
@@ -1052,15 +1150,18 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
                       children: [
                         Icon(
                           Icons.videocam_outlined,
-                          size: 14,
+                          size: iconSize * 0.45,
                           color: Colors.grey[500],
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          AppLocalizations.of(context)!.videoUploaded,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[600],
+                        Expanded(
+                          child: Text(
+                            AppLocalizations.of(context)!.videoUploaded,
+                            style: TextStyle(
+                              fontSize: smallFontSize,
+                              color: Colors.grey[600],
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -1074,10 +1175,16 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
             if (service.isVerified)
               IconButton(
                 onPressed: () => _deleteService(service, isAppliance),
-                icon: Icon(Icons.delete_outline, color: Colors.red[400]),
+                icon: Icon(
+                  Icons.delete_outline,
+                  color: Colors.red[400],
+                  size: iconSize * 0.7,
+                ),
                 tooltip: AppLocalizations.of(context)!.remove,
                 style: IconButton.styleFrom(
                   backgroundColor: Colors.red[50],
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(40, 40),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -1088,9 +1195,15 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
                 message: AppLocalizations.of(context)!.cannotDeleteWhilePending,
                 child: IconButton(
                   onPressed: null,
-                  icon: Icon(Icons.delete_outline, color: Colors.grey[300]),
+                  icon: Icon(
+                    Icons.delete_outline,
+                    color: Colors.grey[300],
+                    size: iconSize * 0.7,
+                  ),
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.grey[100],
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(40, 40),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -1103,14 +1216,19 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(
+    BuildContext context,
+    double headingFontSize,
+    double bodyFontSize,
+    double iconSize,
+  ) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 10,
         left: 10,
-        right: 20,
-        bottom: 20,
+        right: 16,
+        bottom: 16,
       ),
       decoration: const BoxDecoration(
         gradient: AppColors.primaryGradient,
@@ -1123,17 +1241,18 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios_new,
               color: Colors.white,
-              size: 20,
+              size: iconSize * 0.7,
             ),
           ),
           Expanded(
+            flex: 2,
             child: Text(
               AppLocalizations.of(context)!.editServices,
-              style: const TextStyle(
-                fontSize: 18,
+              style: TextStyle(
+                fontSize: headingFontSize,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
@@ -1143,32 +1262,36 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
           ),
           if (!_hideHelp)
             Flexible(
+              flex: 1,
               child: InkWell(
                 onTap: _showHelpOptions,
                 borderRadius: BorderRadius.circular(8),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
+                    horizontal: 8,
+                    vertical: 6,
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.help_outline,
-                        size: 20,
+                        size: iconSize * 0.7,
                         color: Colors.white,
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        AppLocalizations.of(context)!.help,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          AppLocalizations.of(context)!.help,
+                          style: TextStyle(
+                            fontSize: bodyFontSize,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
                       ),
                     ],
                   ),
@@ -1180,7 +1303,7 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
     );
   }
 
-  Widget _buildBottomBar() {
+  Widget _buildBottomBar(double buttonHeight, double iconSize) {
     final hasVerifiedServices =
         _verifiedServices.isNotEmpty || _verifiedAppliances.isNotEmpty;
 
@@ -1198,9 +1321,10 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
       ),
       child: SizedBox(
         width: double.infinity,
+        height: buttonHeight,
         child: ElevatedButton.icon(
           onPressed: _isLoading ? null : _navigateToVerification,
-          icon: const Icon(Icons.add_circle_outline),
+          icon: Icon(Icons.add_circle_outline, size: iconSize * 0.8),
           label: Text(
             hasVerifiedServices
                 ? AppLocalizations.of(context)!.addMoreServices
@@ -1210,7 +1334,6 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primaryOrangeStart,
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),

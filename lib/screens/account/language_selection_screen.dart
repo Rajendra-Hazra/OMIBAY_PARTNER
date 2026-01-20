@@ -57,26 +57,58 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Responsive values
+    final horizontalPadding = (screenWidth * 0.05).clamp(16.0, 24.0);
+    final headingFontSize = (screenWidth * 0.05).clamp(18.0, 22.0);
+    final bodyFontSize = (screenWidth * 0.04).clamp(15.0, 18.0);
+    final smallFontSize = (screenWidth * 0.035).clamp(12.0, 14.0);
+    final iconSize = (screenWidth * 0.06).clamp(24.0, 32.0);
+    final buttonHeight = (screenHeight * 0.06).clamp(56.0, 64.0);
+
     return Scaffold(
       body: SafeArea(
         top: false,
         child: Column(
           children: [
-            _buildHeader(context),
+            _buildHeader(context, headingFontSize, iconSize),
             Expanded(
               child: ListView.separated(
                 itemCount: _languages.length,
+                padding: EdgeInsets.symmetric(vertical: 8),
                 separatorBuilder: (context, index) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final lang = _languages[index];
                   final isSelected = _selectedLanguage == lang['code'];
                   return ListTile(
-                    title: Text(lang['name']!),
-                    subtitle: Text(lang['native']!),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
+                      vertical: 8,
+                    ),
+                    title: Text(
+                      lang['native']!,
+                      style: TextStyle(
+                        fontSize: bodyFontSize,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    subtitle: Text(
+                      lang['name']!,
+                      style: TextStyle(
+                        fontSize: smallFontSize,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                     trailing: isSelected
-                        ? const Icon(
+                        ? Icon(
                             Icons.check_circle,
                             color: AppColors.primaryOrangeStart,
+                            size: iconSize,
                           )
                         : null,
                     onTap: () {
@@ -93,24 +125,46 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: ElevatedButton(
-            onPressed: _updateLanguage,
-            child: Text(AppLocalizations.of(context)!.updateLanguage),
+          padding: EdgeInsets.all(horizontalPadding),
+          child: SizedBox(
+            width: double.infinity,
+            height: buttonHeight,
+            child: ElevatedButton(
+              onPressed: _updateLanguage,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryOrangeStart,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                AppLocalizations.of(context)!.updateLanguage,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(
+    BuildContext context,
+    double headingFontSize,
+    double iconSize,
+  ) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 10,
         left: 10,
-        right: 20,
-        bottom: 20,
+        right: 16,
+        bottom: 16,
       ),
       decoration: const BoxDecoration(
         gradient: AppColors.primaryGradient,
@@ -122,15 +176,15 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+            icon: Icon(Icons.arrow_back_ios_new, size: iconSize * 0.7),
             onPressed: () => Navigator.pop(context),
             color: Colors.white,
           ),
           Expanded(
             child: Text(
               AppLocalizations.of(context)!.appLanguage,
-              style: const TextStyle(
-                fontSize: 18,
+              style: TextStyle(
+                fontSize: headingFontSize,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),

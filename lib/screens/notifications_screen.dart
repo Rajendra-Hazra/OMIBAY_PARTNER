@@ -101,23 +101,38 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final paddingScale = (screenWidth / 375).clamp(0.8, 1.2);
+    final titleFontSize = (screenWidth * 0.05).clamp(18.0, 22.0);
+    final bodyFontSize = (screenWidth * 0.035).clamp(13.0, 16.0);
+    final smallFontSize = (screenWidth * 0.03).clamp(11.0, 14.0);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         top: false,
         child: Column(
           children: [
-            _buildHeader(context),
+            _buildHeader(context, paddingScale, titleFontSize, smallFontSize),
             Expanded(
               child: _notifications.isEmpty
-                  ? _buildEmptyState()
+                  ? _buildEmptyState(paddingScale, bodyFontSize)
                   : ListView.separated(
                       padding: EdgeInsets.zero,
+                      physics: const BouncingScrollPhysics(),
                       itemCount: _notifications.length,
-                      separatorBuilder: (context, index) =>
-                          const Divider(height: 1),
+                      separatorBuilder: (context, index) => Divider(
+                        height: 1,
+                        color: Colors.grey.shade100,
+                        indent: 70 * paddingScale,
+                      ),
                       itemBuilder: (context, index) {
-                        return _buildNotificationItem(index);
+                        return _buildNotificationItem(
+                          index,
+                          paddingScale,
+                          bodyFontSize,
+                          smallFontSize,
+                        );
                       },
                     ),
             ),
@@ -127,57 +142,78 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.notifications_off_outlined,
-            size: 64,
-            color: Colors.grey[300],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            AppLocalizations.of(context)!.noNotifications,
-            style: TextStyle(color: Colors.grey[500], fontSize: 16),
-          ),
-        ],
+  Widget _buildEmptyState(double paddingScale, double bodyFontSize) {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 100 * paddingScale),
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: EdgeInsets.all(24 * paddingScale),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.notifications_off_outlined,
+                size: (64 * paddingScale).clamp(48.0, 80.0),
+                color: Colors.grey[300],
+              ),
+            ),
+            SizedBox(height: 24 * paddingScale),
+            Text(
+              AppLocalizations.of(context)!.noNotifications,
+              style: TextStyle(
+                color: Colors.grey[500],
+                fontSize: bodyFontSize + 2,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(
+    BuildContext context,
+    double paddingScale,
+    double titleFontSize,
+    double smallFontSize,
+  ) {
     return Container(
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 10,
-        left: 16,
-        right: 16,
-        bottom: 15,
+        top: MediaQuery.of(context).padding.top + (10 * paddingScale),
+        left: 10 * paddingScale,
+        right: 16 * paddingScale,
+        bottom: 15 * paddingScale,
       ),
       decoration: const BoxDecoration(
         gradient: AppColors.primaryGradient,
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(20),
-          bottomRight: Radius.circular(20),
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
         ),
       ),
       child: Row(
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios_new,
               color: Colors.white,
-              size: 20,
+              size: (20 * paddingScale).clamp(18.0, 24.0),
             ),
           ),
           Expanded(
             child: Text(
               AppLocalizations.of(context)!.notifications,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 18,
+                fontSize: titleFontSize,
                 fontWeight: FontWeight.bold,
               ),
               overflow: TextOverflow.ellipsis,
@@ -186,9 +222,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           if (_notifications.any((n) => !n['isRead']))
             TextButton(
               onPressed: _markAllAsRead,
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.symmetric(horizontal: 12 * paddingScale),
+              ),
               child: Text(
                 AppLocalizations.of(context)!.markAllAsRead,
-                style: const TextStyle(color: Colors.white, fontSize: 13),
+                style: TextStyle(color: Colors.white, fontSize: smallFontSize),
               ),
             ),
         ],
@@ -196,7 +235,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildNotificationItem(int index) {
+  Widget _buildNotificationItem(
+    int index,
+    double paddingScale,
+    double bodyFontSize,
+    double smallFontSize,
+  ) {
     final notification = _notifications[index];
     final type = notification['type'];
     final isRead = notification['isRead'];
@@ -222,115 +266,129 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         iconColor = Colors.purple;
     }
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: isRead
-          ? Colors.white
-          : Colors.orange.shade50.withValues(alpha: 0.3),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
+    return InkWell(
+      onTap: () => _markAsRead(index),
+      child: Container(
+        padding: EdgeInsets.all(16 * paddingScale),
+        color: isRead
+            ? Colors.white
+            : Colors.orange.shade50.withValues(alpha: 0.3),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: EdgeInsets.all(10 * paddingScale),
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: iconColor,
+                size: (20 * paddingScale).clamp(18.0, 24.0),
+              ),
             ),
-            child: Icon(icon, color: iconColor, size: 20),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        notification['title'],
-                        style: TextStyle(
-                          fontWeight: isRead
-                              ? FontWeight.normal
-                              : FontWeight.bold,
-                          fontSize: 14,
+            SizedBox(width: 16 * paddingScale),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          notification['title'],
+                          style: TextStyle(
+                            fontWeight: isRead
+                                ? FontWeight.normal
+                                : FontWeight.bold,
+                            fontSize: bodyFontSize,
+                            color: AppColors.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    ),
-                    Text(
-                      notification['time'],
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 12,
+                      Text(
+                        notification['time'],
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: smallFontSize - 1,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    PopupMenuButton<String>(
-                      icon: const Icon(
-                        Icons.more_vert,
-                        size: 18,
-                        color: AppColors.textSecondary,
-                      ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onSelected: (value) {
-                        if (value == 'read') {
-                          _markAsRead(index);
-                        } else if (value == 'delete') {
-                          _deleteNotification(index);
-                        }
-                      },
-                      itemBuilder: (BuildContext context) => [
-                        if (!isRead)
+                      SizedBox(width: 4 * paddingScale),
+                      PopupMenuButton<String>(
+                        icon: Icon(
+                          Icons.more_vert,
+                          size: (18 * paddingScale).clamp(16.0, 22.0),
+                          color: AppColors.textSecondary,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onSelected: (value) {
+                          if (value == 'read') {
+                            _markAsRead(index);
+                          } else if (value == 'delete') {
+                            _deleteNotification(index);
+                          }
+                        },
+                        itemBuilder: (BuildContext context) => [
+                          if (!isRead)
+                            PopupMenuItem<String>(
+                              value: 'read',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.mark_email_read_outlined,
+                                    size: (18 * paddingScale).clamp(16.0, 22.0),
+                                  ),
+                                  SizedBox(width: 8 * paddingScale),
+                                  Text(
+                                    AppLocalizations.of(context)!.markAllAsRead,
+                                    style: TextStyle(fontSize: smallFontSize),
+                                  ),
+                                ],
+                              ),
+                            ),
                           PopupMenuItem<String>(
-                            value: 'read',
+                            value: 'delete',
                             child: Row(
                               children: [
-                                const Icon(
-                                  Icons.mark_email_read_outlined,
-                                  size: 18,
+                                Icon(
+                                  Icons.delete_outline,
+                                  size: (18 * paddingScale).clamp(16.0, 22.0),
+                                  color: Colors.red,
                                 ),
-                                const SizedBox(width: 8),
+                                SizedBox(width: 8 * paddingScale),
                                 Text(
-                                  AppLocalizations.of(context)!.markAllAsRead,
+                                  AppLocalizations.of(context)!.delete,
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontSize: smallFontSize,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                        PopupMenuItem<String>(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.delete_outline,
-                                size: 18,
-                                color: Colors.red,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                AppLocalizations.of(context)!.delete,
-                                style: const TextStyle(color: Colors.red),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  notification['body'],
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 13,
-                    height: 1.4,
+                        ],
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                  SizedBox(height: 4 * paddingScale),
+                  Text(
+                    notification['body'],
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: bodyFontSize - 1,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

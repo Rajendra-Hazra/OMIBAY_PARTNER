@@ -78,6 +78,13 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final Map<String, dynamic>? rawData = widget.jobData ?? args;
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final paddingScale = (screenWidth / 375).clamp(0.8, 1.2);
+    final titleFontSize = (screenWidth * 0.05).clamp(18.0, 22.0);
+    final bodyFontSize = (screenWidth * 0.035).clamp(13.0, 16.0);
+    final smallFontSize = (screenWidth * 0.03).clamp(11.0, 14.0);
+
     if (rawData == null) {
       return Scaffold(
         body: Center(
@@ -135,19 +142,44 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         bottom: false,
         child: Column(
           children: [
-            _buildHeader(context),
+            _buildHeader(context, paddingScale, titleFontSize, bodyFontSize),
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildScheduleSection(effectiveJobData),
-                    _buildCombinedDetails(effectiveJobData),
-                    _buildServiceTimeline(),
-                    if (_currentStep == 3) _buildReviewSection(),
-                    _buildSyncActionButton(effectiveJobData),
-                    const SizedBox(height: 100),
+                    _buildScheduleSection(
+                      effectiveJobData,
+                      paddingScale,
+                      bodyFontSize,
+                      smallFontSize,
+                    ),
+                    _buildCombinedDetails(
+                      effectiveJobData,
+                      paddingScale,
+                      bodyFontSize,
+                      smallFontSize,
+                    ),
+                    _buildServiceTimeline(
+                      paddingScale,
+                      bodyFontSize,
+                      smallFontSize,
+                    ),
+                    if (_currentStep == 3)
+                      _buildReviewSection(
+                        paddingScale,
+                        bodyFontSize,
+                        smallFontSize,
+                      ),
+                    _buildSyncActionButton(
+                      effectiveJobData,
+                      screenWidth,
+                      screenHeight,
+                      paddingScale,
+                      bodyFontSize,
+                    ),
+                    SizedBox(height: 100 * paddingScale),
                   ],
                 ),
               ),
@@ -158,12 +190,24 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     );
   }
 
-  Widget _buildSyncActionButton(Map<String, dynamic>? effectiveJobData) {
+  Widget _buildSyncActionButton(
+    Map<String, dynamic>? effectiveJobData,
+    double screenWidth,
+    double screenHeight,
+    double paddingScale,
+    double bodyFontSize,
+  ) {
     if (_currentStep == 3) return const SizedBox.shrink();
+
+    final buttonPadding = screenWidth * 0.04; // 4% of screen width
+    final buttonHeight = screenHeight * 0.065; // 6.5% of screen height
 
     if (_currentStep == 2) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: EdgeInsets.symmetric(
+          horizontal: buttonPadding,
+          vertical: 8 * paddingScale,
+        ),
         child: Row(
           children: [
             Expanded(
@@ -174,6 +218,8 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                 color: _isPaused
                     ? AppColors.successGreen
                     : Colors.grey.shade700,
+                screenWidth: screenWidth,
+                screenHeight: screenHeight,
                 onPressed: () {
                   if (_isPaused) {
                     setState(() {
@@ -188,18 +234,25 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                       ),
                     );
                   } else {
-                    _showPauseWorkPopup(context);
+                    _showPauseWorkPopup(context, paddingScale, bodyFontSize);
                   }
                 },
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: screenWidth * 0.03),
             Expanded(
               child: _buildBaseActionButton(
                 label: AppLocalizations.of(context)!.markComplete,
                 color: AppColors.primaryOrangeStart,
+                screenWidth: screenWidth,
+                screenHeight: screenHeight,
                 onPressed: () {
-                  _showCompletionPopup(context, effectiveJobData);
+                  _showCompletionPopup(
+                    context,
+                    effectiveJobData,
+                    paddingScale,
+                    bodyFontSize,
+                  );
                 },
               ),
             ),
@@ -214,14 +267,19 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
 
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      height: 56,
+      margin: EdgeInsets.symmetric(
+        horizontal: buttonPadding,
+        vertical: 8 * paddingScale,
+      ),
+      height: buttonHeight.clamp(50.0, 60.0),
       child: _buildBaseActionButton(
         label: label,
         color: AppColors.primaryOrangeStart,
+        screenWidth: screenWidth,
+        screenHeight: screenHeight,
         onPressed: () {
           if (_currentStep == 1) {
-            _showOtpVerificationPopup(context);
+            _showOtpVerificationPopup(context, paddingScale, bodyFontSize);
           } else {
             final nextStep = _currentStep < 3 ? _currentStep + 1 : _currentStep;
             setState(() {
@@ -237,10 +295,15 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   Widget _buildBaseActionButton({
     required String label,
     required Color color,
+    required double screenWidth,
+    required double screenHeight,
     required VoidCallback onPressed,
   }) {
+    final buttonHeight = screenHeight * 0.065; // 6.5% of screen height
+    final fontSize = screenWidth * 0.04; // 4% of screen width
+
     return SizedBox(
-      height: 56,
+      height: buttonHeight.clamp(50.0, 60.0),
       child: BounceButton(
         onPressed: onPressed,
         child: Container(
@@ -258,9 +321,9 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           child: Center(
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 16,
+                fontSize: fontSize.clamp(14.0, 17.0),
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.5,
               ),
@@ -271,7 +334,12 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     );
   }
 
-  void _showCompletionPopup(BuildContext context, Map<String, dynamic>? data) {
+  void _showCompletionPopup(
+    BuildContext context,
+    Map<String, dynamic>? data,
+    double paddingScale,
+    double bodyFontSize,
+  ) {
     final String price = data?['price'] ?? '1,499';
     String? pickedPhoto;
     String? pickedVideo;
@@ -289,335 +357,377 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
               ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFE8F5E9),
-                        shape: BoxShape.circle,
+              content: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.8,
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: EdgeInsets.all(16 * paddingScale),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFE8F5E9),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.check_circle_rounded,
+                          color: Colors.green,
+                          size: (64 * paddingScale).clamp(48.0, 80.0),
+                        ),
                       ),
-                      child: const Icon(
-                        Icons.check_circle_rounded,
-                        color: Colors.green,
-                        size: 64,
+                      SizedBox(height: 24 * paddingScale),
+                      Text(
+                        AppLocalizations.of(context)!.completeJobQuestion,
+                        style: TextStyle(
+                          fontSize: bodyFontSize + 6,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      AppLocalizations.of(context)!.completeJobQuestion,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                      SizedBox(height: 12 * paddingScale),
+                      Text(
+                        AppLocalizations.of(context)!.completeJobConfirmation,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: bodyFontSize - 2,
+                          height: 1.5,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      AppLocalizations.of(context)!.completeJobConfirmation,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFF1F5F9)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            AppLocalizations.of(context)!.receiveMoney,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
+                      SizedBox(height: 24 * paddingScale),
+                      Container(
+                        padding: EdgeInsets.all(16 * paddingScale),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFF1F5F9)),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              AppLocalizations.of(context)!.receiveMoney,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                                fontSize: bodyFontSize,
+                              ),
                             ),
-                          ),
-                          Text(
-                            '₹${LocalizationHelper.convertBengaliToEnglish(price)}',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primaryOrangeStart,
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                '₹${LocalizationHelper.convertBengaliToEnglish(price)}',
+                                style: TextStyle(
+                                  fontSize: bodyFontSize + 4,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.primaryOrangeStart,
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    // COMPLETION PROOF SECTION
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFF1F5F9)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.02),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 3,
-                                height: 12,
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryOrangeStart,
-                                  borderRadius: BorderRadius.circular(2),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                AppLocalizations.of(context)!.completionProof,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                  letterSpacing: 1.1,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildMediaUploadButton(
-                                  icon: Icons.add_a_photo_outlined,
-                                  label: AppLocalizations.of(context)!.addPhoto,
-                                  color: pickedPhoto != null
-                                      ? Colors.green
-                                      : null,
-                                  previewPath: pickedPhoto,
-                                  onPreviewTap: () => _showFullScreenPreview(
-                                    context,
-                                    pickedPhoto!,
-                                  ),
-                                  onCancelTap: () {
-                                    setPopupState(() {
-                                      pickedPhoto = null;
-                                    });
-                                  },
-                                  onTap: () {
-                                    _showMediaSourceOptions(
-                                      context,
-                                      title: 'Add Completion Photo',
-                                      onImagePicked: (path) {
-                                        setPopupState(() {
-                                          pickedPhoto = path;
-                                        });
-                                      },
-                                    );
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _buildMediaUploadButton(
-                                  icon: Icons.videocam_outlined,
-                                  label: AppLocalizations.of(context)!.addVideo,
-                                  subLabel: pickedVideo != null
-                                      ? null
-                                      : AppLocalizations.of(context)!.min10Sec,
-                                  color: pickedVideo != null
-                                      ? Colors.green
-                                      : null,
-                                  previewPath: pickedVideo,
-                                  isVideo: true,
-                                  onPreviewTap: () => _showFullScreenPreview(
-                                    context,
-                                    pickedVideo!,
-                                    isVideo: true,
-                                  ),
-                                  onCancelTap: () {
-                                    setPopupState(() {
-                                      pickedVideo = null;
-                                      videoUploadProgress = 0.0;
-                                      isUploading = false;
-                                    });
-                                  },
-                                  uploadProgress: videoUploadProgress,
-                                  onTap: isUploading
-                                      ? () {}
-                                      : () {
-                                          _showMediaSourceOptions(
-                                            context,
-                                            title: 'Add Completion Video',
-                                            isVideo: true,
-                                            onImagePicked: (path) {
-                                              setPopupState(() {
-                                                isUploading = true;
-                                                videoUploadProgress = 0.01;
-                                              });
-
-                                              // Simulate upload progress
-                                              Timer.periodic(
-                                                const Duration(
-                                                  milliseconds: 100,
-                                                ),
-                                                (timer) {
-                                                  setPopupState(() {
-                                                    videoUploadProgress += 0.05;
-                                                    if (videoUploadProgress >=
-                                                        1.0) {
-                                                      videoUploadProgress = 1.0;
-                                                      pickedVideo = path;
-                                                      isUploading = false;
-                                                      timer.cancel();
-                                                    }
-                                                  });
-                                                },
-                                              );
-                                            },
-                                          );
-                                        },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // PAYMENT METHOD SECTION
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFF1F5F9)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.02),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 3,
-                                height: 12,
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryOrangeStart,
-                                  borderRadius: BorderRadius.circular(2),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                AppLocalizations.of(
-                                  context,
-                                )!.paymentMethod.toUpperCase(),
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                  letterSpacing: 1.1,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          if (data?['paymentStatus'] == 'Prepaid' ||
-                              data?['paymentType'] == 'Prepaid')
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 12,
-                                horizontal: 16,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.blue.withValues(alpha: 0.2),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(
-                                    Icons.check_circle,
-                                    color: Colors.blue,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    AppLocalizations.of(context)!.prepaid,
-                                    style: const TextStyle(
-                                      color: Colors.blue,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          else
+                      SizedBox(height: 24 * paddingScale),
+                      // COMPLETION PROOF SECTION
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(20 * paddingScale),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFFF1F5F9)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.02),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Row(
                               children: [
-                                Expanded(
-                                  child: _buildMediaUploadButton(
-                                    icon: Icons.payments_outlined,
-                                    label: AppLocalizations.of(context)!.cash,
-                                    color: selectedPaymentMethod == 'Cash'
-                                        ? Colors.green
-                                        : null,
-                                    onTap: () {
-                                      setPopupState(() {
-                                        selectedPaymentMethod = 'Cash';
-                                      });
-                                    },
+                                Container(
+                                  width: 3,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryOrangeStart,
+                                    borderRadius: BorderRadius.circular(2),
                                   ),
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _buildMediaUploadButton(
-                                    icon: Icons.qr_code_scanner_rounded,
-                                    label: AppLocalizations.of(context)!.showQr,
-                                    color: selectedPaymentMethod == 'QR'
-                                        ? Colors.green
-                                        : null,
-                                    onTap: () {
-                                      setPopupState(() {
-                                        selectedPaymentMethod = 'QR';
-                                      });
-                                      _showQrCodePopup(context);
-                                    },
+                                SizedBox(width: 8 * paddingScale),
+                                Text(
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.completionProof.toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: bodyFontSize - 4,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textPrimary,
+                                    letterSpacing: 1.1,
                                   ),
                                 ),
                               ],
                             ),
-                        ],
+                            SizedBox(height: 16 * paddingScale),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildMediaUploadButton(
+                                    icon: Icons.add_a_photo_outlined,
+                                    label: AppLocalizations.of(
+                                      context,
+                                    )!.addPhoto,
+                                    paddingScale: paddingScale,
+                                    bodyFontSize: bodyFontSize,
+                                    color: pickedPhoto != null
+                                        ? Colors.green
+                                        : null,
+                                    previewPath: pickedPhoto,
+                                    onPreviewTap: () => _showFullScreenPreview(
+                                      context,
+                                      pickedPhoto!,
+                                    ),
+                                    onCancelTap: () {
+                                      setPopupState(() {
+                                        pickedPhoto = null;
+                                      });
+                                    },
+                                    onTap: () {
+                                      _showMediaSourceOptions(
+                                        context,
+                                        title: 'Add Completion Photo',
+                                        paddingScale: paddingScale,
+                                        bodyFontSize: bodyFontSize,
+                                        onImagePicked: (path) {
+                                          setPopupState(() {
+                                            pickedPhoto = path;
+                                          });
+                                        },
+                                      );
+                                    },
+                                  ),
+                                ),
+                                SizedBox(width: 12 * paddingScale),
+                                Expanded(
+                                  child: _buildMediaUploadButton(
+                                    icon: Icons.videocam_outlined,
+                                    label: AppLocalizations.of(
+                                      context,
+                                    )!.addVideo,
+                                    paddingScale: paddingScale,
+                                    bodyFontSize: bodyFontSize,
+                                    subLabel: pickedVideo != null
+                                        ? null
+                                        : AppLocalizations.of(
+                                            context,
+                                          )!.min10Sec,
+                                    color: pickedVideo != null
+                                        ? Colors.green
+                                        : null,
+                                    previewPath: pickedVideo,
+                                    isVideo: true,
+                                    onPreviewTap: () => _showFullScreenPreview(
+                                      context,
+                                      pickedVideo!,
+                                      isVideo: true,
+                                    ),
+                                    onCancelTap: () {
+                                      setPopupState(() {
+                                        pickedVideo = null;
+                                        videoUploadProgress = 0.0;
+                                        isUploading = false;
+                                      });
+                                    },
+                                    uploadProgress: videoUploadProgress,
+                                    onTap: isUploading
+                                        ? () {}
+                                        : () {
+                                            _showMediaSourceOptions(
+                                              context,
+                                              title: 'Add Completion Video',
+                                              isVideo: true,
+                                              paddingScale: paddingScale,
+                                              bodyFontSize: bodyFontSize,
+                                              onImagePicked: (path) {
+                                                setPopupState(() {
+                                                  isUploading = true;
+                                                  videoUploadProgress = 0.01;
+                                                });
+
+                                                // Simulate upload progress
+                                                Timer.periodic(
+                                                  const Duration(
+                                                    milliseconds: 100,
+                                                  ),
+                                                  (timer) {
+                                                    setPopupState(() {
+                                                      videoUploadProgress +=
+                                                          0.05;
+                                                      if (videoUploadProgress >=
+                                                          1.0) {
+                                                        videoUploadProgress =
+                                                            1.0;
+                                                        pickedVideo = path;
+                                                        isUploading = false;
+                                                        timer.cancel();
+                                                      }
+                                                    });
+                                                  },
+                                                );
+                                              },
+                                            );
+                                          },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                      SizedBox(height: 24 * paddingScale),
+                      // PAYMENT METHOD SECTION
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(20 * paddingScale),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFFF1F5F9)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.02),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 3,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryOrangeStart,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                                SizedBox(width: 8 * paddingScale),
+                                Text(
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.paymentMethod.toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: bodyFontSize - 4,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textPrimary,
+                                    letterSpacing: 1.1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 16 * paddingScale),
+                            if (data?['paymentStatus'] == 'Prepaid' ||
+                                data?['paymentType'] == 'Prepaid')
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  vertical: 12 * paddingScale,
+                                  horizontal: 16 * paddingScale,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.blue.withValues(alpha: 0.2),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.check_circle,
+                                      color: Colors.blue,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      AppLocalizations.of(context)!.prepaid,
+                                      style: const TextStyle(
+                                        color: Colors.blue,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            else
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildMediaUploadButton(
+                                      icon: Icons.payments_outlined,
+                                      label: AppLocalizations.of(context)!.cash,
+                                      paddingScale: paddingScale,
+                                      bodyFontSize: bodyFontSize,
+                                      color: selectedPaymentMethod == 'Cash'
+                                          ? Colors.green
+                                          : null,
+                                      onTap: () {
+                                        setPopupState(() {
+                                          selectedPaymentMethod = 'Cash';
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  SizedBox(width: 12 * paddingScale),
+                                  Expanded(
+                                    child: _buildMediaUploadButton(
+                                      icon: Icons.qr_code_scanner_rounded,
+                                      label: AppLocalizations.of(
+                                        context,
+                                      )!.showQr,
+                                      paddingScale: paddingScale,
+                                      bodyFontSize: bodyFontSize,
+                                      color: selectedPaymentMethod == 'QR'
+                                          ? Colors.green
+                                          : null,
+                                      onTap: () {
+                                        setPopupState(() {
+                                          selectedPaymentMethod = 'QR';
+                                        });
+                                        _showQrCodePopup(
+                                          context,
+                                          paddingScale,
+                                          bodyFontSize,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               actions: [
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 8, left: 8, right: 8),
+                  padding: EdgeInsets.only(
+                    bottom: 8 * paddingScale,
+                    left: 8 * paddingScale,
+                    right: 8 * paddingScale,
+                  ),
                   child: Row(
                     children: [
                       Expanded(
@@ -625,11 +735,14 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                           onPressed: () => Navigator.pop(context),
                           child: Text(
                             AppLocalizations.of(context)!.cancel,
-                            style: TextStyle(color: Colors.grey.shade600),
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: bodyFontSize - 1,
+                            ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12 * paddingScale),
                       Expanded(
                         child: ElevatedButton(
                           onPressed:
@@ -673,7 +786,6 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                                       data?['timeType'] ?? l10n.instant;
 
                                   // Determine payment mode
-                                  // Prepaid or QR = ONLINE, Cash = COD
                                   String paymentMode;
                                   if (data?['paymentStatus'] == 'Prepaid' ||
                                       data?['paymentType'] == 'Prepaid' ||
@@ -683,8 +795,6 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                                     paymentMode = 'COD';
                                   }
 
-                                  // Use WalletService to process job completion
-                                  // This handles all calculations, wallet updates, and transaction recording
                                   await WalletService.processJobCompletion(
                                     jobId: jobId,
                                     totalJobPrice: totalJobPrice,
@@ -696,14 +806,11 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                                     location: location,
                                     timeType: timeType,
                                   );
-                                  // Remove from active jobs list (multi-job support)
                                   if (jobId.isNotEmpty) {
                                     await WalletService.removeActiveJob(jobId);
                                   }
-                                  // Also clear legacy single-job keys for backward compatibility
                                   await WalletService.clearActiveJob();
 
-                                  // Increment trigger to notify listeners (e.g. Job list update)
                                   AppColors.jobUpdateNotifier.value++;
 
                                   if (context.mounted) {
@@ -717,7 +824,6 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                                         backgroundColor: Colors.green,
                                       ),
                                     );
-                                    // Navigate back to the jobs list screen
                                     Navigator.pop(context);
                                   }
                                 },
@@ -726,9 +832,17 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: EdgeInsets.symmetric(
+                              vertical: 12 * paddingScale,
+                            ),
                           ),
-                          child: Text(AppLocalizations.of(context)!.confirm),
+                          child: Text(
+                            AppLocalizations.of(context)!.confirm,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: bodyFontSize,
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -742,89 +856,102 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     );
   }
 
-  void _showQrCodePopup(BuildContext context) {
+  void _showQrCodePopup(
+    BuildContext context,
+    double paddingScale,
+    double bodyFontSize,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.qr_code_2_rounded,
               color: AppColors.primaryOrangeStart,
+              size: (24 * paddingScale).clamp(20.0, 30.0),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12 * paddingScale),
             Text(
               AppLocalizations.of(context)!.scanToPay,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: bodyFontSize + 2,
+              ),
             ),
           ],
         ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                AppLocalizations.of(context)!.scanToPayInstructions,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 13,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=omibay_partner_payment',
-                    height: 200,
-                    width: 200,
-                    fit: BoxFit.contain,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return const SizedBox(
-                        height: 200,
-                        width: 200,
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.primaryOrangeStart,
-                          ),
-                        ),
-                      );
-                    },
+        content: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  AppLocalizations.of(context)!.scanToPayInstructions,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: bodyFontSize - 2,
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                AppLocalizations.of(context)!.totalAmountToPay,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 12,
+                SizedBox(height: 24 * paddingScale),
+                Container(
+                  padding: EdgeInsets.all(16 * paddingScale),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=omibay_partner_payment',
+                      height: (200 * paddingScale).clamp(150.0, 250.0),
+                      width: (200 * paddingScale).clamp(150.0, 250.0),
+                      fit: BoxFit.contain,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return SizedBox(
+                          height: (200 * paddingScale).clamp(150.0, 250.0),
+                          width: (200 * paddingScale).clamp(150.0, 250.0),
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.primaryOrangeStart,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
-              ),
-              const Text(
-                '₹1,499',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
+                SizedBox(height: 24 * paddingScale),
+                Text(
+                  AppLocalizations.of(context)!.totalAmountToPay,
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: bodyFontSize - 3,
+                  ),
                 ),
-              ),
-            ],
+                Text(
+                  '₹1,499',
+                  style: TextStyle(
+                    fontSize: bodyFontSize + 8,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         actions: [
@@ -837,9 +964,15 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: EdgeInsets.symmetric(vertical: 12 * paddingScale),
               ),
-              child: Text(AppLocalizations.of(context)!.cancel),
+              child: Text(
+                AppLocalizations.of(context)!.cancel,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: bodyFontSize,
+                ),
+              ),
             ),
           ),
         ],
@@ -850,29 +983,48 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   void _showMediaSourceOptions(
     BuildContext context, {
     required String title,
+    required double paddingScale,
+    required double bodyFontSize,
     required Function(String) onImagePicked,
     bool isVideo = false,
   }) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) {
         return Container(
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: EdgeInsets.fromLTRB(
+            20 * paddingScale,
+            24 * paddingScale,
+            20 * paddingScale,
+            (MediaQuery.of(context).padding.bottom + 24) * paddingScale,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: EdgeInsets.only(bottom: 24 * paddingScale),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
               Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 18,
+                style: TextStyle(
+                  fontSize: bodyFontSize + 2,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24 * paddingScale),
               Row(
                 children: [
                   Expanded(
@@ -880,6 +1032,8 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                       context,
                       icon: isVideo ? Icons.videocam : Icons.camera_alt,
                       label: AppLocalizations.of(context)!.camera,
+                      paddingScale: paddingScale,
+                      bodyFontSize: bodyFontSize,
                       onTap: () async {
                         Navigator.pop(context);
                         final ImagePicker picker = ImagePicker();
@@ -894,12 +1048,14 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                       },
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16 * paddingScale),
                   Expanded(
                     child: _buildHelpOption(
                       context,
                       icon: Icons.photo_library,
                       label: AppLocalizations.of(context)!.files,
+                      paddingScale: paddingScale,
+                      bodyFontSize: bodyFontSize,
                       onTap: () async {
                         Navigator.pop(context);
                         final ImagePicker picker = ImagePicker();
@@ -928,6 +1084,8 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   Widget _buildMediaUploadButton({
     required IconData icon,
     required String label,
+    required double paddingScale,
+    required double bodyFontSize,
     String? subLabel,
     Color? color,
     String? previewPath,
@@ -946,7 +1104,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
               borderRadius: BorderRadius.circular(16),
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: EdgeInsets.symmetric(vertical: 16 * paddingScale),
                 decoration: BoxDecoration(
                   border: Border.all(
                     color: color != null
@@ -964,14 +1122,14 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                         child: kIsWeb
                             ? Image.network(
                                 previewPath,
-                                height: 40,
-                                width: 40,
+                                height: 40 * paddingScale,
+                                width: 40 * paddingScale,
                                 fit: BoxFit.cover,
                               )
                             : Image.file(
                                 File(previewPath),
-                                height: 40,
-                                width: 40,
+                                height: 40 * paddingScale,
+                                width: 40 * paddingScale,
                                 fit: BoxFit.cover,
                               ),
                       )
@@ -979,13 +1137,13 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                       Icon(
                         icon,
                         color: color ?? AppColors.primaryOrangeStart,
-                        size: 28,
+                        size: (28 * paddingScale).clamp(24.0, 36.0),
                       ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8 * paddingScale),
                     Text(
                       label,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: bodyFontSize - 2,
                         fontWeight: FontWeight.bold,
                         color: color ?? AppColors.textPrimary,
                       ),
@@ -994,7 +1152,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                       Text(
                         subLabel,
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: bodyFontSize - 5,
                           color: Colors.grey.shade500,
                         ),
                       ),
@@ -1002,10 +1160,10 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                         uploadProgress > 0 &&
                         uploadProgress < 1.0)
                       Padding(
-                        padding: const EdgeInsets.only(
-                          top: 12,
-                          left: 16,
-                          right: 16,
+                        padding: EdgeInsets.only(
+                          top: 12 * paddingScale,
+                          left: 16 * paddingScale,
+                          right: 16 * paddingScale,
                         ),
                         child: Column(
                           children: [
@@ -1018,11 +1176,11 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                                 minHeight: 6,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            SizedBox(height: 4 * paddingScale),
                             Text(
                               '${(uploadProgress * 100).toInt()}%',
-                              style: const TextStyle(
-                                fontSize: 10,
+                              style: TextStyle(
+                                fontSize: bodyFontSize - 5,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.primaryOrangeStart,
                               ),
@@ -1059,10 +1217,13 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         if (previewPath != null)
           TextButton.icon(
             onPressed: onPreviewTap,
-            icon: const Icon(Icons.visibility_outlined, size: 14),
+            icon: Icon(
+              Icons.visibility_outlined,
+              size: (14 * paddingScale).clamp(12.0, 18.0),
+            ),
             label: Text(
               AppLocalizations.of(context)!.preview,
-              style: const TextStyle(fontSize: 12),
+              style: TextStyle(fontSize: bodyFontSize - 3),
             ),
             style: TextButton.styleFrom(
               foregroundColor: AppColors.primaryOrangeStart,
@@ -1103,7 +1264,11 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     );
   }
 
-  void _showPauseWorkPopup(BuildContext context) {
+  void _showPauseWorkPopup(
+    BuildContext context,
+    double paddingScale,
+    double bodyFontSize,
+  ) {
     String? selectedReason;
     final List<String> reasons = [
       AppLocalizations.of(context)!.reasonNeedMaterials,
@@ -1124,45 +1289,61 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
               ),
               title: Text(
                 AppLocalizations.of(context)!.pauseWorkTitle,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: bodyFontSize + 2,
+                ),
               ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    AppLocalizations.of(context)!.pauseWorkReasonPrompt,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 14,
-                    ),
+              content: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.6,
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        AppLocalizations.of(context)!.pauseWorkReasonPrompt,
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: bodyFontSize - 2,
+                        ),
+                      ),
+                      SizedBox(height: 16 * paddingScale),
+                      ...reasons.map(
+                        (reason) => RadioListTile<String>(
+                          title: Text(
+                            reason,
+                            style: TextStyle(fontSize: bodyFontSize - 2),
+                          ),
+                          value: reason,
+                          // ignore: deprecated_member_use
+                          groupValue: selectedReason,
+                          activeColor: AppColors.primaryOrangeStart,
+                          // ignore: deprecated_member_use
+                          onChanged: (value) {
+                            setDialogState(() {
+                              selectedReason = value;
+                            });
+                          },
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  ...reasons.map(
-                    (reason) => RadioListTile<String>(
-                      title: Text(reason, style: const TextStyle(fontSize: 14)),
-                      value: reason,
-                      // ignore: deprecated_member_use
-                      groupValue: selectedReason,
-                      activeColor: AppColors.primaryOrangeStart,
-                      // ignore: deprecated_member_use
-                      onChanged: (value) {
-                        setDialogState(() {
-                          selectedReason = value;
-                        });
-                      },
-                      contentPadding: EdgeInsets.zero,
-                      dense: true,
-                    ),
-                  ),
-                ],
+                ),
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
                   child: Text(
                     AppLocalizations.of(context)!.cancel,
-                    style: TextStyle(color: Colors.grey.shade600),
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: bodyFontSize - 1,
+                    ),
                   ),
                 ),
                 ElevatedButton(
@@ -1188,7 +1369,10 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: Text(AppLocalizations.of(context)!.confirmPause),
+                  child: Text(
+                    AppLocalizations.of(context)!.confirmPause,
+                    style: TextStyle(fontSize: bodyFontSize - 1),
+                  ),
                 ),
               ],
             );
@@ -1198,7 +1382,11 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     );
   }
 
-  void _showOtpVerificationPopup(BuildContext context) {
+  void _showOtpVerificationPopup(
+    BuildContext context,
+    double paddingScale,
+    double bodyFontSize,
+  ) {
     final TextEditingController otpController = TextEditingController();
     showDialog(
       context: context,
@@ -1210,15 +1398,18 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           ),
           title: Column(
             children: [
-              const Icon(
+              Icon(
                 Icons.lock_outline_rounded,
                 color: AppColors.primaryOrangeStart,
-                size: 48,
+                size: (48 * paddingScale).clamp(40.0, 56.0),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16 * paddingScale),
               Text(
                 AppLocalizations.of(context)!.verifyOtpTitle,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: bodyFontSize + 2,
+                ),
               ),
             ],
           ),
@@ -1229,20 +1420,20 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                 Text(
                   AppLocalizations.of(context)!.enterOtpInstruction,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppColors.textSecondary,
-                    fontSize: 14,
+                    fontSize: bodyFontSize - 2,
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24 * paddingScale),
                 TextField(
                   controller: otpController,
                   keyboardType: TextInputType.number,
                   inputFormatters: [EnglishDigitFormatter()],
                   maxLength: 4,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 24,
+                  style: TextStyle(
+                    fontSize: (24 * paddingScale).clamp(20.0, 32.0),
                     fontWeight: FontWeight.bold,
                     letterSpacing: 16,
                   ),
@@ -1276,12 +1467,14 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
               onPressed: () => Navigator.pop(context),
               child: Text(
                 AppLocalizations.of(context)!.cancel,
-                style: TextStyle(color: Colors.grey.shade600),
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: bodyFontSize - 1,
+                ),
               ),
             ),
             ElevatedButton(
               onPressed: () {
-                // Mock verification - in real app, verify with backend/booking data
                 if (otpController.text == '1234') {
                   Navigator.pop(context);
                   setState(() {
@@ -1313,7 +1506,10 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              child: Text(AppLocalizations.of(context)!.verifyAndStart),
+              child: Text(
+                AppLocalizations.of(context)!.verifyAndStart,
+                style: TextStyle(fontSize: bodyFontSize - 1),
+              ),
             ),
           ],
         );
@@ -1321,13 +1517,18 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(
+    BuildContext context,
+    double paddingScale,
+    double titleFontSize,
+    double bodyFontSize,
+  ) {
     return Container(
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 10,
-        left: 10,
-        right: 20,
-        bottom: 20,
+        top: MediaQuery.of(context).padding.top + (10 * paddingScale),
+        left: 10 * paddingScale,
+        right: 20 * paddingScale,
+        bottom: 20 * paddingScale,
       ),
       decoration: const BoxDecoration(
         gradient: AppColors.primaryGradient,
@@ -1347,18 +1548,18 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios_new,
               color: Colors.white,
-              size: 20,
+              size: (20 * paddingScale).clamp(18.0, 24.0),
             ),
           ),
           Expanded(
             child: Text(
               AppLocalizations.of(context)!.jobDetailsTitle,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 20,
+                fontSize: titleFontSize,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.5,
               ),
@@ -1366,19 +1567,27 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
               maxLines: 1,
             ),
           ),
-          if (_currentStep != 3) _buildHelpButton(context),
+          if (_currentStep != 3)
+            _buildHelpButton(context, paddingScale, bodyFontSize),
         ],
       ),
     );
   }
 
-  Widget _buildHelpButton(BuildContext context) {
+  Widget _buildHelpButton(
+    BuildContext context,
+    double paddingScale,
+    double bodyFontSize,
+  ) {
     return GestureDetector(
       onTap: () {
-        _showHelpOptions(context);
+        _showHelpOptions(context, paddingScale, bodyFontSize);
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: EdgeInsets.symmetric(
+          horizontal: 16 * paddingScale,
+          vertical: 8 * paddingScale,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -1393,18 +1602,18 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.help_outline_rounded,
               color: AppColors.primaryOrangeStart,
-              size: 18,
+              size: (18 * paddingScale).clamp(16.0, 22.0),
             ),
-            const SizedBox(width: 6),
+            SizedBox(width: 6 * paddingScale),
             Text(
               AppLocalizations.of(context)!.help,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.primaryOrangeStart,
                 fontWeight: FontWeight.bold,
-                fontSize: 14,
+                fontSize: bodyFontSize - 1,
               ),
             ),
           ],
@@ -1413,27 +1622,48 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     );
   }
 
-  void _showHelpOptions(BuildContext context) {
+  void _showHelpOptions(
+    BuildContext context,
+    double paddingScale,
+    double bodyFontSize,
+  ) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) {
         return Container(
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: EdgeInsets.fromLTRB(
+            20 * paddingScale,
+            24 * paddingScale,
+            20 * paddingScale,
+            (MediaQuery.of(context).padding.bottom + 24) * paddingScale,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: EdgeInsets.only(bottom: 24 * paddingScale),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
               Text(
                 AppLocalizations.of(context)!.howCanWeHelp,
-                style: const TextStyle(
-                  fontSize: 18,
+                style: TextStyle(
+                  fontSize: bodyFontSize + 4,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24 * paddingScale),
               Row(
                 children: [
                   Expanded(
@@ -1441,18 +1671,22 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                       context,
                       icon: Icons.chat_outlined,
                       label: AppLocalizations.of(context)!.chatNow,
+                      paddingScale: paddingScale,
+                      bodyFontSize: bodyFontSize,
                       onTap: () {
                         Navigator.pop(context);
                         Navigator.pushNamed(context, '/live-chat');
                       },
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16 * paddingScale),
                   Expanded(
                     child: _buildHelpOption(
                       context,
                       icon: Icons.phone_outlined,
                       label: AppLocalizations.of(context)!.callNow,
+                      paddingScale: paddingScale,
+                      bodyFontSize: bodyFontSize,
                       onTap: () async {
                         Navigator.pop(context);
                         final Uri url = Uri.parse('tel:+918016867006');
@@ -1487,24 +1721,41 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     BuildContext context, {
     required IconData icon,
     required String label,
+    required double paddingScale,
+    required double bodyFontSize,
     required VoidCallback onTap,
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(15),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
+        padding: EdgeInsets.symmetric(vertical: 24 * paddingScale),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade200),
-          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: Colors.grey.shade100),
+          borderRadius: BorderRadius.circular(16),
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           children: [
-            Icon(icon, color: AppColors.primaryOrangeStart, size: 30),
-            const SizedBox(height: 12),
+            Icon(
+              icon,
+              color: AppColors.primaryOrangeStart,
+              size: (32 * paddingScale).clamp(28.0, 40.0),
+            ),
+            SizedBox(height: 12 * paddingScale),
             Text(
               label,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: bodyFontSize,
+              ),
             ),
           ],
         ),
@@ -1512,10 +1763,19 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     );
   }
 
-  Widget _buildServiceTimeline() {
+  Widget _buildServiceTimeline(
+    double paddingScale,
+    double bodyFontSize,
+    double smallFontSize,
+  ) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final horizontalMargin = screenWidth * 0.04; // 4% of screen width
+    final verticalPadding =
+        MediaQuery.of(context).size.height * 0.025; // 2.5% of screen height
+
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      margin: EdgeInsets.fromLTRB(horizontalMargin, 20, horizontalMargin, 16),
+      padding: EdgeInsets.symmetric(vertical: verticalPadding, horizontal: 16),
       decoration: BoxDecoration(
         color: AppColors.darkNavyStart,
         borderRadius: BorderRadius.circular(24),
@@ -1563,11 +1823,15 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   }
 
   Widget _buildTimelineStep(IconData icon, String label, bool isActive) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final iconSize = screenWidth * 0.05; // 5% of screen width
+    final fontSize = screenWidth * 0.024; // 2.4% of screen width
+
     return Expanded(
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: EdgeInsets.all(iconSize * 0.5),
             decoration: BoxDecoration(
               color: isActive
                   ? AppColors.primaryOrangeStart
@@ -1579,7 +1843,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
               color: isActive
                   ? Colors.white
                   : Colors.white.withValues(alpha: 0.5),
-              size: 20,
+              size: iconSize.clamp(18.0, 22.0),
             ),
           ),
           const SizedBox(height: 8),
@@ -1590,7 +1854,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
               color: isActive
                   ? Colors.white
                   : Colors.white.withValues(alpha: 0.5),
-              fontSize: 10,
+              fontSize: fontSize.clamp(9.0, 11.0),
               fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
             ),
           ),
@@ -1600,8 +1864,11 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   }
 
   Widget _buildTimelineConnector(bool isDone) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final connectorWidth = screenWidth * 0.04; // 4% of screen width
+
     return Container(
-      width: 20,
+      width: connectorWidth.clamp(16.0, 24.0),
       height: 2,
       margin: const EdgeInsets.only(bottom: 24),
       color: isDone
@@ -1610,10 +1877,18 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     );
   }
 
-  Widget _buildReviewSection() {
+  Widget _buildReviewSection(
+    double paddingScale,
+    double bodyFontSize,
+    double smallFontSize,
+  ) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final horizontalMargin = screenWidth * 0.04; // 4% of screen width
+    final padding = screenWidth * 0.05; // 5% of screen width
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.symmetric(horizontal: horizontalMargin, vertical: 12),
+      padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -1686,14 +1961,25 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     );
   }
 
-  Widget _buildScheduleSection(Map<String, dynamic>? data) {
+  Widget _buildScheduleSection(
+    Map<String, dynamic>? data,
+    double paddingScale,
+    double bodyFontSize,
+    double smallFontSize,
+  ) {
     final String timeInfo =
         data?['timeType'] ?? 'Scheduled for 12 Jan, 10:00 AM';
     final bool isScheduled = timeInfo.contains(':');
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final horizontalMargin = screenWidth * 0.04; // 4% of screen width
+    final padding = screenWidth * 0.05; // 5% of screen width
+    final iconSize = screenWidth * 0.06; // 6% of screen width
+    final titleFontSize = screenWidth * 0.045; // 4.5% of screen width
+
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.all(horizontalMargin),
+      padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -1711,7 +1997,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(iconSize * 0.4),
                 decoration: BoxDecoration(
                   color: (isScheduled ? Colors.blue : Colors.green).withValues(
                     alpha: 0.1,
@@ -1721,10 +2007,10 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                 child: Icon(
                   isScheduled ? Icons.calendar_today : Icons.bolt,
                   color: isScheduled ? Colors.blue : Colors.green,
-                  size: 24,
+                  size: iconSize.clamp(20.0, 26.0),
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: screenWidth * 0.04),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1741,8 +2027,8 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                     const SizedBox(height: 4),
                     Text(
                       timeInfo,
-                      style: const TextStyle(
-                        fontSize: 18,
+                      style: TextStyle(
+                        fontSize: titleFontSize.clamp(16.0, 20.0),
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
                       ),
@@ -1754,7 +2040,10 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           ),
           const SizedBox(height: 16),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: EdgeInsets.symmetric(
+              horizontal: screenWidth * 0.04,
+              vertical: 12,
+            ),
             decoration: BoxDecoration(
               color: AppColors.primaryOrangeStart.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(12),
@@ -1789,7 +2078,12 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     );
   }
 
-  Widget _buildCombinedDetails(Map<String, dynamic>? data) {
+  Widget _buildCombinedDetails(
+    Map<String, dynamic>? data,
+    double paddingScale,
+    double bodyFontSize,
+    double smallFontSize,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     final String serviceName = data?['service'] ?? l10n.service;
     final String customerName =
@@ -1803,9 +2097,18 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     );
     final String location = data?['location'] ?? l10n.mockFullAddress;
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final horizontalMargin = screenWidth * 0.04; // 4% of screen width
+    final padding = screenWidth * 0.05; // 5% of screen width
+    final serviceFontSize = screenWidth * 0.045; // 4.5% of screen width
+    final priceFontSize = screenWidth * 0.05; // 5% of screen width
+    final mapHeight = screenHeight * 0.18; // 18% of screen height
+    final buttonHeight = screenHeight * 0.06; // 6% of screen height
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.symmetric(horizontal: horizontalMargin, vertical: 12),
+      padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -1853,8 +2156,8 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                   children: [
                     Text(
                       serviceName,
-                      style: const TextStyle(
-                        fontSize: 18,
+                      style: TextStyle(
+                        fontSize: serviceFontSize.clamp(16.0, 20.0),
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
                       ),
@@ -1873,8 +2176,8 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
               ),
               Text(
                 '₹$price',
-                style: const TextStyle(
-                  fontSize: 20,
+                style: TextStyle(
+                  fontSize: priceFontSize.clamp(18.0, 22.0),
                   fontWeight: FontWeight.w900,
                   color: AppColors.primaryOrangeStart,
                 ),
@@ -1912,7 +2215,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
             child: Stack(
               children: [
                 Container(
-                  height: 160,
+                  height: mapHeight.clamp(140.0, 180.0),
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: Colors.grey[100],
@@ -1986,7 +2289,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
               children: [
                 Expanded(
                   child: Container(
-                    height: 52,
+                    height: buttonHeight.clamp(48.0, 56.0),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(15),
                       boxShadow: [
@@ -2035,10 +2338,10 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: screenWidth * 0.03),
                 Expanded(
                   child: Container(
-                    height: 52,
+                    height: buttonHeight.clamp(48.0, 56.0),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(15),
                       boxShadow: [

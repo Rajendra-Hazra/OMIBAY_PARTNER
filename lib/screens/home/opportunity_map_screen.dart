@@ -105,6 +105,12 @@ class _OpportunityMapScreenState extends State<OpportunityMapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final paddingScale = (screenWidth / 375).clamp(0.8, 1.2);
+    final titleFontSize = (screenWidth * 0.05).clamp(18.0, 22.0);
+    final bodyFontSize = (screenWidth * 0.035).clamp(13.0, 16.0);
+    final smallFontSize = (screenWidth * 0.03).clamp(11.0, 14.0);
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A192F),
       body: SafeArea(
@@ -113,7 +119,7 @@ class _OpportunityMapScreenState extends State<OpportunityMapScreen> {
           children: [
             Column(
               children: [
-                _buildHeader(context),
+                _buildHeader(context, paddingScale, titleFontSize),
                 Expanded(
                   child: ClipRRect(
                     borderRadius: const BorderRadius.only(
@@ -128,23 +134,29 @@ class _OpportunityMapScreenState extends State<OpportunityMapScreen> {
                       zoomControlsEnabled: false,
                       mapToolbarEnabled: false,
                       compassEnabled: false,
-                      style: _darkMapStyle,
                     ),
                   ),
                 ),
               ],
             ),
-            _buildLegend(),
-            _buildSearchOverlay(),
-            if (_showInfoCard) _buildBottomCard(),
+            _buildLegend(paddingScale, smallFontSize),
+            _buildSearchOverlay(paddingScale, bodyFontSize),
+            if (_showInfoCard)
+              _buildBottomCard(paddingScale, bodyFontSize, smallFontSize),
             if (!_showInfoCard)
               Positioned(
-                bottom: MediaQuery.of(context).padding.bottom + 16,
-                right: 16,
+                bottom:
+                    MediaQuery.of(context).padding.bottom + (16 * paddingScale),
+                right: 16 * paddingScale,
                 child: FloatingActionButton(
                   onPressed: () => setState(() => _showInfoCard = true),
                   backgroundColor: const Color(0xFF0A192F),
-                  child: const Icon(Icons.info_outline, color: Colors.white),
+                  mini: screenWidth < 360,
+                  child: Icon(
+                    Icons.info_outline,
+                    color: Colors.white,
+                    size: (24 * paddingScale).clamp(20.0, 28.0),
+                  ),
                 ),
               ),
           ],
@@ -153,29 +165,36 @@ class _OpportunityMapScreenState extends State<OpportunityMapScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(
+    BuildContext context,
+    double paddingScale,
+    double titleFontSize,
+  ) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 10,
-        left: 10,
-        right: 10,
-        bottom: 15,
+        top: MediaQuery.of(context).padding.top + (10 * paddingScale),
+        left: 10 * paddingScale,
+        right: 10 * paddingScale,
+        bottom: 15 * paddingScale,
       ),
       decoration: const BoxDecoration(color: Color(0xFF0A192F)),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+            icon: Icon(
+              Icons.arrow_back_ios_new,
+              size: (20 * paddingScale).clamp(18.0, 24.0),
+            ),
             onPressed: () => Navigator.pop(context),
             color: Colors.white,
           ),
-          const Expanded(
+          Expanded(
             child: Text(
               'Opportunity Map',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 18,
+                fontSize: titleFontSize,
                 fontWeight: FontWeight.bold,
               ),
               overflow: TextOverflow.ellipsis,
@@ -183,7 +202,11 @@ class _OpportunityMapScreenState extends State<OpportunityMapScreen> {
           ),
           IconButton(
             onPressed: _reCenterMap,
-            icon: const Icon(Icons.my_location, color: Colors.white),
+            icon: Icon(
+              Icons.my_location,
+              color: Colors.white,
+              size: (24 * paddingScale).clamp(20.0, 28.0),
+            ),
             tooltip: 'Re-center',
           ),
         ],
@@ -191,87 +214,13 @@ class _OpportunityMapScreenState extends State<OpportunityMapScreen> {
     );
   }
 
-  // Basic Dark Map Style JSON
-  final String _darkMapStyle = '''
-[
-  {
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#212121"
-      }
-    ]
-  },
-  {
-    "elementType": "labels.icon",
-    "stylers": [
-      {
-        "visibility": "off"
-      }
-    ]
-  },
-  {
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#757575"
-      }
-    ]
-  },
-  {
-    "elementType": "labels.text.stroke",
-    "stylers": [
-      {
-        "color": "#212121"
-      }
-    ]
-  },
-  {
-    "featureType": "administrative",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#757575"
-      }
-    ]
-  },
-  {
-    "featureType": "poi",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#181818"
-      }
-    ]
-  },
-  {
-    "featureType": "road",
-    "elementType": "geometry.fill",
-    "stylers": [
-      {
-        "color": "#2c2c2c"
-      }
-    ]
-  },
-  {
-    "featureType": "water",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#000000"
-      }
-    ]
-  }
-]
-''';
-
-  Widget _buildSearchOverlay() {
+  Widget _buildSearchOverlay(double paddingScale, double bodyFontSize) {
     return Positioned(
-      top: MediaQuery.of(context).padding.top + 70,
-      left: 16,
-      right: 16,
+      top: MediaQuery.of(context).padding.top + (70 * paddingScale),
+      left: 16 * paddingScale,
+      right: 16 * paddingScale,
       child: Container(
-        height: 50,
+        height: (50 * paddingScale).clamp(45.0, 60.0),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(25),
@@ -286,12 +235,21 @@ class _OpportunityMapScreenState extends State<OpportunityMapScreen> {
         child: TextField(
           controller: _searchController,
           onSubmitted: _handleSearch,
+          style: TextStyle(fontSize: bodyFontSize),
           decoration: InputDecoration(
             hintText: 'Search high demand zones (e.g. Whitefield)',
-            hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-            prefixIcon: const Icon(Icons.search, color: Colors.grey),
+            hintStyle: TextStyle(color: Colors.grey, fontSize: bodyFontSize),
+            prefixIcon: Icon(
+              Icons.search,
+              color: Colors.grey,
+              size: (20 * paddingScale).clamp(18.0, 24.0),
+            ),
             suffixIcon: IconButton(
-              icon: const Icon(Icons.clear, color: Colors.grey, size: 20),
+              icon: Icon(
+                Icons.clear,
+                color: Colors.grey,
+                size: (20 * paddingScale).clamp(18.0, 24.0),
+              ),
               onPressed: () => _searchController.clear(),
             ),
             border: InputBorder.none,
@@ -302,12 +260,12 @@ class _OpportunityMapScreenState extends State<OpportunityMapScreen> {
     );
   }
 
-  Widget _buildLegend() {
+  Widget _buildLegend(double paddingScale, double smallFontSize) {
     return Positioned(
-      top: MediaQuery.of(context).padding.top + 140,
-      right: 16,
+      top: MediaQuery.of(context).padding.top + (140 * paddingScale),
+      right: 16 * paddingScale,
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(12 * paddingScale),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.9),
           borderRadius: BorderRadius.circular(16),
@@ -323,22 +281,37 @@ class _OpportunityMapScreenState extends State<OpportunityMapScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildLegendItem('Very High Demand', const Color(0xFFEF4444)),
-            const SizedBox(height: 10),
-            _buildLegendItem('High Demand', const Color(0xFFF59E0B)),
+            _buildLegendItem(
+              'Very High Demand',
+              const Color(0xFFEF4444),
+              paddingScale,
+              smallFontSize,
+            ),
+            SizedBox(height: 10 * paddingScale),
+            _buildLegendItem(
+              'High Demand',
+              const Color(0xFFF59E0B),
+              paddingScale,
+              smallFontSize,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildLegendItem(String label, Color color) {
+  Widget _buildLegendItem(
+    String label,
+    Color color,
+    double paddingScale,
+    double smallFontSize,
+  ) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 10,
-          height: 10,
+          width: 10 * paddingScale,
+          height: 10 * paddingScale,
           decoration: BoxDecoration(
             color: color,
             shape: BoxShape.circle,
@@ -351,24 +324,28 @@ class _OpportunityMapScreenState extends State<OpportunityMapScreen> {
             ],
           ),
         ),
-        const SizedBox(width: 10),
+        SizedBox(width: 10 * paddingScale),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 11,
+          style: TextStyle(
+            fontSize: smallFontSize,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF0A192F),
+            color: const Color(0xFF0A192F),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildBottomCard() {
+  Widget _buildBottomCard(
+    double paddingScale,
+    double bodyFontSize,
+    double smallFontSize,
+  ) {
     return Positioned(
-      bottom: MediaQuery.of(context).padding.bottom + 16,
-      left: 16,
-      right: 16,
+      bottom: MediaQuery.of(context).padding.bottom + (16 * paddingScale),
+      left: 16 * paddingScale,
+      right: 16 * paddingScale,
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xFF0A192F),
@@ -383,26 +360,26 @@ class _OpportunityMapScreenState extends State<OpportunityMapScreen> {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24 * paddingScale),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: EdgeInsets.all(8 * paddingScale),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF59E0B).withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.flash_on,
-                      color: Color(0xFFF59E0B),
-                      size: 20,
+                      color: const Color(0xFFF59E0B),
+                      size: (20 * paddingScale).clamp(18.0, 24.0),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  const Expanded(
+                  SizedBox(width: 16 * paddingScale),
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -410,15 +387,15 @@ class _OpportunityMapScreenState extends State<OpportunityMapScreen> {
                           'Indiranagar is Booming',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 18,
+                            fontSize: bodyFontSize + 4,
                             color: Colors.white,
                           ),
                         ),
                         Text(
                           '20% higher earnings right now',
                           style: TextStyle(
-                            color: Color(0xFF34D399),
-                            fontSize: 12,
+                            color: const Color(0xFF34D399),
+                            fontSize: smallFontSize,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -427,24 +404,24 @@ class _OpportunityMapScreenState extends State<OpportunityMapScreen> {
                   ),
                   IconButton(
                     onPressed: () => setState(() => _showInfoCard = false),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.close,
                       color: Colors.white54,
-                      size: 20,
+                      size: (20 * paddingScale).clamp(18.0, 24.0),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20 * paddingScale),
               Text(
                 'Partners in this zone are waiting less than 3 minutes for new job requests.',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.7),
-                  fontSize: 14,
+                  fontSize: bodyFontSize,
                   height: 1.4,
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24 * paddingScale),
               ElevatedButton(
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -461,15 +438,21 @@ class _OpportunityMapScreenState extends State<OpportunityMapScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryOrangeStart,
                   foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 50),
+                  minimumSize: Size(
+                    double.infinity,
+                    (50 * paddingScale).clamp(45.0, 60.0),
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(15),
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
+                child: Text(
                   'Navigate to Zone',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: bodyFontSize + 2,
+                  ),
                 ),
               ),
             ],

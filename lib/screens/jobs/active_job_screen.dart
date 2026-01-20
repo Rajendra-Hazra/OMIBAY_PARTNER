@@ -93,25 +93,36 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final paddingScale = (screenWidth / 375).clamp(0.8, 1.2);
+    final titleFontSize = (screenWidth * 0.05).clamp(18.0, 22.0);
+    final bodyFontSize = (screenWidth * 0.035).clamp(13.0, 16.0);
+    final smallFontSize = (screenWidth * 0.03).clamp(11.0, 14.0);
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         top: false,
         child: Column(
           children: [
-            _buildHeader(context),
-            _buildTimerCard(),
+            _buildHeader(context, paddingScale, titleFontSize, bodyFontSize),
+            _buildTimerCard(paddingScale, bodyFontSize, smallFontSize),
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20 * paddingScale),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildCustomerInfo(),
-                    const SizedBox(height: 24),
-                    _buildChecklist(),
-                    const SizedBox(height: 24),
-                    _buildPhotoUploadSection(),
+                    _buildCustomerInfo(
+                      paddingScale,
+                      bodyFontSize,
+                      smallFontSize,
+                    ),
+                    SizedBox(height: 24 * paddingScale),
+                    _buildChecklist(paddingScale, bodyFontSize),
+                    SizedBox(height: 24 * paddingScale),
+                    _buildPhotoUploadSection(paddingScale, bodyFontSize),
                   ],
                 ),
               ),
@@ -119,19 +130,26 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: SafeArea(child: _buildBottomAction()),
+      bottomNavigationBar: SafeArea(
+        child: _buildBottomAction(paddingScale, bodyFontSize),
+      ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(
+    BuildContext context,
+    double paddingScale,
+    double titleFontSize,
+    double bodyFontSize,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 10,
-        left: 10,
-        right: 10,
-        bottom: 15,
+        top: MediaQuery.of(context).padding.top + (10 * paddingScale),
+        left: 10 * paddingScale,
+        right: 10 * paddingScale,
+        bottom: 15 * paddingScale,
       ),
       decoration: const BoxDecoration(
         gradient: AppColors.primaryGradient,
@@ -142,32 +160,45 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
       ),
       child: Row(
         children: [
-          const SizedBox(width: 10),
+          SizedBox(width: 10 * paddingScale),
           Expanded(
             child: Text(
               l10n.activeJob,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 18,
+                fontSize: titleFontSize,
                 fontWeight: FontWeight.bold,
               ),
               overflow: TextOverflow.ellipsis,
             ),
           ),
           IconButton(
-            onPressed: () => _showHelpOptions(context),
-            icon: const Icon(Icons.help_outline, color: Colors.white),
+            onPressed: () => _showHelpOptions(
+              context,
+              paddingScale,
+              titleFontSize,
+              bodyFontSize,
+            ),
+            icon: Icon(
+              Icons.help_outline,
+              color: Colors.white,
+              size: (24 * paddingScale).clamp(20.0, 28.0),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTimerCard() {
+  Widget _buildTimerCard(
+    double paddingScale,
+    double bodyFontSize,
+    double smallFontSize,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 24),
+      padding: EdgeInsets.symmetric(vertical: 24 * paddingScale),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
@@ -176,25 +207,31 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
         children: [
           Text(
             l10n.totalDuration,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppColors.textSecondary,
-              fontSize: 12,
+              fontSize: smallFontSize,
               letterSpacing: 1,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            _formatTime(_seconds),
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 48,
-              fontWeight: FontWeight.bold,
+          SizedBox(height: 8 * paddingScale),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              _formatTime(_seconds),
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: (48 * paddingScale).clamp(36.0, 60.0),
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12 * paddingScale),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding: EdgeInsets.symmetric(
+              horizontal: 12 * paddingScale,
+              vertical: 4 * paddingScale,
+            ),
             decoration: BoxDecoration(
               color: AppColors.successGreen.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
@@ -202,17 +239,17 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Icons.circle,
-                  size: 8,
+                  size: (8 * paddingScale).clamp(6.0, 10.0),
                   color: AppColors.successGreen,
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8 * paddingScale),
                 Text(
                   l10n.jobInProgress,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppColors.successGreen,
-                    fontSize: 12,
+                    fontSize: smallFontSize,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -224,7 +261,11 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
     );
   }
 
-  Widget _buildCustomerInfo() {
+  Widget _buildCustomerInfo(
+    double paddingScale,
+    double bodyFontSize,
+    double smallFontSize,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     final String serviceName = LocalizationHelper.getLocalizedServiceName(
       context,
@@ -232,51 +273,68 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
     );
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16 * paddingScale),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
+        border: Border.all(color: Colors.grey.shade100),
       ),
       child: Row(
         children: [
-          const CircleAvatar(
-            radius: 20,
-            backgroundImage: NetworkImage('https://via.placeholder.com/100'),
+          CircleAvatar(
+            radius: 24 * paddingScale,
+            backgroundColor: Colors.grey[200],
+            backgroundImage: const NetworkImage(
+              'https://via.placeholder.com/100',
+            ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12 * paddingScale),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   _jobData['customer'] ?? l10n.customer,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: bodyFontSize,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   serviceName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppColors.textSecondary,
-                    fontSize: 12,
+                    fontSize: smallFontSize,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
           IconButton(
             onPressed: () {},
-            icon: const Icon(Icons.phone, color: AppColors.successGreen),
+            icon: Icon(
+              Icons.phone,
+              color: AppColors.successGreen,
+              size: (24 * paddingScale).clamp(20.0, 28.0),
+            ),
           ),
           IconButton(
             onPressed: () {},
-            icon: const Icon(
+            icon: Icon(
               Icons.chat_bubble_outline,
               color: AppColors.primaryOrangeStart,
+              size: (24 * paddingScale).clamp(20.0, 28.0),
             ),
           ),
         ],
@@ -284,41 +342,60 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
     );
   }
 
-  Widget _buildChecklist() {
+  Widget _buildChecklist(double paddingScale, double bodyFontSize) {
     final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           l10n.serviceChecklist,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: bodyFontSize),
         ),
-        const SizedBox(height: 16),
-        _buildCheckItem('Cleaning all rooms', true),
-        _buildCheckItem('Kitchen deep cleaning', true),
-        _buildCheckItem('Bathroom sanitization', false),
-        _buildCheckItem('Balcony & Windows', false),
+        SizedBox(height: 16 * paddingScale),
+        _buildCheckItem('Cleaning all rooms', true, paddingScale, bodyFontSize),
+        _buildCheckItem(
+          'Kitchen deep cleaning',
+          true,
+          paddingScale,
+          bodyFontSize,
+        ),
+        _buildCheckItem(
+          'Bathroom sanitization',
+          false,
+          paddingScale,
+          bodyFontSize,
+        ),
+        _buildCheckItem('Balcony & Windows', false, paddingScale, bodyFontSize),
       ],
     );
   }
 
-  Widget _buildCheckItem(String label, bool completed) {
+  Widget _buildCheckItem(
+    String label,
+    bool completed,
+    double paddingScale,
+    double bodyFontSize,
+  ) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: 12 * paddingScale),
       child: Row(
         children: [
           Icon(
             completed ? Icons.check_circle : Icons.circle_outlined,
             color: completed ? AppColors.successGreen : AppColors.textSecondary,
+            size: (20 * paddingScale).clamp(18.0, 24.0),
           ),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: TextStyle(
-              color: completed
-                  ? AppColors.textPrimary
-                  : AppColors.textSecondary,
-              decoration: completed ? TextDecoration.lineThrough : null,
+          SizedBox(width: 12 * paddingScale),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: bodyFontSize,
+                color: completed
+                    ? AppColors.textPrimary
+                    : AppColors.textSecondary,
+                decoration: completed ? TextDecoration.lineThrough : null,
+              ),
             ),
           ),
         ],
@@ -326,48 +403,59 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
     );
   }
 
-  Widget _buildPhotoUploadSection() {
+  Widget _buildPhotoUploadSection(double paddingScale, double bodyFontSize) {
     final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           l10n.afterServicePhotos,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: bodyFontSize),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16 * paddingScale),
         Row(
           children: [
-            _buildUploadBox(),
-            const SizedBox(width: 12),
-            _buildUploadBox(),
-            const SizedBox(width: 12),
-            _buildUploadBox(isPlaceholder: true),
+            _buildUploadBox(paddingScale),
+            SizedBox(width: 12 * paddingScale),
+            _buildUploadBox(paddingScale),
+            SizedBox(width: 12 * paddingScale),
+            _buildUploadBox(paddingScale, isPlaceholder: true),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildUploadBox({bool isPlaceholder = false}) {
+  Widget _buildUploadBox(double paddingScale, {bool isPlaceholder = false}) {
+    final boxSize = (80 * paddingScale).clamp(70.0, 100.0);
     return Container(
-      width: 80,
-      height: 80,
+      width: boxSize,
+      height: boxSize,
       decoration: BoxDecoration(
         color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[300]!),
       ),
       child: isPlaceholder
-          ? const Icon(Icons.add_a_photo, color: AppColors.textSecondary)
-          : Image.network('https://via.placeholder.com/80', fit: BoxFit.cover),
+          ? Icon(
+              Icons.add_a_photo,
+              color: AppColors.textSecondary,
+              size: (24 * paddingScale).clamp(20.0, 32.0),
+            )
+          : ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                'https://via.placeholder.com/80',
+                fit: BoxFit.cover,
+              ),
+            ),
     );
   }
 
-  Widget _buildBottomAction() {
+  Widget _buildBottomAction(double paddingScale, double bodyFontSize) {
     final l10n = AppLocalizations.of(context)!;
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20 * paddingScale),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -382,15 +470,28 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
         onPressed: () async {
           _timer?.cancel();
           await _handleJobCompletion();
-          _showCompletionModal();
+          _showCompletionModal(paddingScale, bodyFontSize);
         },
         child: ElevatedButton(
           onPressed: () {},
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.successGreen,
-            minimumSize: const Size(double.infinity, 50),
+            minimumSize: Size(
+              double.infinity,
+              (50 * paddingScale).clamp(45.0, 60.0),
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
-          child: Text(l10n.markAsCompleted),
+          child: Text(
+            l10n.markAsCompleted,
+            style: TextStyle(
+              fontSize: bodyFontSize,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
         ),
       ),
     );
@@ -445,28 +546,50 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
     AppColors.jobUpdateNotifier.value++;
   }
 
-  void _showHelpOptions(BuildContext context) {
+  void _showHelpOptions(
+    BuildContext context,
+    double paddingScale,
+    double titleFontSize,
+    double bodyFontSize,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) {
         return Container(
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: EdgeInsets.fromLTRB(
+            20 * paddingScale,
+            24 * paddingScale,
+            20 * paddingScale,
+            (MediaQuery.of(context).padding.bottom + 24) * paddingScale,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: EdgeInsets.only(bottom: 24 * paddingScale),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
               Text(
                 l10n.howCanWeHelp,
-                style: const TextStyle(
-                  fontSize: 18,
+                style: TextStyle(
+                  fontSize: titleFontSize,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24 * paddingScale),
               Row(
                 children: [
                   Expanded(
@@ -474,18 +597,22 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
                       context,
                       icon: Icons.chat_outlined,
                       label: l10n.chatNow,
+                      paddingScale: paddingScale,
+                      bodyFontSize: bodyFontSize,
                       onTap: () {
                         Navigator.pop(context);
                         Navigator.pushNamed(context, '/support');
                       },
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16 * paddingScale),
                   Expanded(
                     child: _buildHelpOption(
                       context,
                       icon: Icons.phone_outlined,
                       label: l10n.callNow,
+                      paddingScale: paddingScale,
+                      bodyFontSize: bodyFontSize,
                       onTap: () async {
                         Navigator.pop(context);
                         final Uri url = Uri.parse('tel:+918016867006');
@@ -513,24 +640,41 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
     BuildContext context, {
     required IconData icon,
     required String label,
+    required double paddingScale,
+    required double bodyFontSize,
     required VoidCallback onTap,
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(15),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
+        padding: EdgeInsets.symmetric(vertical: 24 * paddingScale),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade200),
-          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: Colors.grey.shade100),
+          borderRadius: BorderRadius.circular(16),
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           children: [
-            Icon(icon, color: AppColors.primaryOrangeStart, size: 30),
-            const SizedBox(height: 12),
+            Icon(
+              icon,
+              color: AppColors.primaryOrangeStart,
+              size: (32 * paddingScale).clamp(28.0, 40.0),
+            ),
+            SizedBox(height: 12 * paddingScale),
             Text(
               label,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: bodyFontSize,
+              ),
             ),
           ],
         ),
@@ -538,140 +682,165 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
     );
   }
 
-  void _showCompletionModal() {
+  void _showCompletionModal(double paddingScale, double bodyFontSize) {
     final l10n = AppLocalizations.of(context)!;
     final bool isOnlinePayment = _paymentType == 'ONLINE';
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.check_circle,
-                    size: 64,
-                    color: AppColors.successGreen,
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: EdgeInsets.fromLTRB(
+            24 * paddingScale,
+            32 * paddingScale,
+            24 * paddingScale,
+            (MediaQuery.of(context).padding.bottom + 24) * paddingScale,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.check_circle,
+                size: (64 * paddingScale).clamp(56.0, 80.0),
+                color: AppColors.successGreen,
+              ),
+              SizedBox(height: 16 * paddingScale),
+              Text(
+                l10n.jobCompleted,
+                style: TextStyle(
+                  fontSize: bodyFontSize + 4,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 8 * paddingScale),
+              Text(
+                l10n.earnedFromJob(
+                  LocalizationHelper.convertBengaliToEnglish(
+                    _earnedAmount.toStringAsFixed(2),
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    l10n.jobCompleted,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                ),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: bodyFontSize,
+                ),
+              ),
+              SizedBox(height: 16 * paddingScale),
+              // Payment type indicator
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 16 * paddingScale,
+                  vertical: 10 * paddingScale,
+                ),
+                decoration: BoxDecoration(
+                  color: isOnlinePayment
+                      ? AppColors.successGreen.withValues(alpha: 0.1)
+                      : Colors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isOnlinePayment
+                        ? AppColors.successGreen.withValues(alpha: 0.3)
+                        : Colors.orange.withValues(alpha: 0.3),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.earnedFromJob(
-                      LocalizationHelper.convertBengaliToEnglish(
-                        _earnedAmount.toStringAsFixed(2),
-                      ),
-                    ),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: AppColors.textSecondary),
-                  ),
-                  const SizedBox(height: 12),
-                  // Payment type indicator
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isOnlinePayment
+                          ? Icons.account_balance_wallet
+                          : Icons.money,
+                      size: (16 * paddingScale).clamp(14.0, 18.0),
                       color: isOnlinePayment
-                          ? AppColors.successGreen.withValues(alpha: 0.1)
-                          : Colors.orange.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isOnlinePayment
-                            ? AppColors.successGreen.withValues(alpha: 0.3)
-                            : Colors.orange.withValues(alpha: 0.3),
-                      ),
+                          ? AppColors.successGreen
+                          : Colors.orange,
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          isOnlinePayment
-                              ? Icons.account_balance_wallet
-                              : Icons.money,
-                          size: 16,
+                    SizedBox(width: 8 * paddingScale),
+                    Flexible(
+                      child: Text(
+                        isOnlinePayment
+                            ? l10n.amountCreditedToWallet
+                            : l10n.cashCollectedFeeDeducted,
+                        style: TextStyle(
                           color: isOnlinePayment
                               ? AppColors.successGreen
                               : Colors.orange,
+                          fontSize: bodyFontSize - 2,
+                          fontWeight: FontWeight.w500,
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          isOnlinePayment
-                              ? l10n.amountCreditedToWallet
-                              : l10n.cashCollectedFeeDeducted,
-                          style: TextStyle(
-                            color: isOnlinePayment
-                                ? AppColors.successGreen
-                                : Colors.orange,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Customer Rating Section
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.amber.withValues(alpha: 0.3),
                       ),
                     ),
-                    child: Column(
-                      children: [
-                        Text(
-                          l10n.customerRating,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          l10n.ratingGivenByCustomer,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () async {
-                      // Notify other screens
-                      AppColors.jobUpdateNotifier.value++;
-                      if (!context.mounted) return;
-                      Navigator.pop(context);
-                      Navigator.pushReplacementNamed(context, '/home');
-                    },
-                    child: Text(l10n.backToHome),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            );
-          },
+              SizedBox(height: 24 * paddingScale),
+              // Customer Rating Section
+              Container(
+                padding: EdgeInsets.all(16 * paddingScale),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.amber.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      l10n.customerRating,
+                      style: TextStyle(
+                        fontSize: bodyFontSize,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: 4 * paddingScale),
+                    Text(
+                      l10n.ratingGivenByCustomer,
+                      style: TextStyle(
+                        fontSize: bodyFontSize - 3,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 32 * paddingScale),
+              ElevatedButton(
+                onPressed: () async {
+                  // Notify other screens
+                  AppColors.jobUpdateNotifier.value++;
+                  if (!context.mounted) return;
+                  Navigator.pop(context);
+                  Navigator.pushReplacementNamed(context, '/home');
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryOrangeStart,
+                  minimumSize: Size(
+                    double.infinity,
+                    (50 * paddingScale).clamp(45.0, 60.0),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  l10n.backToHome,
+                  style: TextStyle(
+                    fontSize: bodyFontSize,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
         );
       },
     );

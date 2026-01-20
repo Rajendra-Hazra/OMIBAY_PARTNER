@@ -9,6 +9,14 @@ class TransactionDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final paddingScale = (screenWidth / 375).clamp(0.8, 1.2);
+    final hPadding = 20.0 * paddingScale;
+    final titleFontSize = (screenWidth * 0.05).clamp(18.0, 24.0);
+    final bodyFontSize = (screenWidth * 0.038).clamp(13.0, 16.0);
+    final smallFontSize = (screenWidth * 0.032).clamp(11.0, 14.0);
+    final borderRadius = (screenWidth * 0.06).clamp(16.0, 24.0);
+
     final Map<String, dynamic>? args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
@@ -75,15 +83,21 @@ class TransactionDetailsScreen extends StatelessWidget {
         top: false,
         child: Column(
           children: [
-            _buildHeader(context),
+            _buildHeader(context, titleFontSize, borderRadius, hPadding),
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.all(24.0),
+                padding: EdgeInsets.all(hPadding * 1.2),
                 child: Column(
                   children: [
-                    _buildStatusCard(isCredit, amount, statusText),
-                    const SizedBox(height: 24),
+                    _buildStatusCard(
+                      isCredit,
+                      amount,
+                      statusText,
+                      borderRadius,
+                      bodyFontSize,
+                    ),
+                    SizedBox(height: 24 * paddingScale),
                     _buildTransactionInfo(
                       context,
                       transactionId,
@@ -91,14 +105,18 @@ class TransactionDetailsScreen extends StatelessWidget {
                       date,
                       paymentMethod,
                       isManualTransaction,
+                      bodyFontSize,
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24 * paddingScale),
                     if (isManualTransaction)
                       _buildSimpleTransactionInfo(
                         context,
                         args,
                         title,
                         subtitle,
+                        borderRadius,
+                        bodyFontSize,
+                        smallFontSize,
                       )
                     else
                       _buildEarningsBreakdown(
@@ -110,6 +128,9 @@ class TransactionDetailsScreen extends StatelessWidget {
                         partnerEarning,
                         isCredit,
                         isOnlinePayment,
+                        borderRadius,
+                        bodyFontSize,
+                        smallFontSize,
                       ),
                   ],
                 ),
@@ -121,21 +142,26 @@ class TransactionDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(
+    BuildContext context,
+    double fontSize,
+    double borderRadius,
+    double horizontalPadding,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 10,
-        left: 10,
-        right: 20,
+        left: horizontalPadding * 0.5,
+        right: horizontalPadding,
         bottom: 20,
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: AppColors.primaryGradient,
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(24),
-          bottomRight: Radius.circular(24),
+          bottomLeft: Radius.circular(borderRadius),
+          bottomRight: Radius.circular(borderRadius),
         ),
       ),
       child: Row(
@@ -151,9 +177,9 @@ class TransactionDetailsScreen extends StatelessWidget {
           Expanded(
             child: Text(
               l10n.transactionDetails,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 20,
+                fontSize: fontSize,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.5,
               ),
@@ -165,12 +191,19 @@ class TransactionDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusCard(bool isCredit, String amount, String statusText) {
+  Widget _buildStatusCard(
+    bool isCredit,
+    String amount,
+    String statusText,
+    double borderRadius,
+    double fontSize,
+  ) {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: isCredit ? Colors.green.shade50 : Colors.red.shade50,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(
           color: isCredit ? Colors.green.shade100 : Colors.red.shade100,
         ),
@@ -180,21 +213,28 @@ class TransactionDetailsScreen extends StatelessWidget {
           Icon(
             isCredit ? Icons.check_circle_rounded : Icons.remove_rounded,
             color: isCredit ? AppColors.successGreen : Colors.red,
-            size: 48,
+            size: fontSize * 3,
           ),
           const SizedBox(height: 16),
           Text(
             statusText,
             style: TextStyle(
-              fontSize: 18,
+              fontSize: fontSize,
               fontWeight: FontWeight.bold,
               color: isCredit ? AppColors.successGreen : Colors.red,
             ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
-          Text(
-            LocalizationHelper.convertBengaliToEnglish(amount),
-            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              LocalizationHelper.convertBengaliToEnglish(amount),
+              style: TextStyle(
+                fontSize: fontSize * 1.8,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -208,6 +248,7 @@ class TransactionDetailsScreen extends StatelessWidget {
     String date,
     String paymentMethod,
     bool isManualTransaction,
+    double fontSize,
   ) {
     final l10n = AppLocalizations.of(context)!;
     return Column(
@@ -215,27 +256,48 @@ class TransactionDetailsScreen extends StatelessWidget {
         _buildInfoRow(
           l10n.transactionId,
           LocalizationHelper.convertBengaliToEnglish(transactionId),
+          fontSize,
         ),
-        _buildInfoRow(l10n.dateTime, date),
+        _buildInfoRow(l10n.dateTime, date, fontSize),
         if (!isManualTransaction) ...[
           _buildInfoRow(
             l10n.jobReference,
             LocalizationHelper.convertBengaliToEnglish(jobId),
+            fontSize,
           ),
-          _buildInfoRow(l10n.paymentMethod, paymentMethod),
+          _buildInfoRow(l10n.paymentMethod, paymentMethod, fontSize),
         ],
       ],
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String value, double fontSize) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: AppColors.textSecondary)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Flexible(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: fontSize * 0.9,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: fontSize * 0.9,
+              ),
+              textAlign: TextAlign.right,
+            ),
+          ),
         ],
       ),
     );
@@ -246,34 +308,38 @@ class TransactionDetailsScreen extends StatelessWidget {
     Map<String, dynamic>? args,
     String title,
     String subtitle,
+    double borderRadius,
+    double bodyFontSize,
+    double smallFontSize,
   ) {
     final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.bgStart,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(borderRadius * 0.6),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             l10n.transactionDetails,
-            style: const TextStyle(
-              fontSize: 12,
+            style: TextStyle(
+              fontSize: smallFontSize * 0.8,
               fontWeight: FontWeight.bold,
               color: AppColors.textSecondary,
               letterSpacing: 1,
             ),
           ),
           const SizedBox(height: 16),
-          _buildInfoRow(l10n.transactionType, title),
-          _buildInfoRow(l10n.description, subtitle),
+          _buildInfoRow(l10n.transactionType, title, bodyFontSize),
+          _buildInfoRow(l10n.description, subtitle, bodyFontSize),
           _buildInfoRow(
             l10n.amountLabel,
             LocalizationHelper.convertBengaliToEnglish(
               args?['amount']?.toString() ?? '${l10n.currencySymbol}0.00',
             ),
+            bodyFontSize,
           ),
         ],
       ),
@@ -289,6 +355,9 @@ class TransactionDetailsScreen extends StatelessWidget {
     double partnerEarning,
     bool isCredit,
     bool isOnlinePayment,
+    double borderRadius,
+    double bodyFontSize,
+    double smallFontSize,
   ) {
     final l10n = AppLocalizations.of(context)!;
     // Calculate platform payable amount for COD
@@ -298,15 +367,15 @@ class TransactionDetailsScreen extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.bgStart,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(borderRadius * 0.6),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             l10n.earningsBreakdown,
-            style: const TextStyle(
-              fontSize: 12,
+            style: TextStyle(
+              fontSize: smallFontSize * 0.8,
               fontWeight: FontWeight.bold,
               color: AppColors.textSecondary,
               letterSpacing: 1,
@@ -318,6 +387,7 @@ class TransactionDetailsScreen extends StatelessWidget {
             LocalizationHelper.convertBengaliToEnglish(
               '${l10n.currencySymbol}${jobPrice.toStringAsFixed(2)}',
             ),
+            bodyFontSize,
           ),
           if (tipAmount > 0)
             _buildBreakdownRow(
@@ -325,6 +395,7 @@ class TransactionDetailsScreen extends StatelessWidget {
               LocalizationHelper.convertBengaliToEnglish(
                 '${l10n.currencySymbol}${tipAmount.toStringAsFixed(2)}',
               ),
+              bodyFontSize,
               valueColor: Colors.orange,
             ),
           _buildBreakdownRow(
@@ -332,12 +403,14 @@ class TransactionDetailsScreen extends StatelessWidget {
             LocalizationHelper.convertBengaliToEnglish(
               '${l10n.currencySymbol}${serviceAmount.toStringAsFixed(2)}',
             ),
+            bodyFontSize,
           ),
           _buildBreakdownRow(
             l10n.gst,
             LocalizationHelper.convertBengaliToEnglish(
               '-${l10n.currencySymbol}${(serviceAmount * 0.05).toStringAsFixed(2)}',
             ),
+            bodyFontSize,
             valueColor: Colors.red,
           ),
           _buildBreakdownRow(
@@ -345,6 +418,7 @@ class TransactionDetailsScreen extends StatelessWidget {
             LocalizationHelper.convertBengaliToEnglish(
               '-${l10n.currencySymbol}${(serviceAmount * 0.20).toStringAsFixed(2)}',
             ),
+            bodyFontSize,
             valueColor: Colors.red,
           ),
           if (tipAmount > 0)
@@ -353,6 +427,7 @@ class TransactionDetailsScreen extends StatelessWidget {
               LocalizationHelper.convertBengaliToEnglish(
                 '+${l10n.currencySymbol}${tipAmount.toStringAsFixed(2)}',
               ),
+              bodyFontSize,
               valueColor: Colors.green,
             ),
           const Divider(height: 32),
@@ -361,6 +436,7 @@ class TransactionDetailsScreen extends StatelessWidget {
             LocalizationHelper.convertBengaliToEnglish(
               '${l10n.currencySymbol}${partnerEarning.toStringAsFixed(2)}',
             ),
+            bodyFontSize,
             isTotal: true,
             isCredit: true,
           ),
@@ -380,16 +456,18 @@ class TransactionDetailsScreen extends StatelessWidget {
                     children: [
                       Icon(
                         Icons.info_outline,
-                        size: 16,
+                        size: bodyFontSize,
                         color: Colors.orange.shade700,
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        l10n.cashPaymentNote,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.orange.shade700,
-                          fontSize: 12,
+                      Expanded(
+                        child: Text(
+                          l10n.cashPaymentNote,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange.shade700,
+                            fontSize: smallFontSize * 0.9,
+                          ),
                         ),
                       ),
                     ],
@@ -403,7 +481,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                     ),
                     style: TextStyle(
                       color: Colors.orange.shade900,
-                      fontSize: 12,
+                      fontSize: smallFontSize * 0.9,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -415,7 +493,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                     ),
                     style: TextStyle(
                       color: Colors.orange.shade900,
-                      fontSize: 12,
+                      fontSize: smallFontSize * 0.9,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -430,7 +508,8 @@ class TransactionDetailsScreen extends StatelessWidget {
 
   Widget _buildBreakdownRow(
     String label,
-    String value, {
+    String value,
+    double fontSize, {
     bool isTotal = false,
     bool isCredit = true,
     Color? valueColor,
@@ -440,18 +519,22 @@ class TransactionDetailsScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-              fontSize: isTotal ? 16 : 14,
+          Flexible(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+                fontSize: isTotal ? fontSize * 1.1 : fontSize * 0.9,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
+          const SizedBox(width: 8),
           Text(
             value,
             style: TextStyle(
               fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-              fontSize: isTotal ? 16 : 14,
+              fontSize: isTotal ? fontSize * 1.1 : fontSize * 0.9,
               color:
                   valueColor ??
                   (isTotal

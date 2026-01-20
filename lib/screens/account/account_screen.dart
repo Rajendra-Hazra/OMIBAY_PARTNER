@@ -121,6 +121,9 @@ class _AccountScreenState extends State<AccountScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final horizontalPadding = (screenWidth * 0.05).clamp(16.0, 24.0);
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(gradient: AppColors.bgGradient),
@@ -133,8 +136,8 @@ class _AccountScreenState extends State<AccountScreen> {
               children: [
                 _buildHeader(context),
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding,
                     vertical: 16.0,
                   ),
                   child: Column(
@@ -170,8 +173,22 @@ class _AccountScreenState extends State<AccountScreen> {
 
   Widget _buildStatsSection(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Responsive sizing
+    final verticalPadding =
+        MediaQuery.of(context).size.height * 0.025; // 2.5% of screen height
+    final horizontalPadding = screenWidth * 0.04; // 4% of screen width
+    final iconPadding = screenWidth * 0.01; // 1% of screen width
+    final iconSize = screenWidth * 0.035; // 3.5% of screen width
+    final valueFontSize = screenWidth * 0.045; // 4.5% of screen width
+    final labelFontSize = screenWidth * 0.028; // 2.8% of screen width
+
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      padding: EdgeInsets.symmetric(
+        vertical: verticalPadding.clamp(16.0, 24.0),
+        horizontal: horizontalPadding.clamp(12.0, 20.0),
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -192,6 +209,10 @@ class _AccountScreenState extends State<AccountScreen> {
             l10n.rating,
             Icons.star_rounded,
             Colors.amber,
+            iconPadding: iconPadding,
+            iconSize: iconSize,
+            valueFontSize: valueFontSize,
+            labelFontSize: labelFontSize,
           ),
           _buildStatDivider(),
           _buildStatItem(
@@ -200,6 +221,10 @@ class _AccountScreenState extends State<AccountScreen> {
             l10n.jobsDone,
             Icons.check_circle_rounded,
             AppColors.successGreen,
+            iconPadding: iconPadding,
+            iconSize: iconSize,
+            valueFontSize: valueFontSize,
+            labelFontSize: labelFontSize,
           ),
           _buildStatDivider(),
           _buildStatItem(
@@ -208,6 +233,10 @@ class _AccountScreenState extends State<AccountScreen> {
             l10n.workWithUs,
             Icons.timer_rounded,
             Colors.blue,
+            iconPadding: iconPadding,
+            iconSize: iconSize,
+            valueFontSize: valueFontSize,
+            labelFontSize: labelFontSize,
           ),
         ],
       ),
@@ -219,42 +248,58 @@ class _AccountScreenState extends State<AccountScreen> {
     String value,
     String label,
     IconData icon,
-    Color color,
-  ) {
-    return Column(
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
+    Color color, {
+    required double iconPadding,
+    required double iconSize,
+    required double valueFontSize,
+    required double labelFontSize,
+  }) {
+    return Flexible(
+      child: Column(
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: EdgeInsets.all(iconPadding.clamp(3.0, 5.0)),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: iconSize.clamp(13.0, 16.0),
+                ),
               ),
-              child: Icon(icon, color: color, size: 14),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: valueFontSize.clamp(16.0, 20.0),
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w500,
+            ],
           ),
-        ),
-      ],
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: labelFontSize.clamp(10.0, 12.0),
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
 
@@ -267,12 +312,15 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final horizontalPadding = (screenWidth * 0.05).clamp(20.0, 28.0);
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 10,
-        left: 20,
-        right: 20,
+        left: horizontalPadding,
+        right: horizontalPadding,
         bottom: 25,
       ),
       decoration: const BoxDecoration(
@@ -291,13 +339,16 @@ class _AccountScreenState extends State<AccountScreen> {
       ),
       child: Row(
         children: [
-          Text(
-            AppLocalizations.of(context)!.myAccount,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.5,
+          Expanded(
+            child: Text(
+              AppLocalizations.of(context)!.myAccount,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: (screenWidth * 0.06).clamp(22.0, 26.0),
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -307,6 +358,19 @@ class _AccountScreenState extends State<AccountScreen> {
 
   Widget _buildProfileCard(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Responsive sizing
+    final padding = (screenWidth * 0.06).clamp(20.0, 28.0);
+    final avatarRadius = (screenWidth * 0.11).clamp(38.0, 48.0);
+    final avatarBorderWidth = (screenWidth * 0.008).clamp(2.5, 4.0);
+    final nameSpacing = (screenWidth * 0.05).clamp(16.0, 24.0);
+    final nameFontSize = (screenWidth * 0.055).clamp(20.0, 24.0);
+    final iconSize = (screenWidth * 0.035).clamp(13.0, 16.0);
+    final detailsFontSize = (screenWidth * 0.033).clamp(12.0, 14.0);
+    final decorCircleSize = (screenHeight * 0.15).clamp(100.0, 140.0);
+
     return Container(
       decoration: BoxDecoration(
         gradient: AppColors.darkGradient,
@@ -328,8 +392,8 @@ class _AccountScreenState extends State<AccountScreen> {
               right: -30,
               top: -30,
               child: Container(
-                width: 120,
-                height: 120,
+                width: decorCircleSize.clamp(100.0, 140.0),
+                height: decorCircleSize.clamp(100.0, 140.0),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.05),
                   shape: BoxShape.circle,
@@ -337,24 +401,24 @@ class _AccountScreenState extends State<AccountScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: EdgeInsets.all(padding),
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(3),
+                    padding: EdgeInsets.all(avatarBorderWidth),
                     decoration: const BoxDecoration(
                       color: AppColors.primaryOrangeStart,
                       shape: BoxShape.circle,
                     ),
                     child: CircleAvatar(
-                      radius: 42,
+                      radius: avatarRadius,
                       backgroundColor: Colors.white.withValues(alpha: 0.1),
                       backgroundImage: _photoUrl.startsWith('http')
                           ? NetworkImage(_photoUrl)
                           : FileImage(File(_photoUrl)) as ImageProvider,
                     ),
                   ),
-                  const SizedBox(width: 20),
+                  SizedBox(width: nameSpacing),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -364,8 +428,8 @@ class _AccountScreenState extends State<AccountScreen> {
                             Flexible(
                               child: Text(
                                 _displayName,
-                                style: const TextStyle(
-                                  fontSize: 22,
+                                style: TextStyle(
+                                  fontSize: nameFontSize,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                   letterSpacing: 0.2,
@@ -375,38 +439,41 @@ class _AccountScreenState extends State<AccountScreen> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            const Icon(
+                            Icon(
                               Icons.verified_rounded,
                               color: Colors.blue,
-                              size: 20,
+                              size: (iconSize * 1.4).clamp(18.0, 22.0),
                             ),
                           ],
                         ),
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.badge_outlined,
                               color: Colors.white70,
-                              size: 14,
+                              size: iconSize,
                             ),
                             const SizedBox(width: 6),
                             Text(
                               '${l10n.partnerId} ',
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.7),
-                                fontSize: 13,
+                                fontSize: detailsFontSize,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            Text(
-                              _partnerId.isNotEmpty
-                                  ? _partnerId
-                                  : l10n.notAvailable,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
+                            Flexible(
+                              child: Text(
+                                _partnerId.isNotEmpty
+                                    ? _partnerId
+                                    : l10n.notAvailable,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: detailsFontSize,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -414,18 +481,21 @@ class _AccountScreenState extends State<AccountScreen> {
                         const SizedBox(height: 12),
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.phone_android_rounded,
                               color: Colors.white70,
-                              size: 14,
+                              size: iconSize,
                             ),
                             const SizedBox(width: 6),
-                            Text(
-                              _phone.isNotEmpty ? _phone : l10n.notAvailable,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: Colors.white70,
-                                fontWeight: FontWeight.w500,
+                            Flexible(
+                              child: Text(
+                                _phone.isNotEmpty ? _phone : l10n.notAvailable,
+                                style: TextStyle(
+                                  fontSize: detailsFontSize,
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -704,9 +774,13 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   Widget _buildLogoutButton() {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final buttonHeight = (screenHeight * 0.065).clamp(56.0, 64.0);
+
     return Builder(
       builder: (context) => Container(
         width: double.infinity,
+        height: buttonHeight,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
@@ -781,7 +855,6 @@ class _AccountScreenState extends State<AccountScreen> {
             ),
           ),
           style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 15),
             backgroundColor: AppColors.errorRedAlt,
             foregroundColor: Colors.white,
             elevation: 0,

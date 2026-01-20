@@ -50,94 +50,116 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final paddingScale = (screenWidth / 375).clamp(0.8, 1.2);
+    final logoSize = (132 * paddingScale).clamp(100.0, 160.0);
+    final titleFontSize = (screenWidth * 0.08).clamp(24.0, 36.0);
+    final bodyFontSize = (screenWidth * 0.04).clamp(14.0, 18.0);
+
     return Scaffold(
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFFEFF6FF),
-              Color(0xFFEEF2FF),
-            ], // blue-50 to indigo-50
+            colors: [Color(0xFFEFF6FF), Color(0xFFEEF2FF)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
         child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 132,
-                height: 132,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.border, width: 1),
-                  color: Colors.white,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Image.asset(
-                    'images/logo.png',
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.business_center,
-                      size: 60,
-                      color: AppColors.primaryOrangeStart,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: logoSize,
+                  height: logoSize,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.border, width: 1),
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.all(20.0 * paddingScale),
+                    child: Image.asset(
+                      'images/logo.png',
+                      errorBuilder: (context, error, stackTrace) => Icon(
+                        Icons.business_center,
+                        size: (60 * paddingScale).clamp(48.0, 80.0),
+                        color: AppColors.primaryOrangeStart,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                AppLocalizations.of(context)!.appTitle,
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  color: const Color(0xFF2563EB), // blue-600
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                AppLocalizations.of(context)!.appSlogan,
-                style: const TextStyle(
-                  color: Color(0xFF4B5563), // gray-600
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 48),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.check_circle,
-                    color: Color(0xFF2563EB),
-                    size: 20,
+                SizedBox(height: 32 * paddingScale),
+                Text(
+                  AppLocalizations.of(context)!.appTitle,
+                  style: TextStyle(
+                    fontSize: titleFontSize,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF2563EB),
+                    letterSpacing: 1,
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    AppLocalizations.of(context)!.continuingToLogin,
-                    style: const TextStyle(color: Color(0xFF4B5563)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Container(
-                width: 200,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(2),
                 ),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Container(
-                    width: 200 * _animation.value,
-                    height: 4,
-                    decoration: BoxDecoration(
+                SizedBox(height: 8 * paddingScale),
+                Text(
+                  AppLocalizations.of(context)!.appSlogan,
+                  style: TextStyle(
+                    color: const Color(0xFF4B5563),
+                    fontSize: bodyFontSize,
+                  ),
+                ),
+                SizedBox(height: 60 * paddingScale),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.check_circle,
                       color: const Color(0xFF2563EB),
-                      borderRadius: BorderRadius.circular(2),
+                      size: (20 * paddingScale).clamp(18.0, 24.0),
+                    ),
+                    SizedBox(width: 8 * paddingScale),
+                    Text(
+                      AppLocalizations.of(context)!.continuingToLogin,
+                      style: TextStyle(
+                        color: const Color(0xFF4B5563),
+                        fontSize: bodyFontSize - 2,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 24 * paddingScale),
+                Container(
+                  width: (200 * paddingScale).clamp(150.0, 250.0),
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      width:
+                          (200 * paddingScale).clamp(150.0, 250.0) *
+                          _animation.value,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2563EB),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

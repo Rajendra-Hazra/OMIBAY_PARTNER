@@ -55,5 +55,17 @@
 	<string>This app needs access to microphone for voice commands and support calls.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs access to photo library to select profile photos and after-service job photos.</string>
+	
+	<!-- Firebase Cloud Messaging -->
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
+	
+	<!-- Background Modes for Push Notifications and Audio -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+		<string>remote-notification</string>
+		<string>fetch</string>
+	</array>
 </dict>
 </plist>

@@ -54,8 +54,18 @@ class _ReferralScreenState extends State<ReferralScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final paddingScale = (screenWidth / 375).clamp(0.8, 1.2);
+    final hPadding = 20.0 * paddingScale;
+    final titleFontSize = (screenWidth * 0.05).clamp(18.0, 24.0);
+    final bodyFontSize = (screenWidth * 0.038).clamp(13.0, 16.0);
+    final smallFontSize = (screenWidth * 0.032).clamp(11.0, 14.0);
+    final borderRadius = (screenWidth * 0.06).clamp(16.0, 24.0);
+    final buttonHeight = (screenHeight * 0.06).clamp(50.0, 60.0);
+
     if (_isLoading) {
-      return const Scaffold(
+      return Scaffold(
         body: Center(
           child: CircularProgressIndicator(color: AppColors.primaryOrangeStart),
         ),
@@ -67,22 +77,35 @@ class _ReferralScreenState extends State<ReferralScreen> {
         child: Column(
           children: [
             // Custom Header
-            _buildHeader(context),
+            _buildHeader(context, titleFontSize, borderRadius, hPadding),
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: Column(
                   children: [
-                    _buildHeroSection(),
+                    _buildHeroSection(
+                      borderRadius,
+                      titleFontSize,
+                      bodyFontSize,
+                    ),
                     Padding(
-                      padding: const EdgeInsets.all(20.0),
+                      padding: EdgeInsets.all(hPadding),
                       child: Column(
                         children: [
-                          _buildCodeContainer(context),
-                          const SizedBox(height: 24),
-                          _buildHowItWorks(),
-                          const SizedBox(height: 24),
-                          _buildStatsSection(),
+                          _buildCodeContainer(
+                            context,
+                            borderRadius,
+                            bodyFontSize,
+                            smallFontSize,
+                          ),
+                          SizedBox(height: 24 * paddingScale),
+                          _buildHowItWorks(bodyFontSize, smallFontSize),
+                          SizedBox(height: 24 * paddingScale),
+                          _buildStatsSection(
+                            borderRadius,
+                            bodyFontSize,
+                            smallFontSize,
+                          ),
                         ],
                       ),
                     ),
@@ -93,24 +116,36 @@ class _ReferralScreenState extends State<ReferralScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: SafeArea(child: _buildBottomAction(context)),
+      bottomNavigationBar: SafeArea(
+        child: _buildBottomAction(
+          context,
+          buttonHeight,
+          bodyFontSize,
+          smallFontSize,
+        ),
+      ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(
+    BuildContext context,
+    double fontSize,
+    double borderRadius,
+    double horizontalPadding,
+  ) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 10,
-        left: 10,
-        right: 20,
+        left: horizontalPadding * 0.5,
+        right: horizontalPadding,
         bottom: 20,
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: AppColors.primaryGradient,
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(24),
-          bottomRight: Radius.circular(24),
+          bottomLeft: Radius.circular(borderRadius),
+          bottomRight: Radius.circular(borderRadius),
         ),
       ),
       child: Row(
@@ -123,8 +158,8 @@ class _ReferralScreenState extends State<ReferralScreen> {
           Expanded(
             child: Text(
               AppLocalizations.of(context)!.referAndEarn,
-              style: const TextStyle(
-                fontSize: 18,
+              style: TextStyle(
+                fontSize: fontSize,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
@@ -136,7 +171,11 @@ class _ReferralScreenState extends State<ReferralScreen> {
     );
   }
 
-  Widget _buildHeroSection() {
+  Widget _buildHeroSection(
+    double borderRadius,
+    double titleFontSize,
+    double bodyFontSize,
+  ) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.all(16),
@@ -147,7 +186,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.2),
@@ -164,15 +203,19 @@ class _ReferralScreenState extends State<ReferralScreen> {
               color: Colors.white.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.people, color: Colors.white, size: 40),
+            child: Icon(
+              Icons.people,
+              color: Colors.white,
+              size: titleFontSize * 2,
+            ),
           ),
           const SizedBox(height: 16),
           Text(
             AppLocalizations.of(context)!.referHeroTitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
-              fontSize: 18,
+              fontSize: titleFontSize,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -180,27 +223,35 @@ class _ReferralScreenState extends State<ReferralScreen> {
           Text(
             AppLocalizations.of(context)!.referHeroSubtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white70, fontSize: 13),
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: bodyFontSize * 0.8,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCodeContainer(BuildContext context) {
+  Widget _buildCodeContainer(
+    BuildContext context,
+    double borderRadius,
+    double bodyFontSize,
+    double smallFontSize,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
       decoration: BoxDecoration(
         color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(borderRadius * 0.6),
         border: Border.all(color: Colors.grey[200]!),
       ),
       child: Column(
         children: [
           Text(
             AppLocalizations.of(context)!.yourReferralCode,
-            style: const TextStyle(
-              fontSize: 11,
+            style: TextStyle(
+              fontSize: smallFontSize * 0.8,
               fontWeight: FontWeight.bold,
               color: AppColors.textSecondary,
               letterSpacing: 1,
@@ -210,13 +261,18 @@ class _ReferralScreenState extends State<ReferralScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                _referralCode,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 3,
-                  color: AppColors.primaryOrangeStart,
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    _referralCode,
+                    style: TextStyle(
+                      fontSize: bodyFontSize * 2,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 3,
+                      color: AppColors.primaryOrangeStart,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -228,10 +284,10 @@ class _ReferralScreenState extends State<ReferralScreen> {
                     ),
                   );
                 },
-                icon: const Icon(
+                icon: Icon(
                   Icons.copy,
                   color: AppColors.textSecondary,
-                  size: 20,
+                  size: bodyFontSize * 1.25,
                 ),
               ),
             ],
@@ -241,32 +297,59 @@ class _ReferralScreenState extends State<ReferralScreen> {
     );
   }
 
-  Widget _buildHowItWorks() {
+  Widget _buildHowItWorks(double titleFontSize, double bodyFontSize) {
     final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           l10n.howItWorks,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: titleFontSize * 0.8,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 24),
-        _buildStepItem(1, l10n.step1Title, l10n.step1Desc),
-        _buildStepItem(2, l10n.step2Title, l10n.step2Desc),
-        _buildStepItem(3, l10n.step3Title, l10n.step3Desc),
+        _buildStepItem(
+          1,
+          l10n.step1Title,
+          l10n.step1Desc,
+          titleFontSize,
+          bodyFontSize,
+        ),
+        _buildStepItem(
+          2,
+          l10n.step2Title,
+          l10n.step2Desc,
+          titleFontSize,
+          bodyFontSize,
+        ),
+        _buildStepItem(
+          3,
+          l10n.step3Title,
+          l10n.step3Desc,
+          titleFontSize,
+          bodyFontSize,
+        ),
       ],
     );
   }
 
-  Widget _buildStepItem(int num, String title, String desc) {
+  Widget _buildStepItem(
+    int num,
+    String title,
+    String desc,
+    double titleFontSize,
+    double bodyFontSize,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 28,
-            height: 28,
+            width: titleFontSize * 1.5,
+            height: titleFontSize * 1.5,
             alignment: Alignment.center,
             decoration: const BoxDecoration(
               color: AppColors.primaryOrangeStart,
@@ -287,17 +370,17 @@ class _ReferralScreenState extends State<ReferralScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontSize: bodyFontSize,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   desc,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppColors.textSecondary,
-                    fontSize: 13,
+                    fontSize: bodyFontSize * 0.8,
                   ),
                 ),
               ],
@@ -308,13 +391,20 @@ class _ReferralScreenState extends State<ReferralScreen> {
     );
   }
 
-  Widget _buildStatsSection() {
+  Widget _buildStatsSection(
+    double borderRadius,
+    double bodyFontSize,
+    double smallFontSize,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     return Row(
       children: [
         _buildStatBox(
           LocalizationHelper.convertBengaliToEnglish('$_totalReferrals'),
           l10n.totalReferrals,
+          borderRadius,
+          bodyFontSize,
+          smallFontSize,
         ),
         const SizedBox(width: 16),
         _buildStatBox(
@@ -322,32 +412,50 @@ class _ReferralScreenState extends State<ReferralScreen> {
             '₹${_totalReferralEarnings.toStringAsFixed(0)}',
           ),
           l10n.totalEarned,
+          borderRadius,
+          bodyFontSize,
+          smallFontSize,
         ),
       ],
     );
   }
 
-  Widget _buildStatBox(String val, String label) {
+  Widget _buildStatBox(
+    String val,
+    String label,
+    double borderRadius,
+    double bodyFontSize,
+    double smallFontSize,
+  ) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(borderRadius * 0.6),
           border: Border.all(color: AppColors.border),
         ),
         child: Column(
           children: [
-            Text(
-              val,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                val,
+                style: TextStyle(
+                  fontSize: bodyFontSize * 1.5,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 12,
+              style: TextStyle(
+                fontSize: smallFontSize,
                 color: AppColors.textSecondary,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -355,7 +463,12 @@ class _ReferralScreenState extends State<ReferralScreen> {
     );
   }
 
-  Widget _buildBottomAction(BuildContext context) {
+  Widget _buildBottomAction(
+    BuildContext context,
+    double buttonHeight,
+    double bodyFontSize,
+    double smallFontSize,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: const BoxDecoration(
@@ -367,6 +480,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
         children: [
           SizedBox(
             width: double.infinity,
+            height: buttonHeight,
             child: ElevatedButton.icon(
               onPressed: () {
                 // ignore: deprecated_member_use
@@ -376,18 +490,24 @@ class _ReferralScreenState extends State<ReferralScreen> {
                   )!.referralShareMessage(_referralCode),
                 );
               },
-              icon: const Icon(Icons.share),
-              label: Text(AppLocalizations.of(context)!.shareCode),
+              icon: Icon(Icons.share, size: bodyFontSize * 1.25),
+              label: Text(
+                AppLocalizations.of(context)!.shareCode,
+                style: TextStyle(
+                  fontSize: bodyFontSize,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 8),
           GestureDetector(
-            onTap: () => _showTermsPopup(context),
+            onTap: () => _showTermsPopup(context, bodyFontSize),
             child: Text(
               AppLocalizations.of(context)!.termsOfService,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.textSecondary,
-                fontSize: 12,
+                fontSize: smallFontSize,
                 decoration: TextDecoration.underline,
                 fontWeight: FontWeight.w500,
               ),
@@ -398,7 +518,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
     );
   }
 
-  void _showTermsPopup(BuildContext context) {
+  void _showTermsPopup(BuildContext context, double fontSize) {
     final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
@@ -409,18 +529,21 @@ class _ReferralScreenState extends State<ReferralScreen> {
           ),
           title: Text(
             l10n.referralTermsTitle,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: fontSize * 1.2,
+            ),
           ),
           content: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildTermPoint(l10n.referralTermsPoint1),
-                _buildTermPoint(l10n.referralTermsPoint2),
-                _buildTermPoint(l10n.referralTermsPoint3),
-                _buildTermPoint(l10n.referralTermsPoint4),
-                _buildTermPoint(l10n.referralTermsPoint5),
+                _buildTermPoint(l10n.referralTermsPoint1, fontSize),
+                _buildTermPoint(l10n.referralTermsPoint2, fontSize),
+                _buildTermPoint(l10n.referralTermsPoint3, fontSize),
+                _buildTermPoint(l10n.referralTermsPoint4, fontSize),
+                _buildTermPoint(l10n.referralTermsPoint5, fontSize),
               ],
             ),
           ),
@@ -429,7 +552,10 @@ class _ReferralScreenState extends State<ReferralScreen> {
               onPressed: () => Navigator.pop(context),
               child: Text(
                 l10n.close,
-                style: const TextStyle(color: AppColors.primaryOrangeStart),
+                style: TextStyle(
+                  color: AppColors.primaryOrangeStart,
+                  fontSize: fontSize,
+                ),
               ),
             ),
           ],
@@ -438,17 +564,20 @@ class _ReferralScreenState extends State<ReferralScreen> {
     );
   }
 
-  Widget _buildTermPoint(String text) {
+  Widget _buildTermPoint(String text, double fontSize) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('• ', style: TextStyle(fontWeight: FontWeight.bold)),
+          Text(
+            '• ',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: fontSize),
+          ),
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(fontSize: 13, height: 1.4),
+              style: TextStyle(fontSize: fontSize * 0.85, height: 1.4),
             ),
           ),
         ],

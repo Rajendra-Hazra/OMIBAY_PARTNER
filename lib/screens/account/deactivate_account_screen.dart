@@ -61,6 +61,17 @@ class _DeactivateAccountScreenState extends State<DeactivateAccountScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final paddingScale = (screenWidth / 375).clamp(0.8, 1.2);
+    final hPadding = 20.0 * paddingScale;
+    final vPadding = 20.0 * paddingScale;
+    final titleFontSize = (screenWidth * 0.05).clamp(18.0, 24.0);
+    final bodyFontSize = (screenWidth * 0.035).clamp(13.0, 16.0);
+    final smallFontSize = (screenWidth * 0.032).clamp(11.0, 14.0);
+    final iconSize = (screenWidth * 0.05).clamp(18.0, 24.0);
+    final buttonHeight = (screenHeight * 0.06).clamp(50.0, 60.0);
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -68,16 +79,19 @@ class _DeactivateAccountScreenState extends State<DeactivateAccountScreen> {
         bottom: false,
         child: Column(
           children: [
-            _buildHeader(context),
+            _buildHeader(context, titleFontSize, iconSize),
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.symmetric(
+                  horizontal: hPadding,
+                  vertical: vPadding,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(16 * paddingScale),
                       decoration: BoxDecoration(
                         color: Colors.orange.shade50,
                         borderRadius: BorderRadius.circular(12),
@@ -88,13 +102,14 @@ class _DeactivateAccountScreenState extends State<DeactivateAccountScreen> {
                           Icon(
                             Icons.info_outline,
                             color: Colors.orange.shade700,
+                            size: iconSize,
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12 * paddingScale),
                           Expanded(
                             child: Text(
                               AppLocalizations.of(context)!.deactivationWarning,
-                              style: const TextStyle(
-                                fontSize: 13,
+                              style: TextStyle(
+                                fontSize: smallFontSize,
                                 color: Colors.orange,
                               ),
                             ),
@@ -102,21 +117,21 @@ class _DeactivateAccountScreenState extends State<DeactivateAccountScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24 * paddingScale),
                     Text(
                       AppLocalizations.of(context)!.whyDeactivating,
-                      style: const TextStyle(
-                        fontSize: 16,
+                      style: TextStyle(
+                        fontSize: bodyFontSize + 2,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12 * paddingScale),
                     Column(
                       children: _deactivationReasons.map((reason) {
                         return RadioListTile<String>(
                           title: Text(
                             reason,
-                            style: const TextStyle(fontSize: 14),
+                            style: TextStyle(fontSize: bodyFontSize),
                           ),
                           value: reason,
                           // ignore: deprecated_member_use
@@ -136,14 +151,16 @@ class _DeactivateAccountScreenState extends State<DeactivateAccountScreen> {
                     if (_selectedReason ==
                         AppLocalizations.of(context)!.reasonOther)
                       Padding(
-                        padding: const EdgeInsets.only(top: 12),
+                        padding: EdgeInsets.only(top: 12 * paddingScale),
                         child: TextField(
                           controller: _reasonController,
                           maxLines: 3,
+                          style: TextStyle(fontSize: bodyFontSize),
                           decoration: InputDecoration(
                             hintText: AppLocalizations.of(
                               context,
                             )!.pleaseTellMore,
+                            hintStyle: TextStyle(fontSize: smallFontSize),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -152,32 +169,43 @@ class _DeactivateAccountScreenState extends State<DeactivateAccountScreen> {
                           ),
                         ),
                       ),
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32 * paddingScale),
                     Text(
                       AppLocalizations.of(context)!.whatHappensDeactivate,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: bodyFontSize,
+                      ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12 * paddingScale),
                     _buildBulletPoint(
                       AppLocalizations.of(context)!.deactivatePoint1,
+                      bodyFontSize,
                     ),
                     _buildBulletPoint(
                       AppLocalizations.of(context)!.deactivatePoint2,
+                      bodyFontSize,
                     ),
                     _buildBulletPoint(
                       AppLocalizations.of(context)!.deactivatePoint3,
+                      bodyFontSize,
                     ),
                     _buildBulletPoint(
                       AppLocalizations.of(context)!.deactivatePoint4,
+                      bodyFontSize,
                     ),
-                    const SizedBox(height: 48),
+                    SizedBox(height: 48 * paddingScale),
                     SizedBox(
                       width: double.infinity,
-                      height: 50,
+                      height: buttonHeight,
                       child: ElevatedButton(
                         onPressed: _isConfirming
                             ? null
-                            : () => _showConfirmationDialog(),
+                            : () => _showConfirmationDialog(
+                                bodyFontSize,
+                                smallFontSize,
+                                paddingScale,
+                              ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.orange,
                           foregroundColor: Colors.white,
@@ -199,9 +227,9 @@ class _DeactivateAccountScreenState extends State<DeactivateAccountScreen> {
                                 AppLocalizations.of(
                                   context,
                                 )!.deactivateMyAccount,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                                  fontSize: bodyFontSize + 1,
                                 ),
                               ),
                       ),
@@ -216,7 +244,11 @@ class _DeactivateAccountScreenState extends State<DeactivateAccountScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(
+    BuildContext context,
+    double titleFontSize,
+    double iconSize,
+  ) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(
@@ -236,18 +268,18 @@ class _DeactivateAccountScreenState extends State<DeactivateAccountScreen> {
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios_new,
               color: Colors.white,
-              size: 20,
+              size: iconSize,
             ),
           ),
           Expanded(
             child: Text(
               AppLocalizations.of(context)!.deactivateAccount,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 24,
+                fontSize: titleFontSize,
                 fontWeight: FontWeight.bold,
               ),
               overflow: TextOverflow.ellipsis,
@@ -259,18 +291,21 @@ class _DeactivateAccountScreenState extends State<DeactivateAccountScreen> {
     );
   }
 
-  Widget _buildBulletPoint(String text) {
+  Widget _buildBulletPoint(String text, double fontSize) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('• ', style: TextStyle(fontWeight: FontWeight.bold)),
+          Text(
+            '• ',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: fontSize),
+          ),
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
-                fontSize: 14,
+              style: TextStyle(
+                fontSize: fontSize,
                 color: AppColors.textSecondary,
               ),
             ),
@@ -280,7 +315,11 @@ class _DeactivateAccountScreenState extends State<DeactivateAccountScreen> {
     );
   }
 
-  void _showConfirmationDialog() {
+  void _showConfirmationDialog(
+    double bodyFontSize,
+    double smallFontSize,
+    double paddingScale,
+  ) {
     if (_selectedReason == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -294,27 +333,49 @@ class _DeactivateAccountScreenState extends State<DeactivateAccountScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(AppLocalizations.of(context)!.confirmDeactivation),
-        content: Text(AppLocalizations.of(context)!.areYouSureDeactivate),
+        title: Text(
+          AppLocalizations.of(context)!.confirmDeactivation,
+          style: TextStyle(
+            fontSize: bodyFontSize + 2,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          AppLocalizations.of(context)!.areYouSureDeactivate,
+          style: TextStyle(fontSize: bodyFontSize),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(AppLocalizations.of(context)!.cancel),
+            child: Text(
+              AppLocalizations.of(context)!.cancel,
+              style: TextStyle(fontSize: bodyFontSize, color: Colors.grey),
+            ),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _showOtpDialog();
+              _showOtpDialog(bodyFontSize, smallFontSize, paddingScale);
             },
             style: TextButton.styleFrom(foregroundColor: Colors.orange),
-            child: Text(AppLocalizations.of(context)!.confirm),
+            child: Text(
+              AppLocalizations.of(context)!.confirm,
+              style: TextStyle(
+                fontSize: bodyFontSize,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  void _showOtpDialog() {
+  void _showOtpDialog(
+    double bodyFontSize,
+    double smallFontSize,
+    double paddingScale,
+  ) {
     _otpController.clear();
     showDialog(
       context: context,
@@ -324,56 +385,68 @@ class _DeactivateAccountScreenState extends State<DeactivateAccountScreen> {
         title: Text(
           AppLocalizations.of(context)!.verifyDeactivation,
           textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: bodyFontSize + 2,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              AppLocalizations.of(context)!.enterOtpDeactivate,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Pinput(
-              length: 6,
-              controller: _otpController,
-              inputFormatters: [EnglishDigitFormatter()],
-              defaultPinTheme: PinTheme(
-                width: 40,
-                height: 45,
-                textStyle: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(8),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                AppLocalizations.of(context)!.enterOtpDeactivate,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: smallFontSize,
+                  color: AppColors.textSecondary,
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            TextButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(AppLocalizations.of(context)!.otpResent),
+              SizedBox(height: 24 * paddingScale),
+              Pinput(
+                length: 6,
+                controller: _otpController,
+                inputFormatters: [EnglishDigitFormatter()],
+                defaultPinTheme: PinTheme(
+                  width: 40 * paddingScale,
+                  height: 45 * paddingScale,
+                  textStyle: TextStyle(
+                    fontSize: 18 * paddingScale,
+                    fontWeight: FontWeight.bold,
                   ),
-                );
-              },
-              child: Text(
-                AppLocalizations.of(context)!.resendOtp,
-                style: const TextStyle(color: Colors.orange),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
               ),
-            ),
-          ],
+              SizedBox(height: 20 * paddingScale),
+              TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(AppLocalizations.of(context)!.otpResent),
+                    ),
+                  );
+                },
+                child: Text(
+                  AppLocalizations.of(context)!.resendOtp,
+                  style: TextStyle(
+                    color: Colors.orange,
+                    fontSize: smallFontSize,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(AppLocalizations.of(context)!.cancel),
+            child: Text(
+              AppLocalizations.of(context)!.cancel,
+              style: TextStyle(fontSize: bodyFontSize, color: Colors.grey),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -395,7 +468,10 @@ class _DeactivateAccountScreenState extends State<DeactivateAccountScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
             ),
-            child: Text(AppLocalizations.of(context)!.verifyAndDeactivate),
+            child: Text(
+              AppLocalizations.of(context)!.verifyAndDeactivate,
+              style: TextStyle(fontSize: bodyFontSize),
+            ),
           ),
         ],
       ),

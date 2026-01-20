@@ -638,6 +638,22 @@ class _DlVerificationScreenState extends State<DlVerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final screenWidth = screenSize.width;
+    final screenHeight = screenSize.height;
+
+    // Responsive values
+    final horizontalPadding = (screenWidth * 0.04).clamp(16.0, 24.0);
+    final verticalPadding = (screenHeight * 0.02).clamp(12.0, 20.0);
+    final titleFontSize = (screenWidth * 0.05).clamp(16.0, 22.0);
+    final subtitleFontSize = (screenWidth * 0.035).clamp(11.0, 14.0);
+    final bodyFontSize = (screenWidth * 0.04).clamp(13.0, 16.0);
+    final iconSize = (screenWidth * 0.05).clamp(18.0, 24.0);
+    final borderRadius = (screenWidth * 0.04).clamp(12.0, 20.0);
+    final cardPadding = (screenWidth * 0.05).clamp(16.0, 24.0);
+    final spacing = (screenWidth * 0.04).clamp(12.0, 20.0);
+    final buttonHeight = (screenHeight * 0.06).clamp(56.0, 64.0);
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -653,9 +669,9 @@ class _DlVerificationScreenState extends State<DlVerificationScreen> {
               // Header
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 16,
+                padding: EdgeInsets.symmetric(
+                  horizontal: horizontalPadding * 0.5,
+                  vertical: verticalPadding,
                 ),
                 decoration: const BoxDecoration(
                   gradient: AppColors.primaryGradient,
@@ -667,7 +683,10 @@ class _DlVerificationScreenState extends State<DlVerificationScreen> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                      icon: Icon(
+                        Icons.arrow_back_ios_new,
+                        size: iconSize * 0.9,
+                      ),
                       onPressed: () => Navigator.pop(context),
                       color: Colors.white,
                     ),
@@ -680,19 +699,19 @@ class _DlVerificationScreenState extends State<DlVerificationScreen> {
                                 context,
                               )!.drivingLicenseVerification,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 18,
+                              style: TextStyle(
+                                fontSize: titleFontSize,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
                             ),
                           ),
                           if (_isVerified) ...[
-                            const SizedBox(width: 8),
-                            const Icon(
+                            SizedBox(width: spacing * 0.4),
+                            Icon(
                               Icons.verified,
                               color: Colors.white,
-                              size: 20,
+                              size: iconSize,
                             ),
                           ],
                         ],
@@ -703,22 +722,22 @@ class _DlVerificationScreenState extends State<DlVerificationScreen> {
                         onTap: _showHelpOptions,
                         borderRadius: BorderRadius.circular(8),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: horizontalPadding * 0.6,
+                            vertical: verticalPadding * 0.5,
                           ),
                           child: Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.help_outline,
-                                size: 20,
+                                size: iconSize,
                                 color: Colors.white,
                               ),
-                              const SizedBox(width: 6),
+                              SizedBox(width: spacing * 0.3),
                               Text(
                                 AppLocalizations.of(context)!.help,
-                                style: const TextStyle(
-                                  fontSize: 16,
+                                style: TextStyle(
+                                  fontSize: bodyFontSize,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white,
                                 ),
@@ -732,56 +751,81 @@ class _DlVerificationScreenState extends State<DlVerificationScreen> {
               ),
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(horizontalPadding),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Section 1: Enter DL Details
-                      _buildDlDetailsSection(),
-                      const SizedBox(height: 20),
+                      _buildDlDetailsSection(
+                        context,
+                        screenWidth,
+                        cardPadding,
+                        spacing,
+                        titleFontSize,
+                        subtitleFontSize,
+                        bodyFontSize,
+                        iconSize,
+                        borderRadius,
+                      ),
+                      SizedBox(height: spacing),
 
                       // Section 2: Upload Documents
-                      _buildUploadDocumentsSection(),
-                      const SizedBox(height: 24),
+                      _buildUploadDocumentsSection(
+                        context,
+                        screenWidth,
+                        cardPadding,
+                        spacing,
+                        titleFontSize,
+                        subtitleFontSize,
+                        bodyFontSize,
+                        iconSize,
+                        borderRadius,
+                      ),
+                      SizedBox(height: spacing * 1.2),
 
-                      // Save Button
                       if (!_isVerified)
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _isFormValid && !_isLoading
-                                ? _saveData
-                                : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primaryOrangeStart,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                        Padding(
+                          padding: EdgeInsets.only(bottom: verticalPadding),
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: buttonHeight,
+                            child: ElevatedButton(
+                              onPressed: _isFormValid && !_isLoading
+                                  ? _saveData
+                                  : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryOrangeStart,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    borderRadius * 0.75,
+                                  ),
+                                ),
+                                elevation: 0,
+                                disabledBackgroundColor: Colors.grey[300],
                               ),
-                              elevation: 0,
-                              disabledBackgroundColor: Colors.grey[300],
-                            ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
+                              child: _isLoading
+                                  ? SizedBox(
+                                      height: iconSize,
+                                      width: iconSize,
+                                      child: const CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
+                                      ),
+                                    )
+                                  : Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.saveAndContinue,
+                                      style: TextStyle(
+                                        fontSize: bodyFontSize,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                  )
-                                : Text(
-                                    AppLocalizations.of(
-                                      context,
-                                    )!.saveAndContinue,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                            ),
                           ),
                         ),
                     ],
@@ -796,13 +840,26 @@ class _DlVerificationScreenState extends State<DlVerificationScreen> {
   }
 
   // Section 1: Enter DL Details
-  Widget _buildDlDetailsSection() {
+  Widget _buildDlDetailsSection(
+    BuildContext context,
+    double screenWidth,
+    double cardPadding,
+    double spacing,
+    double titleFontSize,
+    double subtitleFontSize,
+    double bodyFontSize,
+    double iconSize,
+    double borderRadius,
+  ) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      constraints: BoxConstraints(
+        maxWidth: screenWidth > 600 ? 600 : double.infinity,
+      ),
+      padding: EdgeInsets.all(cardPadding),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -817,44 +874,52 @@ class _DlVerificationScreenState extends State<DlVerificationScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(cardPadding * 0.5),
                 decoration: BoxDecoration(
                   color: AppColors.primaryOrangeStart.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(borderRadius * 0.625),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.badge_outlined,
                   color: AppColors.primaryOrangeStart,
-                  size: 22,
+                  size: iconSize * 1.1,
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: spacing * 0.6),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       AppLocalizations.of(context)!.enterDlDetails,
-                      style: const TextStyle(
-                        fontSize: 18,
+                      style: TextStyle(
+                        fontSize: titleFontSize,
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: spacing * 0.1),
                     Text(
                       AppLocalizations.of(context)!.fillDlInfo,
-                      style: const TextStyle(fontSize: 13, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: subtitleFontSize,
+                        color: Colors.grey,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: spacing),
 
           // DL Number Field
           _buildTextField(
+            context: context,
             label: AppLocalizations.of(context)!.dlNumber,
             hint: 'KA0120200012345',
             controller: _dlNumberController,
@@ -866,26 +931,43 @@ class _DlVerificationScreenState extends State<DlVerificationScreen> {
               LengthLimitingTextInputFormatter(16),
             ],
             prefixIcon: Icons.credit_card,
+            bodyFontSize: bodyFontSize,
+            subtitleFontSize: subtitleFontSize,
+            iconSize: iconSize,
+            borderRadius: borderRadius,
+            spacing: spacing,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: spacing * 0.8),
 
           // Name as per DL
           _buildTextField(
+            context: context,
             label: AppLocalizations.of(context)!.fullNameAsPerDl,
             hint: AppLocalizations.of(context)!.enterNameAsOnDl,
             controller: _nameController,
             keyboardType: TextInputType.name,
             textCapitalization: TextCapitalization.words,
             prefixIcon: Icons.person_outline,
+            bodyFontSize: bodyFontSize,
+            subtitleFontSize: subtitleFontSize,
+            iconSize: iconSize,
+            borderRadius: borderRadius,
+            spacing: spacing,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: spacing * 0.8),
 
           // Date of Birth
           _buildDateField(
+            context: context,
             label: AppLocalizations.of(context)!.dateOfBirth,
             hint: 'DD/MM/YYYY',
             controller: _dobController,
             onTap: _selectDate,
+            bodyFontSize: bodyFontSize,
+            subtitleFontSize: subtitleFontSize,
+            iconSize: iconSize,
+            borderRadius: borderRadius,
+            spacing: spacing,
           ),
         ],
       ),
@@ -893,13 +975,26 @@ class _DlVerificationScreenState extends State<DlVerificationScreen> {
   }
 
   // Section 2: Upload Documents
-  Widget _buildUploadDocumentsSection() {
+  Widget _buildUploadDocumentsSection(
+    BuildContext context,
+    double screenWidth,
+    double cardPadding,
+    double spacing,
+    double titleFontSize,
+    double subtitleFontSize,
+    double bodyFontSize,
+    double iconSize,
+    double borderRadius,
+  ) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      constraints: BoxConstraints(
+        maxWidth: screenWidth > 600 ? 600 : double.infinity,
+      ),
+      padding: EdgeInsets.all(cardPadding),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -914,70 +1009,94 @@ class _DlVerificationScreenState extends State<DlVerificationScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(cardPadding * 0.5),
                 decoration: BoxDecoration(
                   color: AppColors.primaryOrangeStart.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(borderRadius * 0.625),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.upload_file,
                   color: AppColors.primaryOrangeStart,
-                  size: 22,
+                  size: iconSize * 1.1,
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: spacing * 0.6),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       AppLocalizations.of(context)!.uploadDrivingLicense,
-                      style: const TextStyle(
-                        fontSize: 18,
+                      style: TextStyle(
+                        fontSize: titleFontSize,
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: spacing * 0.1),
                     Text(
                       AppLocalizations.of(context)!.uploadClearPhotos,
-                      style: const TextStyle(fontSize: 13, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: subtitleFontSize,
+                        color: Colors.grey,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
+              SizedBox(width: spacing * 0.4),
               TextButton.icon(
                 onPressed: _showSampleImage,
-                icon: const Icon(Icons.visibility_outlined, size: 16),
+                icon: Icon(Icons.visibility_outlined, size: iconSize * 0.8),
                 label: Text(
                   AppLocalizations.of(context)!.sample,
-                  style: const TextStyle(
-                    fontSize: 12,
+                  style: TextStyle(
+                    fontSize: subtitleFontSize * 0.92,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.primaryOrangeStart,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  padding: EdgeInsets.symmetric(horizontal: spacing * 0.4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: spacing),
 
           // Front Side Upload
           _buildUploadCard(
+            context: context,
             title: AppLocalizations.of(context)!.frontSide,
             imagePath: _frontPath,
             onTap: () => _pickImage(true),
+            screenWidth: screenWidth,
+            bodyFontSize: bodyFontSize,
+            subtitleFontSize: subtitleFontSize,
+            iconSize: iconSize,
+            borderRadius: borderRadius,
+            spacing: spacing,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: spacing * 0.6),
 
           // Back Side Upload
           _buildUploadCard(
+            context: context,
             title: AppLocalizations.of(context)!.backSide,
             imagePath: _backPath,
             onTap: () => _pickImage(false),
+            screenWidth: screenWidth,
+            bodyFontSize: bodyFontSize,
+            subtitleFontSize: subtitleFontSize,
+            iconSize: iconSize,
+            borderRadius: borderRadius,
+            spacing: spacing,
           ),
         ],
       ),
@@ -985,9 +1104,15 @@ class _DlVerificationScreenState extends State<DlVerificationScreen> {
   }
 
   Widget _buildTextField({
+    required BuildContext context,
     required String label,
     required String hint,
     required TextEditingController controller,
+    required double bodyFontSize,
+    required double subtitleFontSize,
+    required double iconSize,
+    required double borderRadius,
+    required double spacing,
     TextInputType keyboardType = TextInputType.text,
     TextCapitalization textCapitalization = TextCapitalization.none,
     List<TextInputFormatter>? inputFormatters,
@@ -998,13 +1123,13 @@ class _DlVerificationScreenState extends State<DlVerificationScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w600,
-            fontSize: 14,
+            fontSize: bodyFontSize,
             color: AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: spacing * 0.4),
         TextField(
           controller: controller,
           keyboardType: keyboardType,
@@ -1012,28 +1137,32 @@ class _DlVerificationScreenState extends State<DlVerificationScreen> {
           inputFormatters: inputFormatters,
           onChanged: (_) => setState(() {}),
           enabled: !_isVerified,
+          style: TextStyle(fontSize: bodyFontSize),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+            hintStyle: TextStyle(
+              color: Colors.grey[400],
+              fontSize: subtitleFontSize,
+            ),
             prefixIcon: prefixIcon != null
-                ? Icon(prefixIcon, color: Colors.grey[500], size: 20)
+                ? Icon(prefixIcon, color: Colors.grey[500], size: iconSize)
                 : null,
             filled: true,
             fillColor: Colors.grey[50],
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: spacing * 0.8,
+              vertical: spacing * 0.7,
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(borderRadius * 0.75),
               borderSide: BorderSide(color: Colors.grey[300]!),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(borderRadius * 0.75),
               borderSide: BorderSide(color: Colors.grey[300]!),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(borderRadius * 0.75),
               borderSide: const BorderSide(
                 color: AppColors.primaryOrangeStart,
                 width: 1.5,
@@ -1046,56 +1175,67 @@ class _DlVerificationScreenState extends State<DlVerificationScreen> {
   }
 
   Widget _buildDateField({
+    required BuildContext context,
     required String label,
     required String hint,
     required TextEditingController controller,
     required VoidCallback onTap,
+    required double bodyFontSize,
+    required double subtitleFontSize,
+    required double iconSize,
+    required double borderRadius,
+    required double spacing,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w600,
-            fontSize: 14,
+            fontSize: bodyFontSize,
             color: AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: spacing * 0.4),
         GestureDetector(
           onTap: _isVerified ? null : onTap,
           child: AbsorbPointer(
             child: TextField(
               controller: controller,
+              style: TextStyle(fontSize: bodyFontSize),
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                hintStyle: TextStyle(
+                  color: Colors.grey[400],
+                  fontSize: subtitleFontSize,
+                ),
                 prefixIcon: Icon(
                   Icons.calendar_today_outlined,
                   color: Colors.grey[500],
-                  size: 20,
+                  size: iconSize,
                 ),
                 suffixIcon: Icon(
                   Icons.arrow_drop_down,
                   color: Colors.grey[500],
+                  size: iconSize * 1.2,
                 ),
                 filled: true,
                 fillColor: _isVerified ? Colors.grey[100] : Colors.grey[50],
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: spacing * 0.8,
+                  vertical: spacing * 0.7,
                 ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(borderRadius * 0.75),
                   borderSide: BorderSide(color: Colors.grey[300]!),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(borderRadius * 0.75),
                   borderSide: BorderSide(color: Colors.grey[300]!),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(borderRadius * 0.75),
                   borderSide: const BorderSide(
                     color: AppColors.primaryOrangeStart,
                     width: 1.5,
@@ -1110,18 +1250,29 @@ class _DlVerificationScreenState extends State<DlVerificationScreen> {
   }
 
   Widget _buildUploadCard({
+    required BuildContext context,
     required String title,
     String? imagePath,
     required VoidCallback onTap,
+    required double screenWidth,
+    required double bodyFontSize,
+    required double subtitleFontSize,
+    required double iconSize,
+    required double borderRadius,
+    required double spacing,
   }) {
+    final imageHeight = screenWidth < 360
+        ? 120.0
+        : (screenWidth < 600 ? 140.0 : 160.0);
+
     return GestureDetector(
       onTap: _isVerified ? () => _showImagePreview(imagePath!) : onTap,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(spacing * 0.8),
         decoration: BoxDecoration(
           color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(borderRadius * 0.75),
           border: Border.all(
             color: imagePath != null
                 ? AppColors.successGreen
@@ -1135,89 +1286,95 @@ class _DlVerificationScreenState extends State<DlVerificationScreen> {
               Stack(
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(borderRadius * 0.625),
                     child: kIsWeb
                         ? Image.network(
                             imagePath,
-                            height: 140,
+                            height: imageHeight,
                             width: double.infinity,
                             fit: BoxFit.cover,
                           )
                         : Image.file(
                             File(imagePath),
-                            height: 140,
+                            height: imageHeight,
                             width: double.infinity,
                             fit: BoxFit.cover,
                           ),
                   ),
                   Positioned(
-                    top: 8,
-                    right: 8,
+                    top: spacing * 0.4,
+                    right: spacing * 0.4,
                     child: GestureDetector(
                       onTap: () => _showImagePreview(imagePath),
                       child: Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: EdgeInsets.all(spacing * 0.4),
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: 0.6),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(spacing * 0.4),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.fullscreen,
                           color: Colors.white,
-                          size: 20,
+                          size: iconSize,
                         ),
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: spacing * 0.6),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.check_circle,
                     color: AppColors.successGreen,
-                    size: 20,
+                    size: iconSize,
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    AppLocalizations.of(context)!.uploadedWithTitle(title),
-                    style: const TextStyle(
-                      color: AppColors.successGreen,
-                      fontWeight: FontWeight.bold,
+                  SizedBox(width: spacing * 0.4),
+                  Expanded(
+                    child: Text(
+                      AppLocalizations.of(context)!.uploadedWithTitle(title),
+                      style: TextStyle(
+                        color: AppColors.successGreen,
+                        fontWeight: FontWeight.bold,
+                        fontSize: subtitleFontSize,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: spacing * 0.4),
                   TextButton(
                     onPressed: () => _showImagePreview(imagePath),
                     style: TextButton.styleFrom(
                       padding: EdgeInsets.zero,
-                      minimumSize: const Size(50, 30),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     child: Text(
                       AppLocalizations.of(context)!.view,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppColors.primaryOrangeStart,
                         fontWeight: FontWeight.w600,
-                        fontSize: 13,
+                        fontSize: subtitleFontSize,
                       ),
                     ),
                   ),
                   if (!_isVerified) ...[
-                    const SizedBox(width: 8),
+                    SizedBox(width: spacing * 0.4),
                     TextButton(
                       onPressed: onTap,
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.zero,
-                        minimumSize: const Size(50, 30),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                       child: Text(
                         AppLocalizations.of(context)!.change,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.blue,
                           fontWeight: FontWeight.w600,
-                          fontSize: 13,
+                          fontSize: subtitleFontSize,
                         ),
                       ),
                     ),
@@ -1227,22 +1384,27 @@ class _DlVerificationScreenState extends State<DlVerificationScreen> {
             ] else ...[
               Icon(
                 Icons.add_a_photo_outlined,
-                size: 48,
+                size: iconSize * 2.4,
                 color: Colors.grey[400],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: spacing * 0.6),
               Text(
                 '${AppLocalizations.of(context)!.uploadText} $title',
-                style: const TextStyle(
-                  fontSize: 16,
+                style: TextStyle(
+                  fontSize: bodyFontSize,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
                 ),
+                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: spacing * 0.2),
               Text(
                 AppLocalizations.of(context)!.tapToCaptureOrSelect,
-                style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                style: TextStyle(
+                  fontSize: subtitleFontSize,
+                  color: Colors.grey[500],
+                ),
+                textAlign: TextAlign.center,
               ),
             ],
           ],

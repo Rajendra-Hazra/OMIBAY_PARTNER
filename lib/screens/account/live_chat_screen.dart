@@ -70,39 +70,57 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Responsive values
+    final horizontalPadding = (screenWidth * 0.04).clamp(16.0, 24.0);
+    final headingFontSize = (screenWidth * 0.05).clamp(18.0, 22.0);
+    final bodyFontSize = (screenWidth * 0.038).clamp(14.0, 16.0);
+    final smallFontSize = (screenWidth * 0.032).clamp(11.0, 13.0);
+    final iconSize = (screenWidth * 0.06).clamp(24.0, 32.0);
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         top: false,
         child: Column(
           children: [
-            _buildHeader(context),
+            _buildHeader(context, headingFontSize, smallFontSize, iconSize),
             Expanded(
               child: ListView.builder(
                 controller: _scrollController,
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(horizontalPadding),
                 itemCount: _messages.length,
                 itemBuilder: (context, index) {
                   final message = _messages[index];
-                  return _buildMessageBubble(message);
+                  return _buildMessageBubble(
+                    message,
+                    bodyFontSize,
+                    smallFontSize,
+                  );
                 },
               ),
             ),
-            _buildMessageInput(),
+            _buildMessageInput(bodyFontSize, iconSize),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(
+    BuildContext context,
+    double headingFontSize,
+    double smallFontSize,
+    double iconSize,
+  ) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 10,
         left: 10,
-        right: 20,
-        bottom: 15,
+        right: 16,
+        bottom: 16,
       ),
       decoration: const BoxDecoration(
         gradient: AppColors.primaryGradient,
@@ -114,13 +132,13 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+            icon: Icon(Icons.arrow_back_ios_new, size: iconSize * 0.7),
             onPressed: () => Navigator.pop(context),
             color: Colors.white,
           ),
           Container(
-            width: 36,
-            height: 36,
+            width: (iconSize * 1.5).clamp(36.0, 48.0),
+            height: (iconSize * 1.5).clamp(36.0, 48.0),
             padding: const EdgeInsets.all(6),
             decoration: const BoxDecoration(
               color: Colors.white,
@@ -128,9 +146,9 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
             ),
             child: Image.asset(
               'images/logo.png',
-              errorBuilder: (context, error, stackTrace) => const Icon(
+              errorBuilder: (context, error, stackTrace) => Icon(
                 Icons.business_center,
-                size: 18,
+                size: iconSize * 0.7,
                 color: AppColors.primaryOrangeStart,
               ),
             ),
@@ -143,8 +161,8 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
               children: [
                 Text(
                   AppLocalizations.of(context)!.omibaySupport,
-                  style: const TextStyle(
-                    fontSize: 18,
+                  style: TextStyle(
+                    fontSize: headingFontSize,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -163,8 +181,8 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                     const SizedBox(width: 6),
                     Text(
                       AppLocalizations.of(context)!.online,
-                      style: const TextStyle(
-                        fontSize: 12,
+                      style: TextStyle(
+                        fontSize: smallFontSize,
                         color: Colors.white70,
                       ),
                     ),
@@ -178,7 +196,11 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     );
   }
 
-  Widget _buildMessageBubble(Map<String, dynamic> message) {
+  Widget _buildMessageBubble(
+    Map<String, dynamic> message,
+    double bodyFontSize,
+    double smallFontSize,
+  ) {
     final bool isMe = message['isMe'];
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -207,15 +229,15 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
               message['text'],
               style: TextStyle(
                 color: isMe ? Colors.white : AppColors.textPrimary,
-                fontSize: 14,
+                fontSize: bodyFontSize,
               ),
             ),
           ),
           const SizedBox(height: 4),
           Text(
             message['time'],
-            style: const TextStyle(
-              fontSize: 10,
+            style: TextStyle(
+              fontSize: smallFontSize - 2,
               color: AppColors.textSecondary,
             ),
           ),
@@ -224,7 +246,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     );
   }
 
-  Widget _buildMessageInput() {
+  Widget _buildMessageInput(double bodyFontSize, double iconSize) {
     return Container(
       padding: EdgeInsets.fromLTRB(
         16,
@@ -254,10 +276,14 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
               ),
               child: TextField(
                 controller: _messageController,
+                style: TextStyle(fontSize: bodyFontSize),
                 decoration: InputDecoration(
                   hintText: AppLocalizations.of(context)!.typeYourMessage,
                   border: InputBorder.none,
-                  hintStyle: const TextStyle(fontSize: 14, color: Colors.grey),
+                  hintStyle: TextStyle(
+                    fontSize: bodyFontSize,
+                    color: Colors.grey,
+                  ),
                 ),
                 onSubmitted: (_) => _sendMessage(),
               ),
@@ -266,9 +292,9 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
           const SizedBox(width: 8),
           CircleAvatar(
             backgroundColor: AppColors.primaryOrangeStart,
-            radius: 22,
+            radius: (iconSize * 0.8).clamp(20.0, 24.0),
             child: IconButton(
-              icon: const Icon(Icons.send, color: Colors.white, size: 20),
+              icon: Icon(Icons.send, color: Colors.white, size: iconSize * 0.7),
               onPressed: _sendMessage,
             ),
           ),

@@ -24,7 +24,11 @@ class SupportScreen extends StatelessWidget {
     }
   }
 
-  void _showCallPicker(BuildContext context) {
+  void _showCallPicker(
+    BuildContext context,
+    double borderRadius,
+    double fontSize,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     final List<Map<String, String>> phoneNumbers = [
       {'label': l10n.supportLine1, 'number': l10n.supportNumber1},
@@ -34,8 +38,8 @@ class SupportScreen extends StatelessWidget {
 
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(borderRadius)),
       ),
       builder: (context) {
         return Container(
@@ -46,8 +50,8 @@ class SupportScreen extends StatelessWidget {
             children: [
               Text(
                 l10n.selectNumberToCall,
-                style: const TextStyle(
-                  fontSize: 18,
+                style: TextStyle(
+                  fontSize: fontSize * 1.2,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
                 ),
@@ -62,24 +66,24 @@ class SupportScreen extends StatelessWidget {
                       color: Colors.blue.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.phone,
                       color: Colors.blue,
-                      size: 20,
+                      size: fontSize * 1.2,
                     ),
                   ),
                   title: Text(
                     phone['label']!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                      fontSize: fontSize,
                     ),
                   ),
                   subtitle: Text(
                     phone['number']!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.textSecondary,
-                      fontSize: 12,
+                      fontSize: fontSize * 0.85,
                     ),
                   ),
                   onTap: () async {
@@ -107,29 +111,48 @@ class SupportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Responsive values
+    final horizontalPadding = (screenWidth * 0.05).clamp(16.0, 24.0);
+    final verticalPadding = (screenHeight * 0.02).clamp(16.0, 24.0);
+    final titleFontSize = (screenWidth * 0.05).clamp(18.0, 22.0);
+    final bodyFontSize = (screenWidth * 0.038).clamp(14.0, 16.0);
+    final subFontSize = (screenWidth * 0.032).clamp(12.0, 14.0);
+    final iconSize = (screenWidth * 0.06).clamp(24.0, 32.0);
+    final borderRadius = (screenWidth * 0.05).clamp(16.0, 24.0);
+
     return Scaffold(
       body: SafeArea(
         top: false,
         bottom: false,
         child: Column(
           children: [
-            _buildHeader(context),
+            _buildHeader(context, titleFontSize, borderRadius),
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: Column(
                   children: [
-                    _buildContactOptions(context),
+                    _buildContactOptions(
+                      context,
+                      horizontalPadding,
+                      verticalPadding,
+                      titleFontSize,
+                      bodyFontSize,
+                      borderRadius,
+                    ),
                     Padding(
-                      padding: const EdgeInsets.all(20),
+                      padding: EdgeInsets.all(horizontalPadding),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             l10n.frequentlyAskedQuestions,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                              fontSize: subFontSize,
                               color: AppColors.textPrimary,
                               letterSpacing: 1,
                             ),
@@ -138,22 +161,37 @@ class SupportScreen extends StatelessWidget {
                           _FaqItem(
                             question: l10n.supportFaqQuestion1,
                             answer: l10n.supportFaqAnswer1,
+                            fontSize: bodyFontSize,
+                            borderRadius: borderRadius,
+                            iconSize: iconSize * 0.8,
                           ),
                           _FaqItem(
                             question: l10n.supportFaqQuestion2,
                             answer: l10n.supportFaqAnswer2,
+                            fontSize: bodyFontSize,
+                            borderRadius: borderRadius,
+                            iconSize: iconSize * 0.8,
                           ),
                           _FaqItem(
                             question: l10n.supportFaqQuestion3,
                             answer: l10n.supportFaqAnswer3,
+                            fontSize: bodyFontSize,
+                            borderRadius: borderRadius,
+                            iconSize: iconSize * 0.8,
                           ),
                           _FaqItem(
                             question: l10n.supportFaqQuestion4,
                             answer: l10n.supportFaqAnswer4,
+                            fontSize: bodyFontSize,
+                            borderRadius: borderRadius,
+                            iconSize: iconSize * 0.8,
                           ),
                           _FaqItem(
                             question: l10n.supportFaqQuestion5,
                             answer: l10n.supportFaqAnswer5,
+                            fontSize: bodyFontSize,
+                            borderRadius: borderRadius,
+                            iconSize: iconSize * 0.8,
                           ),
                           const SizedBox(height: 8),
                           Center(
@@ -163,22 +201,29 @@ class SupportScreen extends StatelessWidget {
                               },
                               icon: Text(
                                 l10n.viewAllFaqs,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: AppColors.primaryOrangeStart,
                                   fontWeight: FontWeight.bold,
+                                  fontSize: bodyFontSize,
                                 ),
                               ),
-                              label: const Icon(
+                              label: Icon(
                                 Icons.arrow_forward_rounded,
                                 color: AppColors.primaryOrangeStart,
-                                size: 16,
+                                size: iconSize * 0.8,
                               ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    _buildSupportContactSection(context),
+                    _buildSupportContactSection(
+                      context,
+                      horizontalPadding,
+                      borderRadius,
+                      subFontSize,
+                      bodyFontSize,
+                    ),
                   ],
                 ),
               ),
@@ -189,38 +234,42 @@ class SupportScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(
+    BuildContext context,
+    double fontSize,
+    double borderRadius,
+  ) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 10,
         left: 10,
-        right: 20,
-        bottom: 15,
+        right: 16,
+        bottom: 16,
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: AppColors.primaryGradient,
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(24),
-          bottomRight: Radius.circular(24),
+          bottomLeft: Radius.circular(borderRadius),
+          bottomRight: Radius.circular(borderRadius),
         ),
       ),
       child: Row(
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios_new,
               color: Colors.white,
-              size: 20,
+              size: fontSize * 0.9,
             ),
           ),
           Expanded(
             child: Text(
               AppLocalizations.of(context)!.helpAndSupport,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 22,
+                fontSize: fontSize,
                 fontWeight: FontWeight.bold,
               ),
               overflow: TextOverflow.ellipsis,
@@ -232,35 +281,45 @@ class SupportScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildContactOptions(BuildContext context) {
+  Widget _buildContactOptions(
+    BuildContext context,
+    double horizontalPadding,
+    double verticalPadding,
+    double titleFontSize,
+    double bodyFontSize,
+    double borderRadius,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
+      padding: EdgeInsets.all(verticalPadding),
+      decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(24),
-          bottomRight: Radius.circular(24),
+          bottomLeft: Radius.circular(borderRadius),
+          bottomRight: Radius.circular(borderRadius),
         ),
       ),
       child: Column(
         children: [
           Text(
             l10n.howCanWeHelp,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppColors.textPrimary,
-              fontSize: 20,
+              fontSize: titleFontSize,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: verticalPadding),
           GridView.count(
             crossAxisCount: 2,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
-            childAspectRatio: 1.5,
+            childAspectRatio:
+                (MediaQuery.of(context).size.width /
+                        (MediaQuery.of(context).size.height * 0.3))
+                    .clamp(1.3, 1.8),
             children: [
               _ContactCard(
                 icon: Icons.chat_bubble_outline_rounded,
@@ -270,25 +329,30 @@ class SupportScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.pushNamed(context, '/live-chat');
                 },
+                fontSize: bodyFontSize,
+                borderRadius: borderRadius,
               ),
               _ContactCard(
                 icon: Icons.phone,
                 title: l10n.callUs,
                 subtitle: l10n.support247,
                 color: Colors.blue,
-                onTap: () => _showCallPicker(context),
+                onTap: () =>
+                    _showCallPicker(context, borderRadius, bodyFontSize),
+                fontSize: bodyFontSize,
+                borderRadius: borderRadius,
               ),
             ],
           ),
           const SizedBox(height: 12),
           InkWell(
             onTap: () => _launchWhatsApp(context),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(borderRadius * 0.8),
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: const Color(0xFF25D366).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(borderRadius * 0.8),
                 border: Border.all(
                   color: const Color(0xFF25D366).withValues(alpha: 0.2),
                 ),
@@ -305,7 +369,7 @@ class SupportScreen extends StatelessWidget {
                       // ignore: deprecated_member_use
                       MdiIcons.whatsapp,
                       color: const Color(0xFF25D366),
-                      size: 32,
+                      size: bodyFontSize * 1.8,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -315,28 +379,31 @@ class SupportScreen extends StatelessWidget {
                       children: [
                         Text(
                           l10n.whatsAppChat,
-                          style: const TextStyle(
-                            color: Color(0xFF075E54),
+                          style: TextStyle(
+                            color: const Color(0xFF075E54),
                             fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                            fontSize: bodyFontSize * 1.1,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 2),
                         Text(
                           l10n.connectQuickSupport,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppColors.textSecondary,
-                            fontSize: 12,
+                            fontSize: bodyFontSize * 0.85,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
                         Text(
                           l10n.whatsappResponseTime,
-                          style: const TextStyle(
-                            color: Color(0xFF25D366),
-                            fontSize: 10,
+                          style: TextStyle(
+                            color: const Color(0xFF25D366),
+                            fontSize: bodyFontSize * 0.7,
                             fontWeight: FontWeight.w500,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -351,15 +418,25 @@ class SupportScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSupportContactSection(BuildContext context) {
+  Widget _buildSupportContactSection(
+    BuildContext context,
+    double horizontalPadding,
+    double borderRadius,
+    double subFontSize,
+    double bodyFontSize,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     return Padding(
-      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 40),
+      padding: EdgeInsets.only(
+        left: horizontalPadding,
+        right: horizontalPadding,
+        bottom: 40,
+      ),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
           color: AppColors.darkNavyStart,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(borderRadius),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.1),
@@ -375,9 +452,9 @@ class SupportScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
                 l10n.contactInformation,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 12,
+                  fontSize: subFontSize,
                   color: Colors.white70,
                   letterSpacing: 1,
                 ),
@@ -388,7 +465,8 @@ class SupportScreen extends StatelessWidget {
               icon: Icons.phone_in_talk_rounded,
               title: l10n.callUs,
               value: l10n.supportNumbers('+91 8016867006'),
-              onTap: () => _showCallPicker(context),
+              onTap: () => _showCallPicker(context, borderRadius, bodyFontSize),
+              fontSize: bodyFontSize,
             ),
             const Divider(
               height: 1,
@@ -401,6 +479,7 @@ class SupportScreen extends StatelessWidget {
               title: l10n.emailUs,
               value: l10n.supportEmail,
               onTap: () => _launchEmail(context),
+              fontSize: bodyFontSize,
             ),
             const Divider(
               height: 1,
@@ -412,6 +491,7 @@ class SupportScreen extends StatelessWidget {
               icon: Icons.access_time_filled_rounded,
               title: l10n.workingHours,
               value: l10n.workingHoursTime,
+              fontSize: bodyFontSize,
             ),
           ],
         ),
@@ -423,13 +503,14 @@ class SupportScreen extends StatelessWidget {
     required IconData icon,
     required String title,
     required String value,
+    required double fontSize,
     VoidCallback? onTap,
   }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
             Container(
@@ -438,7 +519,7 @@ class SupportScreen extends StatelessWidget {
                 color: Colors.white.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: Colors.white, size: 20),
+              child: Icon(icon, color: Colors.white, size: fontSize * 1.3),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -447,23 +528,28 @@ class SupportScreen extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: fontSize * 0.75,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     value,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
-                      fontSize: 14,
+                      fontSize: fontSize * 0.95,
                       fontWeight: FontWeight.bold,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
             if (onTap != null)
-              const Icon(
+              Icon(
                 Icons.arrow_forward_ios,
-                size: 14,
+                size: fontSize * 0.8,
                 color: Colors.white38,
               ),
           ],
@@ -479,6 +565,8 @@ class _ContactCard extends StatelessWidget {
   final String subtitle;
   final Color color;
   final VoidCallback onTap;
+  final double fontSize;
+  final double borderRadius;
 
   const _ContactCard({
     required this.icon,
@@ -486,6 +574,8 @@ class _ContactCard extends StatelessWidget {
     required this.subtitle,
     required this.color,
     required this.onTap,
+    required this.fontSize,
+    required this.borderRadius,
   });
 
   @override
@@ -493,31 +583,32 @@ class _ContactCard extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(fontSize),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(borderRadius * 0.8),
           border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 32),
-            const SizedBox(height: 12),
+            Icon(icon, color: color, size: fontSize * 2),
+            const SizedBox(height: 8),
             Text(
               title,
               style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.bold,
-                fontSize: 14,
+                fontSize: fontSize,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               subtitle,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: color.withValues(alpha: 0.7),
-                fontSize: 10,
+                fontSize: fontSize * 0.7,
               ),
             ),
           ],
@@ -530,8 +621,17 @@ class _ContactCard extends StatelessWidget {
 class _FaqItem extends StatelessWidget {
   final String question;
   final String answer;
+  final double fontSize;
+  final double borderRadius;
+  final double iconSize;
 
-  const _FaqItem({required this.question, required this.answer});
+  const _FaqItem({
+    required this.question,
+    required this.answer,
+    required this.fontSize,
+    required this.borderRadius,
+    required this.iconSize,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -539,7 +639,7 @@ class _FaqItem extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(borderRadius * 0.8),
         border: Border.all(color: AppColors.border.withValues(alpha: 0.05)),
         boxShadow: [
           BoxShadow(
@@ -564,16 +664,16 @@ class _FaqItem extends StatelessWidget {
               color: AppColors.primaryOrangeStart.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.help_outline_rounded,
               color: AppColors.primaryOrangeStart,
-              size: 20,
+              size: iconSize,
             ),
           ),
           title: Text(
             question,
-            style: const TextStyle(
-              fontSize: 14,
+            style: TextStyle(
+              fontSize: fontSize * 1.05,
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
             ),
@@ -582,12 +682,16 @@ class _FaqItem extends StatelessWidget {
           collapsedIconColor: AppColors.textSecondary,
           children: [
             Padding(
-              padding: const EdgeInsets.only(left: 60, right: 16, bottom: 20),
+              padding: EdgeInsets.only(
+                left: iconSize * 3,
+                right: 16,
+                bottom: 20,
+              ),
               child: Text(
                 answer,
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppColors.textSecondary,
-                  fontSize: 13,
+                  fontSize: fontSize * 0.95,
                   height: 1.6,
                 ),
               ),

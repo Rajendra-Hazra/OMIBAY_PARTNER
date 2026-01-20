@@ -35,9 +35,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     final savedLanguage = prefs.getString('app_language') ?? 'en';
     setState(() {
-      _currentLanguage = savedLanguage == 'bn'
-          ? AppLocalizations.of(context)!.bengali
-          : AppLocalizations.of(context)!.english;
+      // Show language name in its native script
+      _currentLanguage = savedLanguage == 'bn' ? 'বাংলা' : 'English';
     });
   }
 
@@ -74,6 +73,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Responsive values
+    final horizontalPadding = (screenWidth * 0.05).clamp(16.0, 24.0);
+    final verticalPadding = (screenHeight * 0.02).clamp(16.0, 24.0);
+    final titleFontSize = (screenWidth * 0.06).clamp(20.0, 26.0);
+    final bodyFontSize = (screenWidth * 0.04).clamp(14.0, 16.0);
+    final smallFontSize = (screenWidth * 0.032).clamp(11.0, 13.0);
+    final iconSize = (screenWidth * 0.06).clamp(24.0, 32.0);
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       body: SafeArea(
@@ -81,23 +91,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
         bottom: false,
         child: Column(
           children: [
-            _buildHeader(context),
+            _buildHeader(context, titleFontSize, iconSize),
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: EdgeInsets.all(horizontalPadding),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildSectionHeader(
                         AppLocalizations.of(context)!.preferences,
+                        smallFontSize,
                       ),
                       _buildSettingsCard([
                         _buildSettingsTile(
                           context,
                           Icons.language,
                           AppLocalizations.of(context)!.appLanguage,
+                          bodyFontSize,
+                          iconSize,
                           route: '/language',
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -108,13 +121,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   color: AppColors.textSecondary.withValues(
                                     alpha: 0.7,
                                   ),
-                                  fontSize: 13,
+                                  fontSize: smallFontSize + 1,
                                 ),
                               ),
                               const SizedBox(width: 4),
-                              const Icon(
+                              Icon(
                                 Icons.chevron_right,
-                                size: 18,
+                                size: iconSize * 0.7,
                                 color: Colors.grey,
                               ),
                             ],
@@ -124,6 +137,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           context,
                           Icons.palette_outlined,
                           AppLocalizations.of(context)!.appearances,
+                          bodyFontSize,
+                          iconSize,
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -133,41 +148,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   color: AppColors.textSecondary.withValues(
                                     alpha: 0.7,
                                   ),
-                                  fontSize: 13,
+                                  fontSize: smallFontSize + 1,
                                 ),
                               ),
                               const SizedBox(width: 4),
-                              const Icon(
+                              Icon(
                                 Icons.chevron_right,
-                                size: 18,
+                                size: iconSize * 0.7,
                                 color: Colors.grey,
                               ),
                             ],
                           ),
                           onTap: () {
-                            _showAppearanceDialog(context);
+                            _showAppearanceDialog(
+                              context,
+                              bodyFontSize,
+                              iconSize,
+                            );
                           },
                         ),
                         _buildSettingsTile(
                           context,
                           Icons.notifications_active_outlined,
                           AppLocalizations.of(context)!.pushNotifications,
-                          trailing: Switch.adaptive(
-                            value: _pushNotifications,
-                            onChanged: _toggleNotifications,
-                            activeTrackColor: AppColors.primaryOrangeStart,
+                          bodyFontSize,
+                          iconSize,
+                          trailing: Transform.scale(
+                            scale: (screenWidth / 400).clamp(0.8, 1.0),
+                            child: Switch.adaptive(
+                              value: _pushNotifications,
+                              onChanged: _toggleNotifications,
+                              activeTrackColor: AppColors.primaryOrangeStart,
+                            ),
                           ),
                         ),
                       ]),
-                      const SizedBox(height: 24),
+                      SizedBox(height: verticalPadding),
                       _buildSectionHeader(
                         AppLocalizations.of(context)!.accountSafety,
+                        smallFontSize,
                       ),
                       _buildSettingsCard([
                         _buildSettingsTile(
                           context,
                           Icons.pause_circle_outline,
                           AppLocalizations.of(context)!.deactivateAccount,
+                          bodyFontSize,
+                          iconSize,
                           route: '/deactivate-account',
                           iconColor: Colors.orange,
                         ),
@@ -175,36 +202,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           context,
                           Icons.delete_forever_outlined,
                           AppLocalizations.of(context)!.deleteAccount,
+                          bodyFontSize,
+                          iconSize,
                           route: '/delete-account',
                           iconColor: Colors.red,
                           textColor: Colors.red,
                         ),
                       ]),
-                      const SizedBox(height: 24),
+                      SizedBox(height: verticalPadding),
                       _buildSectionHeader(
                         AppLocalizations.of(context)!.legalDocuments,
+                        smallFontSize,
                       ),
                       _buildSettingsCard([
                         _buildSettingsTile(
                           context,
                           Icons.article_outlined,
                           AppLocalizations.of(context)!.termsAndConditions,
+                          bodyFontSize,
+                          iconSize,
                           route: '/terms',
                         ),
                         _buildSettingsTile(
                           context,
                           Icons.privacy_tip_outlined,
                           AppLocalizations.of(context)!.privacyPolicy,
+                          bodyFontSize,
+                          iconSize,
                           route: '/privacy',
                         ),
                         _buildSettingsTile(
                           context,
                           Icons.block_outlined,
                           AppLocalizations.of(context)!.suspensionPolicy,
+                          bodyFontSize,
+                          iconSize,
                           route: '/suspension-policy',
                         ),
                       ]),
-                      const SizedBox(height: 48),
+                      SizedBox(height: verticalPadding * 2),
                       Center(
                         child: Container(
                           padding: const EdgeInsets.symmetric(
@@ -223,14 +259,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             '${AppLocalizations.of(context)!.appVersion} 1.0.0',
                             style: TextStyle(
                               color: Colors.grey.shade600,
-                              fontSize: 12,
+                              fontSize: smallFontSize,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 0.5,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: verticalPadding),
                     ],
                   ),
                 ),
@@ -242,14 +278,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(
+    BuildContext context,
+    double titleFontSize,
+    double iconSize,
+  ) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 10,
         left: 10,
-        right: 20,
-        bottom: 15,
+        right: 16,
+        bottom: 16,
       ),
       decoration: const BoxDecoration(
         gradient: AppColors.primaryGradient,
@@ -262,18 +302,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios_new,
               color: Colors.white,
-              size: 20,
+              size: iconSize * 0.7,
             ),
           ),
           Expanded(
             child: Text(
               AppLocalizations.of(context)!.settings,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 24,
+                fontSize: titleFontSize,
                 fontWeight: FontWeight.bold,
               ),
               overflow: TextOverflow.ellipsis,
@@ -285,13 +325,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(String title, double smallFontSize) {
     return Padding(
       padding: const EdgeInsets.only(left: 8, bottom: 12, top: 4),
       child: Text(
         title.toUpperCase(),
-        style: const TextStyle(
-          fontSize: 12,
+        style: TextStyle(
+          fontSize: smallFontSize,
           fontWeight: FontWeight.w700,
           color: AppColors.textSecondary,
           letterSpacing: 1.2,
@@ -346,7 +386,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildSettingsTile(
     BuildContext context,
     IconData icon,
-    String title, {
+    String title,
+    double bodyFontSize,
+    double iconSize, {
     String? route,
     VoidCallback? onTap,
     Widget? trailing,
@@ -354,11 +396,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Color? textColor,
   }) {
     final effectiveIconColor = iconColor ?? AppColors.primaryOrangeStart;
-    
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap ??
+        onTap:
+            onTap ??
             () {
               if (route != null) {
                 Navigator.pushNamed(context, route);
@@ -389,7 +432,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Icon(
                   icon,
                   color: effectiveIconColor,
-                  size: 22,
+                  size: iconSize * 0.8,
                 ),
               ),
               const SizedBox(width: 16),
@@ -397,11 +440,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Text(
                   title,
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: bodyFontSize,
                     fontWeight: FontWeight.w600,
                     color: textColor ?? AppColors.textPrimary,
                     letterSpacing: -0.2,
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               if (trailing != null) trailing,
@@ -412,120 +456,126 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showAppearanceDialog(BuildContext context) {
+  void _showAppearanceDialog(
+    BuildContext context,
+    double bodyFontSize,
+    double iconSize,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                offset: const Offset(0, 8),
-                blurRadius: 24,
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.primaryOrangeStart.withValues(alpha: 0.15),
-                          AppColors.primaryOrangeEnd.withValues(alpha: 0.15),
-                        ],
+        child: SingleChildScrollView(
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.primaryOrangeStart.withValues(
+                              alpha: 0.15,
+                            ),
+                            AppColors.primaryOrangeEnd.withValues(alpha: 0.15),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.palette_outlined,
-                      color: AppColors.primaryOrangeStart,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      l10n.appearances,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: RadioListTile(
-                  title: Row(
-                    children: [
-                      const Icon(
-                        Icons.light_mode,
+                      child: Icon(
+                        Icons.palette_outlined,
                         color: AppColors.primaryOrangeStart,
-                        size: 20,
+                        size: iconSize * 0.8,
                       ),
-                      const SizedBox(width: 12),
-                      Text(
-                        l10n.lightMode,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        l10n.appearances,
+                        style: TextStyle(
+                          fontSize: bodyFontSize + 2,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
                         ),
                       ),
-                    ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade200),
                   ),
-                  value: true,
-                  groupValue: true,
-                  onChanged: (val) {},
-                  activeColor: AppColors.primaryOrangeStart,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
+                  child: RadioListTile(
+                    title: Row(
+                      children: [
+                        Icon(
+                          Icons.light_mode,
+                          color: AppColors.primaryOrangeStart,
+                          size: iconSize * 0.7,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          l10n.lightMode,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: bodyFontSize,
+                          ),
+                        ),
+                      ],
+                    ),
+                    value: true,
+                    // ignore: deprecated_member_use
+                    groupValue: true,
+                    // ignore: deprecated_member_use
+                    onChanged: (val) {},
+                    activeColor: AppColors.primaryOrangeStart,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryOrangeStart,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: (MediaQuery.of(context).size.height * 0.06).clamp(
+                    48.0,
+                    56.0,
                   ),
-                  child: Text(
-                    l10n.close,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryOrangeStart,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      l10n.close,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: bodyFontSize,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

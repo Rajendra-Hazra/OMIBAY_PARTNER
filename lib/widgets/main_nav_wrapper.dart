@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../screens/home/home_screen.dart';
@@ -6,6 +7,8 @@ import '../screens/earnings/earnings_screen.dart';
 import '../screens/account/account_screen.dart';
 import '../core/app_colors.dart';
 import '../l10n/app_localizations.dart';
+import '../services/notification_service.dart';
+import 'incoming_job_modal.dart';
 
 class MainNavigationWrapper extends StatefulWidget {
   final int initialIndex;
@@ -17,14 +20,99 @@ class MainNavigationWrapper extends StatefulWidget {
 
 class _MainNavigationWrapperState extends State<MainNavigationWrapper> {
   late int _selectedIndex;
+  StreamSubscription<Map<String, dynamic>>? _incomingJobSubscription;
+  bool _isJobModalShowing = false;
 
   @override
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
+    _listenForIncomingJobs();
   }
 
-  static const List<Widget> _screens = [
+  @override
+  void dispose() {
+    _incomingJobSubscription?.cancel();
+    super.dispose();
+  }
+
+  /// Listen for incoming job notifications from FCM
+  void _listenForIncomingJobs() {
+    try {
+      _incomingJobSubscription = NotificationService.instance.incomingJobStream
+          .listen((jobData) {
+            // Check if this is a direct action from notification buttons
+            if (jobData['action'] == 'accept') {
+              _handleJobAccepted(jobData);
+              return;
+            } else if (jobData['action'] == 'decline') {
+              _handleJobDeclined(jobData);
+              return;
+            }
+
+            // Show the incoming job modal
+            _showIncomingJobModal(jobData);
+          });
+    } catch (e) {
+      debugPrint('NotificationService not available on this platform: $e');
+    }
+  }
+
+  /// Show the incoming job modal dialog
+  void _showIncomingJobModal(Map<String, dynamic> jobData) {
+    // Prevent multiple modals from showing
+    if (_isJobModalShowing) {
+      debugPrint('Job modal already showing, updating existing notification');
+      return;
+    }
+
+    _isJobModalShowing = true;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false, // User must accept or decline
+      barrierColor: Colors.black.withValues(alpha: 0.7),
+      builder: (context) => IncomingJobModal(
+        job: jobData,
+        onAccept: () {
+          Navigator.of(context).pop();
+          _isJobModalShowing = false;
+          _handleJobAccepted(jobData);
+        },
+        onDecline: () {
+          Navigator.of(context).pop();
+          _isJobModalShowing = false;
+          _handleJobDeclined(jobData);
+        },
+      ),
+    ).then((_) {
+      _isJobModalShowing = false;
+    });
+  }
+
+  /// Handle when user accepts the job
+  void _handleJobAccepted(Map<String, dynamic> jobData) {
+    debugPrint('Job accepted: ${jobData['id']}');
+    // Navigate to active job screen
+    Navigator.pushNamed(context, '/active-job', arguments: jobData);
+  }
+
+  /// Handle when user declines the job
+  void _handleJobDeclined(Map<String, dynamic> jobData) {
+    debugPrint('Job declined: ${jobData['id']}');
+    // Could show a snackbar or log analytics
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          AppLocalizations.of(context)?.jobDeclined ?? 'Job declined',
+        ),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  final List<Widget> _screens = const [
     HomeScreen(),
     JobsListScreen(),
     EarningsScreen(),
@@ -34,9 +122,9 @@ class _MainNavigationWrapperState extends State<MainNavigationWrapper> {
   void _onItemTapped(int index) {
     if (_selectedIndex == index) return;
 
-    setState(() {
-      _selectedIndex = index;
-    });
+    // Navigate to the corresponding route for proper URL updates on web
+    final routes = ['/home', '/jobs', '/earnings', '/account'];
+    Navigator.pushReplacementNamed(context, routes[index]);
   }
 
   /// Tracks the timestamp of the last back button press.

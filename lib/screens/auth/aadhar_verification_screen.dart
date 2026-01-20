@@ -178,6 +178,10 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
   }
 
   Future<void> _pickImage(bool isFront) async {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final fontSize = (screenWidth * 0.048).clamp(17.0, 20.0);
+    final spacing = (screenWidth * 0.064).clamp(24.0, 28.0);
+    
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -186,7 +190,7 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
-        padding: const EdgeInsets.symmetric(vertical: 24),
+        padding: EdgeInsets.symmetric(vertical: spacing),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -194,9 +198,9 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
               isFront
                   ? AppLocalizations.of(context)!.frontSidePhoto
                   : AppLocalizations.of(context)!.backSidePhoto,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: spacing),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -218,7 +222,7 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: spacing * 0.67),
           ],
         ),
       ),
@@ -332,22 +336,27 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
     required String label,
     required VoidCallback onTap,
   }) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final iconSize = (screenWidth * 0.085).clamp(32.0, 40.0);
+    final fontSize = (screenWidth * 0.037).clamp(13.0, 16.0);
+    final padding = (screenWidth * 0.043).clamp(16.0, 20.0);
+    
     return InkWell(
       onTap: onTap,
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(padding),
             decoration: BoxDecoration(
               color: AppColors.primaryOrangeStart.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: AppColors.primaryOrangeStart, size: 32),
+            child: Icon(icon, color: AppColors.primaryOrangeStart, size: iconSize),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: screenWidth * 0.02),
           Text(
             label,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: fontSize),
           ),
         ],
       ),
@@ -355,11 +364,21 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
   }
 
   void _showLogoutConfirmation() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final fontSize = (screenWidth * 0.04).clamp(14.0, 16.0);
+    final buttonPadding = (screenWidth * 0.05).clamp(20.0, 24.0);
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.logout),
-        content: Text(AppLocalizations.of(context)!.logoutConfirmation),
+        title: Text(
+          AppLocalizations.of(context)!.logout,
+          style: TextStyle(fontSize: (fontSize * 1.15).clamp(16.0, 19.0)),
+        ),
+        content: Text(
+          AppLocalizations.of(context)!.logoutConfirmation,
+          style: TextStyle(fontSize: fontSize),
+        ),
         actions: [
           ElevatedButton(
             onPressed: () => Navigator.pop(context),
@@ -367,12 +386,18 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
               backgroundColor: Colors.grey[200],
               foregroundColor: Colors.black87,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: EdgeInsets.symmetric(
+                horizontal: buttonPadding,
+                vertical: buttonPadding * 0.5,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            child: Text(AppLocalizations.of(context)!.cancel),
+            child: Text(
+              AppLocalizations.of(context)!.cancel,
+              style: TextStyle(fontSize: fontSize),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -394,12 +419,18 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: EdgeInsets.symmetric(
+                horizontal: buttonPadding,
+                vertical: buttonPadding * 0.5,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            child: Text(AppLocalizations.of(context)!.logout),
+            child: Text(
+              AppLocalizations.of(context)!.logout,
+              style: TextStyle(fontSize: fontSize),
+            ),
           ),
         ],
       ),
@@ -407,6 +438,10 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
   }
 
   void _showHelpOptions() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final horizontalPadding = (screenWidth * 0.064).clamp(24.0, 28.0);
+    final titleFontSize = (screenWidth * 0.048).clamp(17.0, 20.0);
+    
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -417,38 +452,44 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 24),
+          padding: EdgeInsets.symmetric(vertical: horizontalPadding),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Header
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      AppLocalizations.of(context)!.helpAndSupport,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                    Flexible(
+                      child: Text(
+                        AppLocalizations.of(context)!.helpAndSupport,
+                        style: TextStyle(
+                          fontSize: titleFontSize,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close),
+                      icon: Icon(
+                        Icons.close,
+                        size: (screenWidth * 0.06).clamp(20.0, 24.0),
+                      ),
                       onPressed: () => Navigator.pop(context),
                       style: IconButton.styleFrom(
                         backgroundColor: Colors.grey[100],
-                        padding: const EdgeInsets.all(8),
+                        padding: EdgeInsets.all(screenWidth * 0.021),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: screenWidth * 0.043),
               const Divider(height: 1),
-              const SizedBox(height: 8),
+              SizedBox(height: screenWidth * 0.021),
               // Options
               _buildHelpOption(
                 // ignore: deprecated_member_use
@@ -509,47 +550,57 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
   }
 
   void _showSampleImage(String type) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final padding = (screenWidth * 0.043).clamp(16.0, 20.0);
+    final titleFontSize = (screenWidth * 0.048).clamp(17.0, 20.0);
+    final bodyFontSize = (screenWidth * 0.035).clamp(12.0, 15.0);
+    final iconSize = (screenWidth * 0.064).clamp(24.0, 28.0);
+    
     showDialog(
       context: context,
       builder: (context) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.9,
-            maxHeight: MediaQuery.of(context).size.height * 0.7,
+            maxWidth: screenWidth * 0.9,
+            maxHeight: screenHeight * 0.7,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: EdgeInsets.all(padding),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      AppLocalizations.of(context)!.sampleAadharCard,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                    Flexible(
+                      child: Text(
+                        AppLocalizations.of(context)!.sampleAadharCard,
+                        style: TextStyle(
+                          fontSize: titleFontSize,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close),
+                      icon: Icon(Icons.close, size: iconSize),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: padding),
                 child: Text(
                   AppLocalizations.of(context)!.aadharShouldLookLikeThis,
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  style: TextStyle(fontSize: bodyFontSize, color: Colors.grey[600]),
                   textAlign: TextAlign.center,
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: screenWidth * 0.032),
               Flexible(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -560,26 +611,28 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
                         debugPrint('Error loading sample image: $error');
+                        final errorIconSize = (screenWidth * 0.107).clamp(40.0, 50.0);
+                        final errorFontSize = (screenWidth * 0.032).clamp(11.0, 14.0);
                         return Container(
-                          height: 150,
+                          height: (screenHeight * 0.19).clamp(140.0, 180.0),
                           width: double.infinity,
                           color: Colors.grey[100],
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.image_not_supported,
-                                size: 40,
+                                size: errorIconSize,
                                 color: Colors.grey,
                               ),
-                              const SizedBox(height: 8),
+                              SizedBox(height: screenWidth * 0.021),
                               Text(
                                 AppLocalizations.of(
                                   context,
                                 )!.couldNotLoadSample,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.grey,
-                                  fontSize: 12,
+                                  fontSize: errorFontSize,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -605,20 +658,31 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
     required Color color,
     required VoidCallback onTap,
   }) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final horizontalPadding = (screenWidth * 0.064).clamp(24.0, 28.0);
+    final verticalPadding = (screenWidth * 0.021).clamp(8.0, 12.0);
+    final iconPadding = (screenWidth * 0.032).clamp(12.0, 16.0);
+    final iconSize = (screenWidth * 0.064).clamp(24.0, 28.0);
+    final titleFontSize = (screenWidth * 0.043).clamp(15.0, 18.0);
+    final subtitleFontSize = (screenWidth * 0.035).clamp(12.0, 15.0);
+    
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: horizontalPadding,
+        vertical: verticalPadding,
+      ),
       leading: Container(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(iconPadding),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon, color: color, size: 24),
+        child: Icon(icon, color: color, size: iconSize),
       ),
       title: Text(
         title,
         style: TextStyle(
-          fontSize: 16,
+          fontSize: titleFontSize,
           fontWeight: FontWeight.w600,
           color: title == AppLocalizations.of(context)!.logout
               ? Colors.red
@@ -627,7 +691,7 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+        style: TextStyle(fontSize: subtitleFontSize, color: Colors.grey[600]),
       ),
       onTap: onTap,
     );
@@ -635,6 +699,18 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Responsive sizing
+    final horizontalPadding = (screenWidth * 0.04).clamp(16.0, 24.0);
+    final sectionPadding = (screenWidth * 0.05).clamp(16.0, 24.0);
+    final headingFontSize = (screenWidth * 0.045).clamp(16.0, 20.0);
+    final labelFontSize = (screenWidth * 0.035).clamp(13.0, 15.0);
+    final buttonHeight = (screenHeight * 0.06).clamp(56.0, 64.0);
+    final buttonFontSize = (screenWidth * 0.04).clamp(14.0, 16.0);
+    final iconSize = (screenWidth * 0.055).clamp(20.0, 24.0);
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -650,8 +726,8 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
               // Styled Header
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
+                padding: EdgeInsets.symmetric(
+                  horizontal: horizontalPadding * 0.5,
                   vertical: 16,
                 ),
                 decoration: const BoxDecoration(
@@ -664,30 +740,38 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                      icon: Icon(
+                        Icons.arrow_back_ios_new,
+                        size: (screenWidth * 0.05).clamp(18.0, 22.0),
+                      ),
                       onPressed: () => Navigator.pop(context),
                       color: Colors.white,
                     ),
                     Expanded(
                       child: Row(
                         children: [
-                          Text(
-                            AppLocalizations.of(
-                              context,
-                            )!.aadharCardVerification,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                          Flexible(
+                            child: Text(
+                              AppLocalizations.of(
+                                context,
+                              )!.aadharCardVerification,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: (screenWidth * 0.045).clamp(
+                                  16.0,
+                                  20.0,
+                                ),
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                           if (_isVerified) ...[
-                            const SizedBox(width: 8),
-                            const Icon(
+                            SizedBox(width: screenWidth * 0.02),
+                            Icon(
                               Icons.verified,
                               color: Colors.white,
-                              size: 20,
+                              size: (screenWidth * 0.05).clamp(18.0, 22.0),
                             ),
                           ],
                         ],
@@ -699,22 +783,25 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
                         onTap: _showHelpOptions,
                         borderRadius: BorderRadius.circular(8),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: screenWidth * 0.03,
+                            vertical: screenHeight * 0.01,
                           ),
                           child: Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.help_outline,
-                                size: 20,
+                                size: (screenWidth * 0.05).clamp(18.0, 22.0),
                                 color: Colors.white,
                               ),
-                              const SizedBox(width: 6),
+                              SizedBox(width: screenWidth * 0.015),
                               Text(
                                 AppLocalizations.of(context)!.help,
-                                style: const TextStyle(
-                                  fontSize: 16,
+                                style: TextStyle(
+                                  fontSize: (screenWidth * 0.04).clamp(
+                                    14.0,
+                                    18.0,
+                                  ),
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white,
                                 ),
@@ -728,20 +815,31 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
               ),
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(horizontalPadding),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Section 1: Enter Aadhar Details
-                      _buildAadharDetailsSection(),
-                      const SizedBox(height: 20),
-                      // Section 2: Upload Aadhar Card
-                      _buildUploadSection(),
+                      _buildAadharDetailsSection(
+                        sectionPadding: sectionPadding,
+                        headingFontSize: headingFontSize,
+                        labelFontSize: labelFontSize,
+                        iconSize: iconSize,
+                      ),
                       const SizedBox(height: 24),
+                      // Section 2: Upload Aadhar Card
+                      _buildUploadSection(
+                        sectionPadding: sectionPadding,
+                        headingFontSize: headingFontSize,
+                        labelFontSize: labelFontSize,
+                        iconSize: iconSize,
+                      ),
+                      const SizedBox(height: 32),
                       // Submit Button
                       if (!_isVerified)
                         SizedBox(
                           width: double.infinity,
+                          height: buttonHeight,
                           child: ElevatedButton(
                             onPressed: _isFormValid && !_isLoading
                                 ? _saveData
@@ -756,7 +854,7 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
                               elevation: 0,
                             ),
                             child: _isLoading
-                                ? const SizedBox(
+                                ? SizedBox(
                                     height: 20,
                                     width: 20,
                                     child: CircularProgressIndicator(
@@ -770,8 +868,11 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
                                     AppLocalizations.of(
                                       context,
                                     )!.submitAndContinue,
-                                    style: const TextStyle(
-                                      fontSize: 16,
+                                    style: TextStyle(
+                                      fontSize: buttonFontSize.clamp(
+                                        14.0,
+                                        17.0,
+                                      ),
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -792,12 +893,20 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
     required String title,
     String? imagePath,
     required VoidCallback onTap,
+    required double labelFontSize,
   }) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final cardPadding = (screenWidth * 0.04).clamp(16.0, 20.0);
+    final imageHeight = (screenHeight * 0.18).clamp(140.0, 200.0);
+    final iconSize = (screenWidth * 0.12).clamp(48.0, 64.0);
+    final uploadFontSize = (screenWidth * 0.04).clamp(14.0, 16.0);
+
     return GestureDetector(
       onTap: _isVerified ? () => _showImagePreview(imagePath!, title) : onTap,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(cardPadding),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -825,13 +934,13 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
                     child: kIsWeb
                         ? Image.network(
                             imagePath,
-                            height: 150,
+                            height: imageHeight.clamp(140.0, 160.0),
                             width: double.infinity,
                             fit: BoxFit.cover,
                           )
                         : Image.file(
                             File(imagePath),
-                            height: 150,
+                            height: imageHeight.clamp(140.0, 160.0),
                             width: double.infinity,
                             fit: BoxFit.cover,
                           ),
@@ -870,9 +979,10 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
                   const SizedBox(width: 8),
                   Text(
                     AppLocalizations.of(context)!.uploaded,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.successGreen,
                       fontWeight: FontWeight.bold,
+                      fontSize: labelFontSize.clamp(12.0, 14.0),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -884,10 +994,10 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
                     ),
                     child: Text(
                       AppLocalizations.of(context)!.view,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppColors.primaryOrangeStart,
                         fontWeight: FontWeight.w600,
-                        fontSize: 13,
+                        fontSize: labelFontSize.clamp(12.0, 14.0),
                       ),
                     ),
                   ),
@@ -901,10 +1011,10 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
                       ),
                       child: Text(
                         AppLocalizations.of(context)!.change,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.blue,
                           fontWeight: FontWeight.w600,
-                          fontSize: 13,
+                          fontSize: labelFontSize.clamp(12.0, 14.0),
                         ),
                       ),
                     ),
@@ -914,14 +1024,14 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
             ] else ...[
               Icon(
                 Icons.add_a_photo_outlined,
-                size: 48,
+                size: iconSize.clamp(44.0, 52.0),
                 color: Colors.grey[400],
               ),
               const SizedBox(height: 12),
               Text(
                 AppLocalizations.of(context)!.uploadText,
-                style: const TextStyle(
-                  fontSize: 16,
+                style: TextStyle(
+                  fontSize: uploadFontSize.clamp(14.0, 17.0),
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
                 ),
@@ -929,7 +1039,11 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
               const SizedBox(height: 4),
               Text(
                 AppLocalizations.of(context)!.tapToCaptureOrSelect,
-                style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                style: TextStyle(
+                  fontSize: labelFontSize.clamp(12.0, 14.0),
+                  color: Colors.grey[500],
+                ),
+                textAlign: TextAlign.center,
               ),
             ],
           ],
@@ -939,6 +1053,11 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
   }
 
   void _showImagePreview(String imagePath, String title) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final padding = (screenWidth * 0.043).clamp(16.0, 20.0);
+    final titleFontSize = (screenWidth * 0.043).clamp(15.0, 18.0);
+    final iconSize = (screenWidth * 0.064).clamp(24.0, 28.0);
+    
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -955,19 +1074,22 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(padding),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          '${AppLocalizations.of(context)!.preview} $title',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                        Flexible(
+                          child: Text(
+                            '${AppLocalizations.of(context)!.preview} $title',
+                            style: TextStyle(
+                              fontSize: titleFontSize,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.close),
+                          icon: Icon(Icons.close, size: iconSize),
                           onPressed: () => Navigator.pop(context),
                         ),
                       ],
@@ -999,10 +1121,15 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
   }
 
   // Section 1: Aadhar Details
-  Widget _buildAadharDetailsSection() {
+  Widget _buildAadharDetailsSection({
+    required double sectionPadding,
+    required double headingFontSize,
+    required double labelFontSize,
+    required double iconSize,
+  }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(sectionPadding.clamp(18.0, 24.0)),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -1020,24 +1147,27 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(iconSize * 0.45),
                 decoration: BoxDecoration(
                   color: Colors.blue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.badge_outlined,
                   color: Colors.blue,
-                  size: 22,
+                  size: iconSize.clamp(20.0, 24.0),
                 ),
               ),
               const SizedBox(width: 12),
-              Text(
-                AppLocalizations.of(context)!.enterAadharDetails,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+              Flexible(
+                child: Text(
+                  AppLocalizations.of(context)!.enterAadharDetails,
+                  style: TextStyle(
+                    fontSize: headingFontSize.clamp(16.0, 20.0),
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -1057,6 +1187,7 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
             ],
             maxLength: 14, // 12 digits + 2 spaces
             prefixIcon: Icons.credit_card,
+            labelFontSize: labelFontSize,
           ),
           const SizedBox(height: 16),
           // Full Name as per Aadhar
@@ -1068,6 +1199,7 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
             readOnly: _isVerified,
             textCapitalization: TextCapitalization.words,
             prefixIcon: Icons.person_outline,
+            labelFontSize: labelFontSize,
           ),
           const SizedBox(height: 16),
           // Date of Birth
@@ -1079,6 +1211,7 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
             onTap: _isVerified ? null : _selectDate,
             prefixIcon: Icons.calendar_today,
             suffixIcon: Icons.arrow_drop_down,
+            labelFontSize: labelFontSize,
           ),
         ],
       ),
@@ -1097,15 +1230,16 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
     IconData? prefixIcon,
     IconData? suffixIcon,
     TextCapitalization textCapitalization = TextCapitalization.none,
+    required double labelFontSize,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w600,
-            fontSize: 14,
+            fontSize: labelFontSize.clamp(13.0, 15.0),
             color: AppColors.textPrimary,
           ),
         ),
@@ -1156,10 +1290,15 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
   }
 
   // Section 2: Upload Aadhar Card
-  Widget _buildUploadSection() {
+  Widget _buildUploadSection({
+    required double sectionPadding,
+    required double headingFontSize,
+    required double labelFontSize,
+    required double iconSize,
+  }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(sectionPadding.clamp(18.0, 24.0)),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -1177,15 +1316,15 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(iconSize * 0.45),
                 decoration: BoxDecoration(
                   color: AppColors.primaryOrangeStart.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.upload_file,
                   color: AppColors.primaryOrangeStart,
-                  size: 22,
+                  size: iconSize.clamp(20.0, 24.0),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1195,8 +1334,8 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
                   children: [
                     Text(
                       AppLocalizations.of(context)!.uploadAadharCard,
-                      style: const TextStyle(
-                        fontSize: 18,
+                      style: TextStyle(
+                        fontSize: headingFontSize.clamp(16.0, 20.0),
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
                       ),
@@ -1204,18 +1343,24 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
                     const SizedBox(height: 2),
                     Text(
                       AppLocalizations.of(context)!.uploadClearPhotos,
-                      style: const TextStyle(fontSize: 13, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: labelFontSize.clamp(12.0, 14.0),
+                        color: Colors.grey,
+                      ),
                     ),
                   ],
                 ),
               ),
               TextButton.icon(
                 onPressed: () => _showSampleImage('Front'),
-                icon: const Icon(Icons.visibility_outlined, size: 16),
+                icon: Icon(
+                  Icons.visibility_outlined,
+                  size: (iconSize * 0.7).clamp(14.0, 18.0),
+                ),
                 label: Text(
                   AppLocalizations.of(context)!.sample,
-                  style: const TextStyle(
-                    fontSize: 12,
+                  style: TextStyle(
+                    fontSize: labelFontSize.clamp(11.0, 13.0),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -1232,6 +1377,7 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
             title: AppLocalizations.of(context)!.frontSide,
             imagePath: _frontPath,
             onTap: () => _pickImage(true),
+            labelFontSize: labelFontSize,
           ),
           const SizedBox(height: 12),
           // Back Side Upload
@@ -1239,6 +1385,7 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
             title: AppLocalizations.of(context)!.backSide,
             imagePath: _backPath,
             onTap: () => _pickImage(false),
+            labelFontSize: labelFontSize,
           ),
         ],
       ),

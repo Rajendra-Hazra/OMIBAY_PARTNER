@@ -305,6 +305,19 @@ class _PermissionsScreenState extends State<PermissionsScreen>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Responsive values
+    final horizontalPadding = (screenWidth * 0.06).clamp(16.0, 24.0);
+    final verticalPadding = (screenHeight * 0.02).clamp(16.0, 24.0);
+    final headingFontSize = (screenWidth * 0.05).clamp(18.0, 22.0);
+    final titleFontSize = (screenWidth * 0.055).clamp(20.0, 24.0);
+    final bodyFontSize = (screenWidth * 0.038).clamp(14.0, 16.0);
+    final smallFontSize = (screenWidth * 0.032).clamp(11.0, 13.0);
+    final iconSize = (screenWidth * 0.06).clamp(24.0, 32.0);
+    final buttonHeight = (screenHeight * 0.065).clamp(56.0, 64.0);
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -319,91 +332,26 @@ class _PermissionsScreenState extends State<PermissionsScreen>
           child: Column(
             children: [
               // Styled Header
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).padding.top + 10,
-                  left: 10,
-                  right: 20,
-                  bottom: 20,
-                ),
-                decoration: const BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(24),
-                    bottomRight: Radius.circular(24),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-                      onPressed: () => Navigator.pop(context),
-                      color: Colors.white,
-                    ),
-                    Expanded(
-                      child: Text(
-                        l10n.permissions,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    // Help button
-                    if (!_hideHelp)
-                      InkWell(
-                        onTap: _showHelpOptions,
-                        borderRadius: BorderRadius.circular(8),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.help_outline,
-                                size: 20,
-                                color: Colors.white,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                l10n.help,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
+              _buildHeader(context, headingFontSize, bodyFontSize, iconSize),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(24.0),
+                  padding: EdgeInsets.all(horizontalPadding),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         l10n.managePermissions,
-                        style: const TextStyle(
-                          fontSize: 22,
+                        style: TextStyle(
+                          fontSize: titleFontSize,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 12),
                       Text(
                         l10n.permissionsNote,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppColors.textSecondary,
-                          fontSize: 14,
+                          fontSize: bodyFontSize,
                         ),
                       ),
                       const SizedBox(height: 32),
@@ -416,31 +364,43 @@ class _PermissionsScreenState extends State<PermissionsScreen>
                               Icons.location_on_outlined,
                               l10n.backgroundLocation,
                               l10n.backgroundLocationDesc,
+                              bodyFontSize,
+                              smallFontSize,
+                              iconSize,
+                              screenWidth,
                             ),
                             _buildPermissionTile(
                               Permission.ignoreBatteryOptimizations,
                               Icons.battery_saver_outlined,
                               l10n.batteryOptimization,
                               l10n.batteryOptimizationDesc,
+                              bodyFontSize,
+                              smallFontSize,
+                              iconSize,
+                              screenWidth,
                             ),
                             _buildPermissionTile(
                               Permission.systemAlertWindow,
                               Icons.layers_outlined,
                               l10n.displayOverApps,
                               l10n.displayOverAppsDesc,
+                              bodyFontSize,
+                              smallFontSize,
+                              iconSize,
+                              screenWidth,
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: verticalPadding * 0.5),
                       SizedBox(
                         width: double.infinity,
+                        height: buttonHeight,
                         child: ElevatedButton(
                           onPressed: () => Navigator.pop(context, true),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryOrangeStart,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -466,11 +426,94 @@ class _PermissionsScreenState extends State<PermissionsScreen>
     );
   }
 
+  Widget _buildHeader(
+    BuildContext context,
+    double headingFontSize,
+    double bodyFontSize,
+    double iconSize,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 10,
+        left: 10,
+        right: 16,
+        bottom: 16,
+      ),
+      decoration: const BoxDecoration(
+        gradient: AppColors.primaryGradient,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            icon: Icon(Icons.arrow_back_ios_new, size: iconSize * 0.7),
+            onPressed: () => Navigator.pop(context),
+            color: Colors.white,
+          ),
+          Expanded(
+            child: Text(
+              l10n.permissions,
+              style: TextStyle(
+                fontSize: headingFontSize,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          // Help button
+          if (!_hideHelp)
+            InkWell(
+              onTap: _showHelpOptions,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.help_outline,
+                      size: iconSize * 0.7,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        l10n.help,
+                        style: TextStyle(
+                          fontSize: bodyFontSize,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPermissionTile(
     Permission permission,
     IconData icon,
     String title,
     String description,
+    double bodyFontSize,
+    double smallFontSize,
+    double iconSize,
+    double screenWidth,
   ) {
     final status = _statuses[permission] ?? PermissionStatus.denied;
     final isGranted = status.isGranted;
@@ -486,7 +529,11 @@ class _PermissionsScreenState extends State<PermissionsScreen>
               color: AppColors.bgStart,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: AppColors.primaryOrangeStart, size: 24),
+            child: Icon(
+              icon,
+              color: AppColors.primaryOrangeStart,
+              size: iconSize * 0.8,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -496,29 +543,36 @@ class _PermissionsScreenState extends State<PermissionsScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: bodyFontSize,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    Switch(
-                      value: isGranted,
-                      onChanged: (val) {
-                        if (!isGranted) {
-                          _requestPermission(permission);
-                        }
-                      },
-                      activeThumbColor: AppColors.primaryOrangeStart,
+                    Transform.scale(
+                      scale: (screenWidth / 400).clamp(0.8, 1.0),
+                      child: Switch(
+                        value: isGranted,
+                        onChanged: (val) {
+                          if (!isGranted) {
+                            _requestPermission(permission);
+                          }
+                        },
+                        activeThumbColor: AppColors.primaryOrangeStart,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                     ),
                   ],
                 ),
                 Text(
                   description,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppColors.textSecondary,
-                    fontSize: 13,
+                    fontSize: smallFontSize + 1,
                     height: 1.4,
                   ),
                 ),

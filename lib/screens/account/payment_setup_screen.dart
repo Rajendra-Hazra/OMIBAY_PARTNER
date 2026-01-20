@@ -158,6 +158,18 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final paddingScale = (screenWidth / 375).clamp(0.8, 1.2);
+    final hPadding = 20.0 * paddingScale;
+    final vPadding = 20.0 * paddingScale;
+    final titleFontSize = (screenWidth * 0.05).clamp(18.0, 22.0);
+    final bodyFontSize = (screenWidth * 0.035).clamp(13.0, 16.0);
+    final smallFontSize = (screenWidth * 0.03).clamp(11.0, 13.0);
+    final labelFontSize = (screenWidth * 0.028).clamp(10.0, 12.0);
+    final iconSize = (screenWidth * 0.05).clamp(18.0, 24.0);
+    final buttonHeight = (screenHeight * 0.06).clamp(50.0, 60.0);
+
     if (_isLoading) {
       return const Scaffold(
         body: Center(
@@ -173,28 +185,31 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
         bottom: false,
         child: Column(
           children: [
-            _buildHeader(context),
+            _buildHeader(context, titleFontSize, iconSize),
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.symmetric(
+                  horizontal: hPadding,
+                  vertical: vPadding,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       l10n.savedOptions,
-                      style: const TextStyle(
-                        fontSize: 12,
+                      style: TextStyle(
+                        fontSize: labelFontSize,
                         fontWeight: FontWeight.bold,
                         color: AppColors.textSecondary,
                         letterSpacing: 1,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12 * paddingScale),
                     if (_bankAccounts.isEmpty && _upiIds.isEmpty)
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(24),
+                        padding: EdgeInsets.all(24 * paddingScale),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
@@ -205,16 +220,17 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                             Icon(
                               Icons.payment_outlined,
                               color: Colors.grey[300],
-                              size: 40,
+                              size: 40 * paddingScale,
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: 12 * paddingScale),
                             Text(
                               l10n.noPaymentMethodSaved,
                               style: TextStyle(
                                 color: Colors.grey[400],
-                                fontSize: 14,
+                                fontSize: bodyFontSize,
                                 fontWeight: FontWeight.w500,
                               ),
+                              textAlign: TextAlign.center,
                             ),
                           ],
                         ),
@@ -241,7 +257,10 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                           children: [
                             // Bank Accounts Section
                             if (_bankAccounts.isNotEmpty) ...[
-                              _buildSectionLabel(l10n.bankAccountsLabel),
+                              _buildSectionLabel(
+                                l10n.bankAccountsLabel,
+                                labelFontSize,
+                              ),
                               ..._bankAccounts.asMap().entries.map((entry) {
                                 final int idx = entry.key;
                                 final bank = entry.value;
@@ -263,6 +282,9 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                                           _deletePaymentMethod(accNo, 'bank'),
                                       onSetDefault: () =>
                                           _setDefaultMethod(accNo, 'bank'),
+                                      bodyFontSize: bodyFontSize,
+                                      smallFontSize: smallFontSize,
+                                      iconSize: iconSize,
                                     ),
                                     if (idx < _bankAccounts.length - 1)
                                       const Divider(
@@ -278,7 +300,7 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                             // Differentiation line between Bank and UPI
                             if (_bankAccounts.isNotEmpty && _upiIds.isNotEmpty)
                               Container(
-                                height: 12,
+                                height: 12 * paddingScale,
                                 width: double.infinity,
                                 color: Colors.grey[50],
                                 child: Center(
@@ -293,7 +315,10 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
 
                             // UPI IDs Section
                             if (_upiIds.isNotEmpty) ...[
-                              _buildSectionLabel(l10n.upiIdsLabel),
+                              _buildSectionLabel(
+                                l10n.upiIdsLabel,
+                                labelFontSize,
+                              ),
                               ..._upiIds.asMap().entries.map((entry) {
                                 final int idx = entry.key;
                                 final upiId = entry.value;
@@ -311,6 +336,9 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                                           _deletePaymentMethod(upiId, 'upi'),
                                       onSetDefault: () =>
                                           _setDefaultMethod(upiId, 'upi'),
+                                      bodyFontSize: bodyFontSize,
+                                      smallFontSize: smallFontSize,
+                                      iconSize: iconSize,
                                     ),
                                     if (idx < _upiIds.length - 1)
                                       const Divider(
@@ -325,52 +353,71 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                           ],
                         ),
                       ),
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32 * paddingScale),
                     Text(
                       l10n.addNewOption,
-                      style: const TextStyle(
-                        fontSize: 12,
+                      style: TextStyle(
+                        fontSize: labelFontSize,
                         fontWeight: FontWeight.bold,
                         color: AppColors.textSecondary,
                         letterSpacing: 1,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12 * paddingScale),
                     _buildAddOptionTile(
                       icon: Icons.account_balance_wallet_outlined,
                       title: l10n.addBankAccount,
                       subtitle: l10n.directTransferToBank,
-                      onTap: () => _showBankDialog(context),
+                      onTap: () => _showBankDialog(
+                        context,
+                        bodyFontSize,
+                        smallFontSize,
+                        iconSize,
+                        buttonHeight,
+                        paddingScale,
+                      ),
+                      titleFontSize: bodyFontSize + 1,
+                      subtitleFontSize: smallFontSize,
                     ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8),
-                      child: Divider(height: 1, color: AppColors.border),
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8 * paddingScale),
+                      child: const Divider(height: 1, color: AppColors.border),
                     ),
                     _buildAddOptionTile(
                       icon: Icons.send_to_mobile_outlined,
                       title: l10n.addUpiId,
                       subtitle: l10n.upiAppsSubtitle,
-                      onTap: () => _showUpiDialog(context),
+                      onTap: () => _showUpiDialog(
+                        context,
+                        bodyFontSize,
+                        smallFontSize,
+                        iconSize,
+                        buttonHeight,
+                        paddingScale,
+                      ),
+                      titleFontSize: bodyFontSize + 1,
+                      subtitleFontSize: smallFontSize,
                     ),
-                    const SizedBox(height: 40),
+                    SizedBox(height: 40 * paddingScale),
                     Center(
                       child: Column(
                         children: [
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 Icons.lock_outline,
                                 color: Colors.green[600],
-                                size: 16,
+                                size: iconSize * 0.8,
                               ),
                               const SizedBox(width: 8),
                               Flexible(
                                 child: Text(
                                   l10n.secureSslEncryption,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: AppColors.successGreen,
-                                    fontSize: 13,
+                                    fontSize: bodyFontSize,
                                     fontWeight: FontWeight.w600,
                                   ),
                                   overflow: TextOverflow.ellipsis,
@@ -383,9 +430,9 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                           Text(
                             l10n.paymentSecurityNote,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppColors.textSecondary,
-                              fontSize: 12,
+                              fontSize: smallFontSize,
                             ),
                           ),
                         ],
@@ -408,13 +455,13 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
     )!.accountNumberMask(acc.substring(acc.length - 4));
   }
 
-  Widget _buildSectionLabel(String label) {
+  Widget _buildSectionLabel(String label, double fontSize) {
     return Padding(
       padding: const EdgeInsets.only(left: 16, top: 16, bottom: 8),
       child: Text(
         label.toUpperCase(),
         style: TextStyle(
-          fontSize: 10,
+          fontSize: fontSize,
           fontWeight: FontWeight.bold,
           color: Colors.grey[400],
           letterSpacing: 0.5,
@@ -430,6 +477,9 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
     required bool isDefault,
     required VoidCallback onDelete,
     required VoidCallback onSetDefault,
+    required double bodyFontSize,
+    required double smallFontSize,
+    required double iconSize,
   }) {
     return InkWell(
       onTap: isDefault ? null : onSetDefault,
@@ -444,8 +494,8 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
           children: [
             // Left: Status Indicator (Radio style)
             Container(
-              height: 20,
-              width: 20,
+              height: iconSize,
+              width: iconSize,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
@@ -458,8 +508,8 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
               child: isDefault
                   ? Center(
                       child: Container(
-                        height: 10,
-                        width: 10,
+                        height: iconSize * 0.5,
+                        width: iconSize * 0.5,
                         decoration: const BoxDecoration(
                           color: AppColors.primaryOrangeStart,
                           shape: BoxShape.circle,
@@ -483,7 +533,7 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                 color: isDefault
                     ? AppColors.primaryOrangeStart
                     : Colors.grey[600],
-                size: 20,
+                size: iconSize,
               ),
             ),
             const SizedBox(width: 16),
@@ -494,21 +544,24 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                 children: [
                   Row(
                     children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          fontWeight: isDefault
-                              ? FontWeight.bold
-                              : FontWeight.w600,
-                          fontSize: 14,
-                          color: isDefault ? Colors.black : Colors.grey[800],
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: TextStyle(
+                            fontWeight: isDefault
+                                ? FontWeight.bold
+                                : FontWeight.w600,
+                            fontSize: bodyFontSize,
+                            color: isDefault ? Colors.black : Colors.grey[800],
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       if (isDefault) ...[
                         const SizedBox(width: 6),
-                        const Icon(
+                        Icon(
                           Icons.verified,
-                          size: 14,
+                          size: iconSize * 0.7,
                           color: AppColors.primaryOrangeStart,
                         ),
                       ],
@@ -518,8 +571,9 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                     subtitle,
                     style: TextStyle(
                       color: isDefault ? Colors.grey[700] : Colors.grey[500],
-                      fontSize: 12,
+                      fontSize: smallFontSize,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
@@ -530,7 +584,7 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
               icon: Icon(
                 Icons.delete_outline,
                 color: Colors.red[300],
-                size: 18,
+                size: iconSize * 0.9,
               ),
               splashRadius: 20,
             ),
@@ -545,6 +599,8 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    required double titleFontSize,
+    required double subtitleFontSize,
   }) {
     return InkWell(
       onTap: onTap,
@@ -566,16 +622,16 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 15,
+                      fontSize: titleFontSize,
                     ),
                   ),
                   Text(
                     subtitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.textSecondary,
-                      fontSize: 12,
+                      fontSize: subtitleFontSize,
                     ),
                   ),
                 ],
@@ -592,7 +648,14 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
     );
   }
 
-  void _showBankDialog(BuildContext context) {
+  void _showBankDialog(
+    BuildContext context,
+    double bodyFontSize,
+    double smallFontSize,
+    double iconSize,
+    double buttonHeight,
+    double paddingScale,
+  ) {
     // Clear controllers before opening for fresh entry
     _holderNameController.clear();
     _accountNumberController.clear();
@@ -614,39 +677,41 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
             bool isDirty = _confirmAccountNumberController.text.isNotEmpty;
 
             return AlertDialog(
-              insetPadding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 24,
+              insetPadding: EdgeInsets.symmetric(
+                horizontal: 20 * paddingScale,
+                vertical: 24 * paddingScale,
               ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
               ),
-              title: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryOrangeStart.withValues(
-                        alpha: 0.1,
+              title: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryOrangeStart.withValues(
+                          alpha: 0.1,
+                        ),
+                        shape: BoxShape.circle,
                       ),
-                      shape: BoxShape.circle,
+                      child: Icon(
+                        Icons.account_balance,
+                        color: AppColors.primaryOrangeStart,
+                        size: iconSize * 1.5,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.account_balance,
-                      color: AppColors.primaryOrangeStart,
-                      size: 32,
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.bankAccountDetails,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: bodyFontSize + 4,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    l10n.bankAccountDetails,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               content: SizedBox(
                 width: MediaQuery.of(context).size.width,
@@ -660,6 +725,8 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                         hint: l10n.holderNameHint,
                         icon: Icons.person_outline,
                         onChanged: (val) => setDialogState(() {}),
+                        bodyFontSize: bodyFontSize,
+                        smallFontSize: smallFontSize,
                       ),
                       const SizedBox(height: 16),
                       _buildDialogTextField(
@@ -668,6 +735,8 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                         hint: l10n.bankNameHint,
                         icon: Icons.business_outlined,
                         onChanged: (val) => setDialogState(() {}),
+                        bodyFontSize: bodyFontSize,
+                        smallFontSize: smallFontSize,
                       ),
                       const SizedBox(height: 16),
                       _buildDialogTextField(
@@ -679,6 +748,8 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                         icon: Icons.numbers_outlined,
                         obscureText: true,
                         onChanged: (val) => setDialogState(() {}),
+                        bodyFontSize: bodyFontSize,
+                        smallFontSize: smallFontSize,
                       ),
                       const SizedBox(height: 16),
                       _buildDialogTextField(
@@ -692,6 +763,8 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                             ? l10n.accountNumbersDoNotMatch
                             : null,
                         onChanged: (val) => setDialogState(() {}),
+                        bodyFontSize: bodyFontSize,
+                        smallFontSize: smallFontSize,
                       ),
                       const SizedBox(height: 16),
                       _buildDialogTextField(
@@ -702,6 +775,8 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                         inputFormatters: [EnglishDigitFormatter()],
                         icon: Icons.code_outlined,
                         onChanged: (val) => setDialogState(() {}),
+                        bodyFontSize: bodyFontSize,
+                        smallFontSize: smallFontSize,
                       ),
                       const SizedBox(height: 20),
                       Container(
@@ -726,7 +801,7 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                                 l10n.correctDetailsWarning,
                                 style: TextStyle(
                                   color: Colors.blue[800],
-                                  fontSize: 11,
+                                  fontSize: smallFontSize,
                                 ),
                               ),
                             ),
@@ -742,61 +817,69 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                   onPressed: () => Navigator.pop(context),
                   child: Text(
                     l10n.cancel,
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: bodyFontSize,
+                    ),
                   ),
                 ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
+                SizedBox(
+                  height: buttonHeight * 0.8,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    onPressed: () async {
+                      if (_holderNameController.text.isEmpty ||
+                          _accountNumberController.text.isEmpty ||
+                          _ifscController.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(l10n.pleaseFillAllFields)),
+                        );
+                        return;
+                      }
+                      if (!isMatching) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(l10n.accountNumbersDoNotMatch),
+                          ),
+                        );
+                        return;
+                      }
+                      final prefs = await SharedPreferences.getInstance();
+
+                      // Add to list
+                      final newBank = {
+                        'bank_holder_name': _holderNameController.text,
+                        'bank_account_number': _accountNumberController.text,
+                        'bank_ifsc': _ifscController.text,
+                        'bank_name': _bankNameController.text,
+                      };
+
+                      _bankAccounts.add(newBank);
+                      await prefs.setString(
+                        'saved_bank_accounts',
+                        jsonEncode(_bankAccounts),
+                      );
+
+                      // Clear fields
+                      _holderNameController.clear();
+                      _accountNumberController.clear();
+                      _confirmAccountNumberController.clear();
+                      _ifscController.clear();
+                      _bankNameController.clear();
+
+                      if (context.mounted) Navigator.pop(context);
+                      _fetchPaymentDetails();
+                    },
+                    child: Text(
+                      l10n.saveBankDetails,
+                      style: TextStyle(fontSize: bodyFontSize),
                     ),
                   ),
-                  onPressed: () async {
-                    if (_holderNameController.text.isEmpty ||
-                        _accountNumberController.text.isEmpty ||
-                        _ifscController.text.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(l10n.pleaseFillAllFields)),
-                      );
-                      return;
-                    }
-                    if (!isMatching) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(l10n.accountNumbersDoNotMatch)),
-                      );
-                      return;
-                    }
-                    final prefs = await SharedPreferences.getInstance();
-
-                    // Add to list
-                    final newBank = {
-                      'bank_holder_name': _holderNameController.text,
-                      'bank_account_number': _accountNumberController.text,
-                      'bank_ifsc': _ifscController.text,
-                      'bank_name': _bankNameController.text,
-                    };
-
-                    _bankAccounts.add(newBank);
-                    await prefs.setString(
-                      'saved_bank_accounts',
-                      jsonEncode(_bankAccounts),
-                    );
-
-                    // Clear fields
-                    _holderNameController.clear();
-                    _accountNumberController.clear();
-                    _confirmAccountNumberController.clear();
-                    _ifscController.clear();
-                    _bankNameController.clear();
-
-                    if (context.mounted) Navigator.pop(context);
-                    _fetchPaymentDetails();
-                  },
-                  child: Text(l10n.saveBankDetails),
                 ),
               ],
             );
@@ -806,7 +889,14 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
     );
   }
 
-  void _showUpiDialog(BuildContext context) {
+  void _showUpiDialog(
+    BuildContext context,
+    double bodyFontSize,
+    double smallFontSize,
+    double iconSize,
+    double buttonHeight,
+    double paddingScale,
+  ) {
     // Clear controllers before opening for fresh entry
     _upiIdController.clear();
     _confirmUpiIdController.clear();
@@ -824,35 +914,41 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
             bool isDirty = _confirmUpiIdController.text.isNotEmpty;
 
             return AlertDialog(
+              insetPadding: EdgeInsets.symmetric(
+                horizontal: 20 * paddingScale,
+                vertical: 24 * paddingScale,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
               ),
-              title: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryOrangeStart.withValues(
-                        alpha: 0.1,
+              title: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryOrangeStart.withValues(
+                          alpha: 0.1,
+                        ),
+                        shape: BoxShape.circle,
                       ),
-                      shape: BoxShape.circle,
+                      child: Icon(
+                        Icons.qr_code,
+                        color: AppColors.primaryOrangeStart,
+                        size: iconSize * 1.5,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.qr_code,
-                      color: AppColors.primaryOrangeStart,
-                      size: 32,
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.addUpiId,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: bodyFontSize + 4,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    l10n.addUpiId,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               content: SingleChildScrollView(
                 child: Column(
@@ -866,6 +962,8 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                       icon: Icons.alternate_email_outlined,
                       obscureText: true,
                       onChanged: (val) => setDialogState(() {}),
+                      bodyFontSize: bodyFontSize,
+                      smallFontSize: smallFontSize,
                     ),
                     const SizedBox(height: 16),
                     _buildDialogTextField(
@@ -878,14 +976,16 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                           ? l10n.upiIdsDoNotMatch
                           : null,
                       onChanged: (val) => setDialogState(() {}),
+                      bodyFontSize: bodyFontSize,
+                      smallFontSize: smallFontSize,
                     ),
                     const SizedBox(height: 16),
                     Text(
                       l10n.upiInstantCreditNote,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppColors.textSecondary,
-                        fontSize: 12,
+                        fontSize: smallFontSize,
                       ),
                     ),
                   ],
@@ -896,46 +996,55 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                   onPressed: () => Navigator.pop(context),
                   child: Text(
                     l10n.cancel,
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: bodyFontSize,
+                    ),
                   ),
                 ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
+                SizedBox(
+                  height: buttonHeight * 0.8,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    onPressed: () async {
+                      if (_upiIdController.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(l10n.pleaseEnterUpiId)),
+                        );
+                        return;
+                      }
+                      if (!isMatching) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(l10n.upiIdsDoNotMatch)),
+                        );
+                        return;
+                      }
+                      final prefs = await SharedPreferences.getInstance();
+
+                      // Add to list
+                      _upiIds.add(_upiIdController.text);
+                      await prefs.setString(
+                        'saved_upi_ids',
+                        jsonEncode(_upiIds),
+                      );
+
+                      // Clear fields
+                      _upiIdController.clear();
+                      _confirmUpiIdController.clear();
+
+                      if (context.mounted) Navigator.pop(context);
+                      _fetchPaymentDetails();
+                    },
+                    child: Text(
+                      l10n.saveUpi,
+                      style: TextStyle(fontSize: bodyFontSize),
                     ),
                   ),
-                  onPressed: () async {
-                    if (_upiIdController.text.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(l10n.pleaseEnterUpiId)),
-                      );
-                      return;
-                    }
-                    if (!isMatching) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(l10n.upiIdsDoNotMatch)),
-                      );
-                      return;
-                    }
-                    final prefs = await SharedPreferences.getInstance();
-
-                    // Add to list
-                    _upiIds.add(_upiIdController.text);
-                    await prefs.setString('saved_upi_ids', jsonEncode(_upiIds));
-
-                    // Clear fields
-                    _upiIdController.clear();
-                    _confirmUpiIdController.clear();
-
-                    if (context.mounted) Navigator.pop(context);
-                    _fetchPaymentDetails();
-                  },
-                  child: Text(l10n.saveUpi),
                 ),
               ],
             );
@@ -956,13 +1065,15 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
     bool obscureText = false,
     String? errorText,
     ValueChanged<String>? onChanged,
+    required double bodyFontSize,
+    required double smallFontSize,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: bodyFontSize),
         ),
         const SizedBox(height: 8),
         TextField(
@@ -972,13 +1083,15 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
           textCapitalization: textCapitalization,
           obscureText: obscureText,
           onChanged: onChanged,
+          style: TextStyle(fontSize: bodyFontSize),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(fontSize: 13, color: Colors.grey),
+            hintStyle: TextStyle(fontSize: smallFontSize, color: Colors.grey),
             prefixIcon: icon != null
                 ? Icon(icon, size: 20, color: AppColors.textSecondary)
                 : null,
             errorText: errorText,
+            errorStyle: TextStyle(fontSize: smallFontSize * 0.9),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 14,
@@ -1004,7 +1117,11 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(
+    BuildContext context,
+    double titleFontSize,
+    double iconSize,
+  ) {
     return Container(
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 10,
@@ -1030,18 +1147,18 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios_new,
               color: Colors.white,
-              size: 20,
+              size: iconSize,
             ),
           ),
           Expanded(
             child: Text(
               AppLocalizations.of(context)!.paymentSetup,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 20,
+                fontSize: titleFontSize,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.5,
               ),
