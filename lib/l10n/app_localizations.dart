@@ -1532,6 +1532,18 @@ abstract class AppLocalizations {
   /// **'Add UPI ID'**
   String get addUpiId;
 
+  /// No description provided for @noBankAccountFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No bank account found'**
+  String get noBankAccountFound;
+
+  /// No description provided for @noUpiIdFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No UPI ID found'**
+  String get noUpiIdFound;
+
   /// No description provided for @add.
   ///
   /// In en, this message translates to:
@@ -4111,6 +4123,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Complete 15 jobs'**
   String get complete15Jobs;
+
+  /// No description provided for @jobsGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'15 Jobs Goal'**
+  String get jobsGoal;
 
   /// No description provided for @earnExtraReward.
   ///

@@ -62,7 +62,7 @@ class _WithdrawalHistoryScreenState extends State<WithdrawalHistoryScreen> {
           ),
           'isCredit': data['isCredit'] ?? (data['type'] == 'Credit'),
           'time': timeDisplay,
-          'status': data['isCredit'] == true ? l10n.processed : l10n.deducted,
+          'status': data['isCredit'] == true ? l10n.completed : l10n.deducted,
           'isJob': isJob,
         };
       }).toList();
@@ -182,7 +182,7 @@ class _WithdrawalHistoryScreenState extends State<WithdrawalHistoryScreen> {
     final bool isCredit = transaction['isCredit'] ?? true;
     final bool isJob = transaction['isJob'] ?? false;
     final String status =
-        transaction['status'] ?? (isCredit ? l10n.processed : l10n.deducted);
+        transaction['status'] ?? (isCredit ? l10n.completed : l10n.deducted);
     Color statusColor = isCredit ? AppColors.successGreen : Colors.red;
 
     return InkWell(
@@ -198,14 +198,16 @@ class _WithdrawalHistoryScreenState extends State<WithdrawalHistoryScreen> {
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.bgStart,
-                borderRadius: BorderRadius.circular(10),
+                color: isCredit ? Colors.green.shade50 : Colors.red.shade50,
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
-                isCredit ? Icons.add_rounded : Icons.remove_rounded,
-                color: isCredit ? AppColors.successGreen : Colors.red,
+                isCredit
+                    ? Icons.check_circle_rounded
+                    : Icons.remove_circle_rounded,
+                color: isCredit ? Colors.green : Colors.red,
               ),
             ),
             const SizedBox(width: 16),

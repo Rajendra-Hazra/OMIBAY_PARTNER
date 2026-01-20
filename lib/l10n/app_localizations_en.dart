@@ -767,6 +767,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addUpiId => 'Add UPI ID';
 
   @override
+  String get noBankAccountFound => 'No bank account found';
+
+  @override
+  String get noUpiIdFound => 'No UPI ID found';
+
+  @override
   String get add => 'Add';
 
   @override
@@ -2162,6 +2168,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get complete15Jobs => 'Complete 15 jobs';
+
+  @override
+  String get jobsGoal => '15 Jobs Goal';
 
   @override
   String get earnExtraReward => 'Earn ₹500 extra';
