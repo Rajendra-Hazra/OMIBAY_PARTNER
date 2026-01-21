@@ -318,8 +318,8 @@ class SupportScreen extends StatelessWidget {
             crossAxisSpacing: 12,
             childAspectRatio:
                 (MediaQuery.of(context).size.width /
-                        (MediaQuery.of(context).size.height * 0.3))
-                    .clamp(1.3, 1.8),
+                        (MediaQuery.of(context).size.height * 0.4))
+                    .clamp(0.9, 1.2),
             children: [
               _ContactCard(
                 icon: Icons.chat_bubble_outline_rounded,
@@ -582,14 +582,14 @@ class _ContactCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-    
+
     // Responsive padding and sizing
-    final cardPadding = (screenWidth * 0.04).clamp(12.0, 20.0);
-    final iconSize = (screenWidth * 0.12).clamp(32.0, 48.0);
-    final titleFontSize = (screenWidth * 0.038).clamp(14.0, 17.0);
-    final subtitleFontSize = (screenWidth * 0.03).clamp(11.0, 13.0);
-    final spacing = (screenHeight * 0.01).clamp(6.0, 10.0);
-    
+    final cardPadding = (screenWidth * 0.035).clamp(10.0, 16.0);
+    final iconSize = (screenWidth * 0.11).clamp(30.0, 44.0);
+    final titleFontSize = (screenWidth * 0.036).clamp(13.0, 16.0);
+    final subtitleFontSize = (screenWidth * 0.029).clamp(10.5, 12.5);
+    final spacing = (screenHeight * 0.012).clamp(8.0, 12.0);
+
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -611,13 +611,14 @@ class _ContactCard extends StatelessWidget {
                   color: color,
                   fontWeight: FontWeight.bold,
                   fontSize: titleFontSize,
+                  height: 1.2,
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            SizedBox(height: spacing * 0.5),
+            SizedBox(height: spacing * 0.6),
             Flexible(
               child: Text(
                 subtitle,
@@ -625,6 +626,7 @@ class _ContactCard extends StatelessWidget {
                 style: TextStyle(
                   color: color.withValues(alpha: 0.7),
                   fontSize: subtitleFontSize,
+                  height: 1.3,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
