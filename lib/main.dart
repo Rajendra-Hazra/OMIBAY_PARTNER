@@ -73,6 +73,7 @@ class LocaleNotifier extends ChangeNotifier {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  /* Temporarily disabled for UI testing without google-services.json
   // Initialize Firebase (skip on web until FirebaseOptions are configured)
   if (!kIsWeb) {
     await Firebase.initializeApp();
@@ -83,6 +84,7 @@ void main() async {
     // Initialize notification service (mobile only)
     await NotificationService.instance.initialize(navKey: navigatorKey);
   }
+  */
 
   // Force English digits globally for Bengali locale to ensure numeric numbers
   // always stay in English as per user preference.

@@ -2134,13 +2134,17 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                AppLocalizations.of(context)!.customerDetailsAndSpecification,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.5,
+              Flexible(
+                child: Text(
+                  AppLocalizations.of(context)!.customerDetailsAndSpecification,
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: (screenWidth * 0.032).clamp(11.0, 13.0),
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -2165,11 +2169,13 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                     const SizedBox(height: 4),
                     Text(
                       customerName,
-                      style: const TextStyle(
-                        fontSize: 14,
+                      style: TextStyle(
+                        fontSize: (screenWidth * 0.037).clamp(13.0, 15.0),
                         color: AppColors.textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
@@ -2198,13 +2204,17 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                AppLocalizations.of(context)!.serviceLocation,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.5,
+              Flexible(
+                child: Text(
+                  AppLocalizations.of(context)!.serviceLocation,
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: (screenWidth * 0.032).clamp(11.0, 13.0),
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -2272,12 +2282,14 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                 Expanded(
                   child: Text(
                     location,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.textPrimary,
-                      fontSize: 14,
+                      fontSize: (screenWidth * 0.037).clamp(13.0, 15.0),
                       fontWeight: FontWeight.w600,
                       height: 1.5,
                     ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],

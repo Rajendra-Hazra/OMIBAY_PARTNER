@@ -580,10 +580,20 @@ class _ContactCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    
+    // Responsive padding and sizing
+    final cardPadding = (screenWidth * 0.04).clamp(12.0, 20.0);
+    final iconSize = (screenWidth * 0.12).clamp(32.0, 48.0);
+    final titleFontSize = (screenWidth * 0.038).clamp(14.0, 17.0);
+    final subtitleFontSize = (screenWidth * 0.03).clamp(11.0, 13.0);
+    final spacing = (screenHeight * 0.01).clamp(6.0, 10.0);
+    
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.all(fontSize),
+        padding: EdgeInsets.all(cardPadding),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(borderRadius * 0.8),
@@ -592,23 +602,32 @@ class _ContactCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: fontSize * 2),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.bold,
-                fontSize: fontSize,
+            Icon(icon, color: color, size: iconSize),
+            SizedBox(height: spacing),
+            Flexible(
+              child: Text(
+                title,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                  fontSize: titleFontSize,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: color.withValues(alpha: 0.7),
-                fontSize: fontSize * 0.7,
+            SizedBox(height: spacing * 0.5),
+            Flexible(
+              child: Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: color.withValues(alpha: 0.7),
+                  fontSize: subtitleFontSize,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
