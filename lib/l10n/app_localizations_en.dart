@@ -657,7 +657,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get videoMustBeBetween =>
-      'Video must be between 5 seconds and 1 minute';
+      'Video must be between 30 seconds and 1 minute';
 
   @override
   String get videoUploadedSuccessfully => 'Video uploaded successfully!';

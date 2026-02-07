@@ -217,7 +217,7 @@
   "selectVideoSource": "ভিডিও সোর্স নির্বাচন করুন",
   "files": "ফাইল",
   "videoPreview": "ভিডিও প্রিভিউ",
-  "videoMustBeBetween": "ভিডিও 5 সেকেন্ড থেকে 1 মিনিটের মধ্যে হতে হবে",
+  "videoMustBeBetween": "ভিডিও 30 সেকেন্ড থেকে 1 মিনিটের মধ্যে হতে হবে",
   "videoUploadedSuccessfully": "ভিডিও সফলভাবে আপলোড হয়েছে!",
   "workVerificationSaved": "কাজের যাচাইকরণের বিবরণ সফলভাবে সংরক্ষিত হয়েছে!",
   "serviceSubmittedForVerification": "সেবা যাচাইয়ের জন্য জমা দেওয়া হয়েছে! অনুমোদন হলে আমরা আপনাকে জানাব।",

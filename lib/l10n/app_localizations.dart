@@ -1331,7 +1331,7 @@ abstract class AppLocalizations {
   /// No description provided for @videoMustBeBetween.
   ///
   /// In en, this message translates to:
-  /// **'Video must be between 5 seconds and 1 minute'**
+  /// **'Video must be between 30 seconds and 1 minute'**
   String get videoMustBeBetween;
 
   /// No description provided for @videoUploadedSuccessfully.

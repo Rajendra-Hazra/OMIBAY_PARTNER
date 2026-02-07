@@ -1,0 +1,53 @@
+{
+    "project_info": {
+        "project_number": "446451633620",
+        "project_id": "omibay-41c77",
+        "storage_bucket": "omibay-41c77.firebasestorage.app"
+    },
+    "client": [
+        {
+            "client_info": {
+                "mobilesdk_app_id": "1:446451633620:android:4b301b11191b2a8d0dda41",
+                "android_client_info": {
+                    "package_name": "com.omibay.customer"
+                }
+            },
+            "oauth_client": [],
+            "api_key": [
+                {
+                    "current_key": "AIzaSyCa2KoQAiiYKSk0TLNNPllLcot_lr9IZqA"
+                }
+            ],
+            "services": {
+                "appinvite_service": {
+                    "other_platform_oauth_client": []
+                }
+            }
+        },
+        {
+            "client_info": {
+                "mobilesdk_app_id": "1:446451633620:android:9aff5570cebeb4200dda41",
+                "android_client_info": {
+                    "package_name": "com.omibay.partner"
+                }
+            },
+            "oauth_client": [
+                {
+                    "client_id": "696877816068-js08nml9tcggpk595nf5mv9gr6i77pvv.apps.googleusercontent.com",
+                    "client_type": 3
+                }
+            ],
+            "api_key": [
+                {
+                    "current_key": "AIzaSyCa2KoQAiiYKSk0TLNNPllLcot_lr9IZqA"
+                }
+            ],
+            "services": {
+                "appinvite_service": {
+                    "other_platform_oauth_client": []
+                }
+            }
+        }
+    ],
+    "configuration_version": "1"
+}

@@ -5,6 +5,8 @@ import '../../core/app_colors.dart';
 import '../../services/wallet_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/localization_helper.dart';
+import '../../repositories/order_repository.dart';
+import '../../core/network/api_endpoints.dart';
 
 class JobsListScreen extends StatefulWidget {
   const JobsListScreen({super.key});
@@ -20,11 +22,14 @@ class _JobsListScreenState extends State<JobsListScreen>
   String _searchQuery = '';
   List<Map<String, dynamic>> _activeJobs = [];
   List<Map<String, dynamic>> _completedJobs = [];
+  late OrderRepository _orderRepository;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _orderRepository = OrderRepositoryImpl(baseUrl: ApiEndpoints.baseUrl);
     _loadJobs();
     AppColors.jobUpdateNotifier.addListener(_loadJobs);
   }
@@ -44,40 +49,84 @@ class _JobsListScreenState extends State<JobsListScreen>
   }
 
   Future<void> _loadJobs() async {
-    await _loadActiveJob();
-    await _loadCompletedJobs();
-  }
+    if (_isLoading) return;
 
-  Future<void> _loadCompletedJobs() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final List<String> completedList =
-          prefs.getStringList('completed_jobs_list') ?? [];
-      setState(() {
-        _completedJobs = completedList
-            .map((item) => jsonDecode(item) as Map<String, dynamic>)
-            .where((data) {
-              final title = data['title']?.toString() ?? '';
-              return data['isJob'] == true ||
-                  title.startsWith('Job:') ||
-                  title.startsWith('কাজ:');
-            })
-            .toList();
-      });
+      // Fetch all partner orders from backend
+      // Fetch all partner orders from backend (including completed)
+      final allOrders = await _orderRepository.getAllPartnerOrders();
+
+      debugPrint('📋 Fetched ${allOrders.length} total orders for Jobs page');
+
+      if (mounted) {
+        setState(() {
+          // Active jobs: ALLOCATED, PARTNER_ON_WAY, PARTNER_ARRIVED, IN_PROGRESS, PAUSED
+          _activeJobs = allOrders.where((order) {
+            final status = order['status']?.toString() ?? '';
+            return status == 'ALLOCATED' ||
+                status == 'PARTNER_ON_WAY' ||
+                status == 'PARTNER_ARRIVED' ||
+                status == 'IN_PROGRESS' ||
+                status == 'PAUSED';
+          }).toList();
+
+          // Completed jobs: COMPLETED
+          _completedJobs = allOrders.where((order) {
+            final status = order['status']?.toString() ?? '';
+            return status == 'COMPLETED';
+          }).toList();
+
+          _isLoading = false;
+        });
+
+        debugPrint(
+          '✅ Active jobs: ${_activeJobs.length}, Completed: ${_completedJobs.length}',
+        );
+      }
     } catch (e) {
-      debugPrint('Error loading completed jobs: $e');
+      debugPrint('❌ Error loading jobs: $e');
+      // Fallback to local storage if API fails
+      await _loadFromLocalStorage();
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  Future<void> _loadActiveJob() async {
+  /// Fallback method to load from local storage
+  Future<void> _loadFromLocalStorage() async {
     try {
-      // Load from new multi-job list
       final jobs = await WalletService.getActiveJobs();
-      setState(() {
-        _activeJobs = jobs;
-      });
+      final prefs = await SharedPreferences.getInstance();
+      final List<String> completedList =
+          prefs.getStringList('completed_jobs_list') ?? [];
+
+      if (mounted) {
+        setState(() {
+          _activeJobs = jobs;
+          _completedJobs = completedList
+              .map((item) => jsonDecode(item) as Map<String, dynamic>)
+              .where((data) {
+                final title = data['title']?.toString() ?? '';
+                return data['isJob'] == true ||
+                    title.startsWith('Job:') ||
+                    title.startsWith('কাজ:');
+              })
+              .toList();
+        });
+        debugPrint(
+          '⚠️ Loaded from local storage (fallback): Active=${_activeJobs.length}, Completed=${_completedJobs.length}',
+        );
+      }
     } catch (e) {
-      debugPrint('Error loading active jobs: $e');
+      debugPrint('❌ Error loading from local storage: $e');
     }
   }
 
@@ -274,17 +323,29 @@ class _JobsListScreenState extends State<JobsListScreen>
       if (_searchQuery.isEmpty) return true;
 
       final query = _searchQuery.toLowerCase();
-      final id = (job['id'] ?? job['jobId'] ?? '').toString().toLowerCase();
+      // Support both API fields and legacy fields
+      final id =
+          (job['displayId'] ??
+                  job['orderId'] ??
+                  job['id'] ??
+                  job['jobId'] ??
+                  '')
+              .toString()
+              .toLowerCase();
+      final serviceName = (job['serviceName'] ?? '').toString().toLowerCase();
       final serviceKey = (job['serviceKey'] ?? '').toString();
       final service = (job['service'] ?? '').toString();
 
-      // Get localized service name for searching
-      final localizedService = LocalizationHelper.getLocalizedServiceName(
-        context,
-        serviceKey.isNotEmpty ? serviceKey : service,
-      ).toLowerCase();
+      // Get localized service name for searching (fallback for legacy data)
+      final localizedService = serviceKey.isNotEmpty || service.isNotEmpty
+          ? LocalizationHelper.getLocalizedServiceName(
+              context,
+              serviceKey.isNotEmpty ? serviceKey : service,
+            ).toLowerCase()
+          : '';
 
       return id.contains(query) ||
+          serviceName.contains(query) ||
           service.toLowerCase().contains(query) ||
           serviceKey.toLowerCase().contains(query) ||
           localizedService.contains(query);
@@ -370,12 +431,14 @@ class _JobsListScreenState extends State<JobsListScreen>
 
     final l10n = AppLocalizations.of(context)!;
 
-    // Helper to get localized service name
+    // Helper to get service name from API response
     String getServiceName() {
-      return LocalizationHelper.getLocalizedServiceName(
-        context,
-        data['serviceKey'] ?? data['service'],
-      );
+      // Use serviceName directly from API response if available
+      return data['serviceName']?.toString() ??
+          LocalizationHelper.getLocalizedServiceName(
+            context,
+            data['serviceKey'] ?? data['service'],
+          );
     }
 
     // Helper to get localized time type
@@ -388,21 +451,20 @@ class _JobsListScreenState extends State<JobsListScreen>
       return LocalizationHelper.getLocalizedEta(context, data);
     }
 
-    // Map legacy/transaction format to standard job format if needed
+    // Map API response format to job card format
     final Map<String, dynamic> jobData = {
       'service': getServiceName(),
-      'id': LocalizationHelper.convertBengaliToEnglish(
-        data['id'] ?? data['jobId'] ?? '#JOB',
-      ),
-      'price': data['price'] ?? data['jobPrice'] ?? '0',
-      'customer': LocalizationHelper.getLocalizedCustomerName(
-        context,
-        data['customer'],
-      ),
-      'location': LocalizationHelper.getLocalizedLocation(
-        context,
-        data['location'],
-      ),
+      'id': data['displayId'] ?? data['orderId'] ?? data['id'] ?? '#JOB',
+      'price': data['totalPrice'] ?? data['price'] ?? data['jobPrice'] ?? '0',
+      'customer':
+          data['customerName'] ??
+          LocalizationHelper.getLocalizedCustomerName(
+            context,
+            data['customer'],
+          ),
+      'location':
+          data['customerAddress'] ??
+          LocalizationHelper.getLocalizedLocation(context, data['location']),
       'timeType': getTimeType(),
       'distance':
           (data['distance'] != null &&

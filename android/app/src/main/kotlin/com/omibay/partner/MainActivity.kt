@@ -1,4 +1,4 @@
-package com.example.omibay_partner
+package com.omibay.partner
 
 import io.flutter.embedding.android.FlutterActivity
 

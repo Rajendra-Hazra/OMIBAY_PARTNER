@@ -12,6 +12,11 @@ import '../../core/app_colors.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/wallet_service.dart';
 import '../../core/localization_helper.dart';
+import '../../repositories/order_repository.dart';
+import '../../core/network/api_endpoints.dart';
+import '../../widgets/order_otp_dialog.dart';
+import '../../widgets/pause_order_dialog.dart';
+import '../../widgets/complete_order_dialog.dart';
 
 class JobDetailsScreen extends StatefulWidget {
   final Map<String, dynamic>? jobData;
@@ -27,6 +32,14 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
       -1; // -1: Accept, 0: On the way, 1: Arrived, 2: Started, 3: Complete
   bool _isPaused = false;
   bool _isLoaded = false;
+  late OrderRepository _orderRepository;
+  bool _isProcessing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _orderRepository = OrderRepositoryImpl(baseUrl: ApiEndpoints.baseUrl);
+  }
 
   @override
   void didChangeDependencies() {
@@ -43,13 +56,41 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     final data = widget.jobData ?? args;
     if (data == null) return;
 
+    // Determine step from status first
+    int initialStep = -1;
+    final status = data['status']?.toString() ?? '';
+
+    if (status == 'COMPLETED') {
+      initialStep = 3;
+    } else if (status == 'IN_PROGRESS' || status == 'PAUSED') {
+      initialStep = 2;
+    } else if (status == 'PARTNER_ARRIVED') {
+      initialStep = 1;
+    } else if (status == 'PARTNER_ON_WAY') {
+      initialStep = 0;
+    }
+
+    // Try to load from prefs, but if status is conflicting, prefer status
+    // Or just rely on status if it maps clearly
+
+    // For now, let's prioritize the status passed in argument if it indicates a later stage
+    // especially for COMPLETED
+
     final prefs = await SharedPreferences.getInstance();
     final String key = _getJobKey(data);
     final int savedStep = prefs.getInt(key) ?? -1;
 
+    // Use the max of saved and status-derived to be safe, or just status if it is explicit
+    int stepToUse = max(savedStep, initialStep);
+
+    // If status is explicitly COMPLETED, force step 3
+    if (status == 'COMPLETED') {
+      stepToUse = 3;
+    }
+
     if (mounted) {
       setState(() {
-        _currentStep = savedStep;
+        _currentStep = stepToUse;
       });
     }
   }
@@ -70,6 +111,478 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     final String customer = data['customerName'] ?? 'unknown';
     final String service = data['service'] ?? 'unknown';
     return 'job_step_${customer}_$service';
+  }
+
+  /// Helper to show toast messages
+  void _showToast(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<void> _launchMaps(double lat, double lng) async {
+    final googleMapsUrl = Uri.parse("google.navigation:q=$lat,$lng&mode=d");
+    final browserUrl = Uri.parse(
+      "https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving",
+    );
+
+    try {
+      if (await canLaunchUrl(googleMapsUrl)) {
+        await launchUrl(googleMapsUrl);
+      } else if (await canLaunchUrl(browserUrl)) {
+        await launchUrl(browserUrl);
+      } else {
+        throw 'Could not launch maps';
+      }
+    } catch (e) {
+      _showToast('Could not launch maps: $e', isError: true);
+    }
+  }
+
+  Future<void> _makePhoneCall(String? phoneNumber) async {
+    if (phoneNumber == null || phoneNumber.isEmpty) {
+      _showToast("Phone number not available", isError: true);
+      return;
+    }
+    final Uri launchUri = Uri(scheme: 'tel', path: phoneNumber);
+    if (await canLaunchUrl(launchUri)) {
+      await launchUrl(launchUri);
+    } else {
+      _showToast('Could not call $phoneNumber', isError: true);
+    }
+  }
+
+  /// Start Trip action
+  Future<void> _handleStartTrip(String orderId) async {
+    if (_isProcessing) return;
+
+    setState(() {
+      _isProcessing = true;
+    });
+
+    try {
+      await _orderRepository.markOnWay(orderId);
+      _showToast('Trip started!');
+      // Reload to get updated status
+      if (!mounted) return;
+      Navigator.pop(context);
+      Navigator.pushReplacementNamed(
+        context,
+        '/job-details',
+        arguments: {'orderId': orderId},
+      );
+    } catch (e) {
+      _showToast('Failed to start trip: $e', isError: true);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    }
+  }
+
+  /// I've Arrived action
+  Future<void> _handleArrived(String orderId) async {
+    if (_isProcessing) return;
+
+    setState(() {
+      _isProcessing = true;
+    });
+
+    try {
+      await _orderRepository.markArrived(orderId);
+      _showToast('Marked as arrived! Ask customer for arrival code.');
+      if (!mounted) return;
+      Navigator.pop(context);
+      Navigator.pushReplacementNamed(
+        context,
+        '/job-details',
+        arguments: {'orderId': orderId},
+      );
+    } catch (e) {
+      _showToast('Failed to mark arrived: $e', isError: true);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    }
+  }
+
+  /// Verify Arrival OTP
+  Future<void> _handleVerifyArrival(String orderId) async {
+    setState(() {
+      _isProcessing = true;
+    });
+
+    final verified = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => OrderOtpDialog(
+        orderId: orderId,
+        purpose: 'ARRIVAL',
+        onVerify: (id, otp) async {
+          debugPrint('🔑 Verifying OTP: $otp for order: $id');
+          try {
+            final result = await _orderRepository.verifyArrival(id, otp);
+            debugPrint('✅ Verification result: $result');
+            return result;
+          } catch (e) {
+            debugPrint('❌ Verification error: $e');
+            return false;
+          }
+        },
+      ),
+    );
+
+    setState(() {
+      _isProcessing = false;
+    });
+
+    if (verified == true) {
+      _showToast('Arrival verified! You can now start work.');
+      if (!mounted) return;
+      Navigator.pop(context);
+      Navigator.pushReplacementNamed(
+        context,
+        '/job-details',
+        arguments: {'orderId': orderId},
+      );
+    }
+  }
+
+  /// Pause Order
+  Future<void> _handlePause(String orderId) async {
+    setState(() {
+      _isProcessing = true;
+    });
+
+    final paused = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PauseOrderDialog(
+        orderId: orderId,
+        onPause: (id, reason) => _orderRepository.pauseOrder(id, reason),
+      ),
+    );
+
+    setState(() {
+      _isProcessing = false;
+    });
+
+    if (paused == true) {
+      _showToast('Order paused');
+      if (!mounted) return;
+      Navigator.pop(context);
+      Navigator.pushReplacementNamed(
+        context,
+        '/job-details',
+        arguments: {'orderId': orderId},
+      );
+    }
+  }
+
+  /// Resume Order
+  Future<void> _handleResume(String orderId) async {
+    setState(() {
+      _isProcessing = true;
+    });
+
+    final resumed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => OrderOtpDialog(
+        orderId: orderId,
+        purpose: 'RESUME',
+        onVerify: (id, otp) async {
+          debugPrint('🔑 Verifying Resume OTP: $otp for order: $id');
+          try {
+            final result = await _orderRepository.verifyResume(id, otp);
+            debugPrint('✅ Resume verification result: $result');
+            return result;
+          } catch (e) {
+            debugPrint('❌ Resume verification error: $e');
+            return false;
+          }
+        },
+      ),
+    );
+
+    setState(() {
+      _isProcessing = false;
+    });
+
+    if (resumed == true) {
+      _showToast('Order resumed!');
+      if (!mounted) return;
+      Navigator.pop(context);
+      Navigator.pushReplacementNamed(
+        context,
+        '/job-details',
+        arguments: {'orderId': orderId},
+      );
+    }
+  }
+
+  /// Complete Order
+  Future<void> _handleComplete(String orderId) async {
+    setState(() {
+      _isProcessing = true;
+    });
+
+    final completed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => CompleteOrderDialog(
+        orderId: orderId,
+        onUploadProof: (id, imagePath) =>
+            _orderRepository.uploadOrderProof(id, imagePath),
+        onComplete: (id) => _orderRepository.completeOrder(id),
+      ),
+    );
+
+    setState(() {
+      _isProcessing = false;
+    });
+
+    if (completed == true) {
+      _showToast('Order completed successfully!');
+      if (!mounted) return;
+      Navigator.pop(context);
+      // Notify listeners to refresh job lists
+      // Note: Using a workaround since we can't directly call notifyListeners
+      Navigator.pushReplacementNamed(context, '/');
+    }
+  }
+
+  /// Build status-based action buttons (mirroring partner dashboard)
+  Widget _buildActionButtons(Map<String, dynamic> jobData, double screenWidth) {
+    final status = jobData['status']?.toString() ?? '';
+    final orderId = jobData['orderId'] ?? jobData['id'];
+
+    if (orderId == null || status.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          // ALLOCATED → Start Trip
+          if (status == 'ALLOCATED')
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _isProcessing
+                    ? null
+                    : () => _handleStartTrip(orderId),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue[700],
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 2,
+                ),
+                child: _isProcessing
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                    : const Text(
+                        'Start Trip',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+              ),
+            ),
+
+          // PARTNER_ON_WAY → I've Arrived
+          if (status == 'PARTNER_ON_WAY')
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _isProcessing ? null : () => _handleArrived(orderId),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange[700],
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 2,
+                ),
+                child: _isProcessing
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                    : const Text(
+                        "I've Arrived",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+              ),
+            ),
+
+          // PARTNER_ARRIVED → Enter Arrival OTP
+          if (status == 'PARTNER_ARRIVED')
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _isProcessing
+                    ? null
+                    : () => _handleVerifyArrival(orderId),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.successGreen,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 2,
+                ),
+                child: _isProcessing
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                    : const Text(
+                        'Enter Arrival OTP',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+              ),
+            ),
+
+          // IN_PROGRESS → Pause + Complete Job
+          if (status == 'IN_PROGRESS')
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: _isProcessing
+                          ? null
+                          : () => _handlePause(orderId),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey[700],
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                      ),
+                      child: const Text(
+                        'Pause',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SizedBox(
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: _isProcessing
+                          ? null
+                          : () => _handleComplete(orderId),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.successGreen,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                      ),
+                      child: const Text(
+                        'Complete Job',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+          // PAUSED → Resume (Enter OTP)
+          if (status == 'PAUSED')
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _isProcessing ? null : () => _handleResume(orderId),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue[700],
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 2,
+                ),
+                child: _isProcessing
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                    : const Text(
+                        'Resume (Enter OTP)',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -93,12 +606,14 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
       );
     }
 
-    // Helper to get localized service name
+    // Helper to get service name from API
     String getServiceName() {
-      return LocalizationHelper.getLocalizedServiceName(
-        context,
-        rawData['serviceKey'] ?? rawData['service'],
-      );
+      // Use serviceName directly from API if available, otherwise fallback to legacy fields
+      return rawData['serviceName']?.toString() ??
+          LocalizationHelper.getLocalizedServiceName(
+            context,
+            rawData['serviceKey'] ?? rawData['service'],
+          );
     }
 
     // Helper to get localized time type
@@ -125,14 +640,17 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
       'timeType': getTimeType(),
       'eta': getEta(),
       'paymentType': getPaymentType(),
-      'customerName': LocalizationHelper.getLocalizedCustomerName(
-        context,
-        rawData['customerName'] ?? rawData['customer'],
-      ),
-      'location': LocalizationHelper.getLocalizedLocation(
-        context,
-        rawData['location'],
-      ),
+      'customerName':
+          rawData['customerName'] ??
+          LocalizationHelper.getLocalizedCustomerName(
+            context,
+            rawData['customer'],
+          ),
+      'location':
+          rawData['customerAddress'] ??
+          LocalizationHelper.getLocalizedLocation(context, rawData['location']),
+      'price': rawData['totalPrice'] ?? rawData['price'] ?? '0',
+      'id': rawData['displayId'] ?? rawData['orderId'] ?? rawData['id'],
     };
 
     return Scaffold(
@@ -168,6 +686,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                     ),
                     if (_currentStep == 3)
                       _buildReviewSection(
+                        effectiveJobData,
                         paddingScale,
                         bodyFontSize,
                         smallFontSize,
@@ -1878,10 +2397,19 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   }
 
   Widget _buildReviewSection(
+    Map<String, dynamic>? jobData,
     double paddingScale,
     double bodyFontSize,
     double smallFontSize,
   ) {
+    if (jobData == null || jobData['review'] == null) {
+      return const SizedBox.shrink();
+    }
+
+    final review = jobData['review'];
+    final double rating = (review['rating'] ?? 0.0).toDouble();
+    final String comment = review['comment'] ?? '';
+
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalMargin = screenWidth * 0.04; // 4% of screen width
     final padding = screenWidth * 0.05; // 5% of screen width
@@ -1930,15 +2458,17 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
             children: [
               ...List.generate(5, (index) {
                 return Icon(
-                  index < 5 ? Icons.star_rounded : Icons.star_outline_rounded,
+                  index < rating.round()
+                      ? Icons.star_rounded
+                      : Icons.star_outline_rounded,
                   color: Colors.amber,
                   size: 24,
                 );
               }),
               const SizedBox(width: 8),
-              const Text(
-                '5.0',
-                style: TextStyle(
+              Text(
+                rating.toStringAsFixed(1),
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
@@ -1946,16 +2476,18 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            AppLocalizations.of(context)!.excellentServiceMock,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-              fontStyle: FontStyle.italic,
-              height: 1.5,
+          if (comment.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              comment,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+                fontStyle: FontStyle.italic,
+                height: 1.5,
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -2106,6 +2638,14 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     final mapHeight = screenHeight * 0.18; // 18% of screen height
     final buttonHeight = screenHeight * 0.06; // 6% of screen height
 
+    final customerLat = data?['customerLatitude'] != null
+        ? (data!['customerLatitude'] as num).toDouble()
+        : null;
+    final customerLng = data?['customerLongitude'] != null
+        ? (data!['customerLongitude'] as num).toDouble()
+        : null;
+    final customerPhone = data?['customerPhone'] as String?;
+
     return Container(
       margin: EdgeInsets.symmetric(horizontal: horizontalMargin, vertical: 12),
       padding: EdgeInsets.all(padding),
@@ -2180,15 +2720,123 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                   ],
                 ),
               ),
-              Text(
-                '₹$price',
-                style: TextStyle(
-                  fontSize: priceFontSize.clamp(18.0, 22.0),
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.primaryOrangeStart,
-                ),
-              ),
             ],
+          ),
+          const SizedBox(height: 16),
+
+          // Price Breakdown
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Column(
+              children: [
+                // Service Charge
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Service Price',
+                      style: TextStyle(
+                        fontSize: (screenWidth * 0.035).clamp(13.0, 15.0),
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    Text(
+                      '₹${data?['visitingCharge'] ?? data?['price'] ?? '0'}',
+                      style: TextStyle(
+                        fontSize: (screenWidth * 0.035).clamp(13.0, 15.0),
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Platform Fee (if > 0)
+                if ((data?['platformFee'] as num?) != null &&
+                    (data!['platformFee'] as num) > 0) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Platform Fee',
+                        style: TextStyle(
+                          fontSize: (screenWidth * 0.035).clamp(13.0, 15.0),
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      Text(
+                        '₹${data!['platformFee']}',
+                        style: TextStyle(
+                          fontSize: (screenWidth * 0.035).clamp(13.0, 15.0),
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+
+                // Tip (if > 0)
+                if ((data?['tip'] as num?) != null &&
+                    (data!['tip'] as num) > 0) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Tip',
+                        style: TextStyle(
+                          fontSize: (screenWidth * 0.035).clamp(13.0, 15.0),
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      Text(
+                        '₹${data!['tip']}',
+                        style: TextStyle(
+                          fontSize: (screenWidth * 0.035).clamp(13.0, 15.0),
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.successGreen,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8.0),
+                  child: Divider(height: 1, color: Color(0xFFE2E8F0)),
+                ),
+
+                // Total Collectible
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Total Collectible',
+                      style: TextStyle(
+                        fontSize: (screenWidth * 0.038).clamp(14.0, 16.0),
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      '₹${data?['totalPrice'] ?? data?['price'] ?? '0'}',
+                      style: TextStyle(
+                        fontSize: (screenWidth * 0.042).clamp(16.0, 18.0),
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.primaryOrangeStart,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 24),
           const Divider(height: 1, color: Color(0xFFF1F5F9)),
@@ -2296,7 +2944,13 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          if (_currentStep != 3)
+
+          // Status-based Action Buttons (mirroring partner dashboard)
+          _buildActionButtons(data ?? {}, screenWidth),
+
+          const SizedBox(height: 16),
+          if (_currentStep !=
+              3) // Keep existing condition or remove if buttons needed for completed jobs too
             Row(
               children: [
                 Expanded(
@@ -2314,17 +2968,21 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                     ),
                     child: ElevatedButton.icon(
                       onPressed: () async {
-                        final String encodedLocation = Uri.encodeComponent(
-                          location,
-                        );
-                        final Uri googleMapsUrl = Uri.parse(
-                          'https://www.google.com/maps/search/?api=1&query=$encodedLocation',
-                        );
-                        if (await canLaunchUrl(googleMapsUrl)) {
-                          await launchUrl(
-                            googleMapsUrl,
-                            mode: LaunchMode.externalApplication,
+                        if (customerLat != null && customerLng != null) {
+                          await _launchMaps(customerLat, customerLng);
+                        } else {
+                          final String encodedLocation = Uri.encodeComponent(
+                            location,
                           );
+                          final Uri googleMapsUrl = Uri.parse(
+                            'https://www.google.com/maps/search/?api=1&query=$encodedLocation',
+                          );
+                          if (await canLaunchUrl(googleMapsUrl)) {
+                            await launchUrl(
+                              googleMapsUrl,
+                              mode: LaunchMode.externalApplication,
+                            );
+                          }
                         }
                       },
                       icon: const Icon(
@@ -2365,19 +3023,14 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                       ],
                     ),
                     child: ElevatedButton.icon(
-                      onPressed: () async {
-                        final Uri telUrl = Uri.parse('tel:+918016867006');
-                        if (await canLaunchUrl(telUrl)) {
-                          await launchUrl(telUrl);
-                        }
-                      },
+                      onPressed: () => _makePhoneCall(customerPhone),
                       icon: const Icon(
-                        Icons.phone_outlined,
+                        Icons.phone_rounded,
                         color: Colors.white,
                         size: 20,
                       ),
                       label: Text(
-                        AppLocalizations.of(context)!.callNow,
+                        AppLocalizations.of(context)!.callCustomer,
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,

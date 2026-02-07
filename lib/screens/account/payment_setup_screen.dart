@@ -5,6 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/app_colors.dart';
 import '../../core/localization_helper.dart';
+import '../../repositories/wallet_repository.dart';
+import '../../core/network/api_client.dart';
+import '../../core/network/api_endpoints.dart';
 
 class PaymentSetupScreen extends StatefulWidget {
   const PaymentSetupScreen({super.key});
@@ -21,6 +24,8 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
   final _ifscController = TextEditingController();
   final _bankNameController = TextEditingController();
 
+  late final WalletRepository _walletRepository;
+
   // UPI Form Controller
   final _upiIdController = TextEditingController();
   final _confirmUpiIdController = TextEditingController();
@@ -35,33 +40,71 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
   @override
   void initState() {
     super.initState();
+    _walletRepository = WalletRepositoryImpl(
+      apiClient: ApiClient(baseUrl: ApiEndpoints.baseApiUrl),
+    );
     _fetchPaymentDetails();
   }
 
   Future<void> _fetchPaymentDetails() async {
     final prefs = await SharedPreferences.getInstance();
 
-    setState(() {
-      final String bankJson = prefs.getString('saved_bank_accounts') ?? '[]';
-      final String upiJson = prefs.getString('saved_upi_ids') ?? '[]';
+    try {
+      final bankAccounts = await _walletRepository.getBankAccounts();
+      final mappedBankAccounts = bankAccounts.map((e) {
+        return {
+          'id': e['id'],
+          'bank_account_number': e['accountNumber'],
+          'bank_name': e['bankName'],
+          'bank_ifsc': e['ifscCode'],
+          'bank_holder_name': e['accountHolderName'],
+          'isDefault': e['isDefault'] ?? false,
+        };
+      }).toList();
 
-      _bankAccounts = List<Map<String, dynamic>>.from(jsonDecode(bankJson));
-      _upiIds = List<String>.from(jsonDecode(upiJson));
-      _defaultBankId = prefs.getString('default_bank_id') ?? '';
-      _defaultUpiId = prefs.getString('default_upi_id') ?? '';
+      if (mounted) {
+        setState(() {
+          _bankAccounts = mappedBankAccounts;
+          final String upiJson = prefs.getString('saved_upi_ids') ?? '[]';
+          _upiIds = List<String>.from(jsonDecode(upiJson));
 
-      // Auto-set defaults if only one exists and none is set
-      if (_defaultBankId.isEmpty && _bankAccounts.length == 1) {
-        _defaultBankId = _bankAccounts[0]['bank_account_number'];
-        prefs.setString('default_bank_id', _defaultBankId);
+          _defaultUpiId = prefs.getString('default_upi_id') ?? '';
+
+          // Set default bank if backend says so
+          final defaultBank = _bankAccounts.firstWhere(
+            (element) => element['isDefault'] == true,
+            orElse: () => {},
+          );
+          if (defaultBank.isNotEmpty) {
+            _defaultBankId = defaultBank['bank_account_number'];
+            prefs.setString('default_bank_id', _defaultBankId);
+          } else {
+            _defaultBankId = prefs.getString('default_bank_id') ?? '';
+          }
+
+          // Auto-set defaults if only one exists and none is set
+          if (_defaultBankId.isEmpty && _bankAccounts.length == 1) {
+            _defaultBankId = _bankAccounts[0]['bank_account_number'];
+            prefs.setString('default_bank_id', _defaultBankId);
+          }
+          if (_defaultUpiId.isEmpty && _upiIds.length == 1) {
+            _defaultUpiId = _upiIds[0];
+            prefs.setString('default_upi_id', _defaultUpiId);
+          }
+          _isLoading = false;
+        });
       }
-      if (_defaultUpiId.isEmpty && _upiIds.length == 1) {
-        _defaultUpiId = _upiIds[0];
-        prefs.setString('default_upi_id', _defaultUpiId);
+    } catch (e) {
+      debugPrint('Error fetching bank accounts: $e');
+      if (mounted) {
+        setState(() {
+          final String upiJson = prefs.getString('saved_upi_ids') ?? '[]';
+          _upiIds = List<String>.from(jsonDecode(upiJson));
+          _defaultUpiId = prefs.getString('default_upi_id') ?? '';
+          _isLoading = false;
+        });
       }
-
-      _isLoading = false;
-    });
+    }
   }
 
   Future<void> _setDefaultMethod(String id, String type) async {
@@ -126,11 +169,28 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
 
     final prefs = await SharedPreferences.getInstance();
     if (type == 'bank') {
-      _bankAccounts.removeWhere((item) => item['bank_account_number'] == id);
-      await prefs.setString('saved_bank_accounts', jsonEncode(_bankAccounts));
-      if (_defaultBankId == id) {
-        await prefs.remove('default_bank_id');
-        _defaultBankId = '';
+      try {
+        // id passed here is actually the bankId for API
+        // But UI passes 'accNo' currently. We need to find the ID.
+        // Actually, let's look at how we call this.
+        // We will update the call site to pass the ID.
+        await _walletRepository.deleteBankAccount(id);
+
+        if (_defaultBankId == id) {
+          // This check might be tricky if we use ID vs Account Number.
+          // Currently logic uses account number for default.
+          // Ideally we switch to ID for default too, but keeping minimal changes:
+          // If we delete, we just refresh properly.
+          await prefs.remove('default_bank_id');
+          _defaultBankId = '';
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Failed to delete: $e')));
+        }
+        return;
       }
     } else {
       _upiIds.removeWhere((item) => item == id);
@@ -278,8 +338,10 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                                         ),
                                       ),
                                       isDefault: _defaultBankId == accNo,
-                                      onDelete: () =>
-                                          _deletePaymentMethod(accNo, 'bank'),
+                                      onDelete: () => _deletePaymentMethod(
+                                        bank['id'],
+                                        'bank',
+                                      ),
                                       onSetDefault: () =>
                                           _setDefaultMethod(accNo, 'bank'),
                                       bodyFontSize: bodyFontSize,
@@ -849,31 +911,33 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                         );
                         return;
                       }
-                      final prefs = await SharedPreferences.getInstance();
 
-                      // Add to list
-                      final newBank = {
-                        'bank_holder_name': _holderNameController.text,
-                        'bank_account_number': _accountNumberController.text,
-                        'bank_ifsc': _ifscController.text,
-                        'bank_name': _bankNameController.text,
-                      };
+                      try {
+                        await _walletRepository.addBankAccount({
+                          'accountNumber': _accountNumberController.text,
+                          'ifscCode': _ifscController.text,
+                          'accountHolderName': _holderNameController.text,
+                          'bankName': _bankNameController.text,
+                          'isDefault':
+                              _bankAccounts.isEmpty, // First one is default
+                        });
 
-                      _bankAccounts.add(newBank);
-                      await prefs.setString(
-                        'saved_bank_accounts',
-                        jsonEncode(_bankAccounts),
-                      );
+                        // Clear fields
+                        _holderNameController.clear();
+                        _accountNumberController.clear();
+                        _confirmAccountNumberController.clear();
+                        _ifscController.clear();
+                        _bankNameController.clear();
 
-                      // Clear fields
-                      _holderNameController.clear();
-                      _accountNumberController.clear();
-                      _confirmAccountNumberController.clear();
-                      _ifscController.clear();
-                      _bankNameController.clear();
-
-                      if (context.mounted) Navigator.pop(context);
-                      _fetchPaymentDetails();
+                        if (context.mounted) Navigator.pop(context);
+                        _fetchPaymentDetails();
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed to save: $e')),
+                          );
+                        }
+                      }
                     },
                     child: Text(
                       l10n.saveBankDetails,

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,49 +8,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/app_colors.dart';
-import '../../core/localization_helper.dart';
-
-// Custom formatter for PAN number (ABCDE1234F)
-class PanNumberFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    // Convert to uppercase
-    final text = LocalizationHelper.convertBengaliToEnglish(
-      newValue.text,
-    ).toUpperCase();
-    if (text.length > 10) {
-      return oldValue;
-    }
-
-    // Validate PAN format: 5 letters + 4 digits + 1 letter
-    for (int i = 0; i < text.length; i++) {
-      if (i < 5) {
-        // First 5 characters must be letters
-        if (!RegExp(r'[A-Z]').hasMatch(text[i])) {
-          return oldValue;
-        }
-      } else if (i < 9) {
-        // Next 4 characters must be digits
-        if (!RegExp(r'[0-9]').hasMatch(text[i])) {
-          return oldValue;
-        }
-      } else {
-        // Last character must be letter
-        if (!RegExp(r'[A-Z]').hasMatch(text[i])) {
-          return oldValue;
-        }
-      }
-    }
-
-    return TextEditingValue(
-      text: text,
-      selection: TextSelection.collapsed(offset: text.length),
-    );
-  }
-}
+import '../../core/network/api_client.dart';
+import '../../core/network/api_endpoints.dart';
+import '../../repositories/partner_document_repository.dart';
 
 class PanVerificationScreen extends StatefulWidget {
   const PanVerificationScreen({super.key});
@@ -63,16 +22,14 @@ class PanVerificationScreen extends StatefulWidget {
 class _PanVerificationScreenState extends State<PanVerificationScreen> {
   final ImagePicker _picker = ImagePicker();
   String? _frontPath;
-  String? _backPath;
   bool _isLoading = false;
   bool _hideHelp = false;
   bool _isVerified = false;
 
-  // Form controllers
-  final TextEditingController _panController = TextEditingController();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _dobController = TextEditingController();
-  DateTime? _selectedDate;
+  final PartnerDocumentRepository _documentRepository =
+      PartnerDocumentRepositoryImpl(
+        apiClient: ApiClient(baseUrl: ApiEndpoints.baseUrl),
+      );
 
   @override
   void initState() {
@@ -93,9 +50,6 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
 
   @override
   void dispose() {
-    _panController.dispose();
-    _nameController.dispose();
-    _dobController.dispose();
     super.dispose();
   }
 
@@ -104,11 +58,7 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
       final prefs = await SharedPreferences.getInstance();
       setState(() {
         _isVerified = prefs.getString('status_pan') == 'verified';
-        _panController.text = prefs.getString('pan_number') ?? '';
-        _nameController.text = prefs.getString('pan_name') ?? '';
-        _dobController.text = prefs.getString('pan_dob') ?? '';
         _frontPath = prefs.getString('pan_front_path');
-        _backPath = prefs.getString('pan_back_path');
       });
     } catch (e) {
       debugPrint('Error loading PAN data: $e');
@@ -119,15 +69,17 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
     setState(() => _isLoading = true);
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('pan_number', _panController.text);
-      await prefs.setString('pan_name', _nameController.text);
-      await prefs.setString('pan_dob', _dobController.text);
+      // 1. Upload front side
       if (_frontPath != null) {
+        await _documentRepository.uploadDocument(
+          documentType: 'ID_PROOF', // Or PAN_CARD if added to backend enum
+          filePath: _frontPath!,
+          side: 'FRONT',
+        );
         await prefs.setString('pan_front_path', _frontPath!);
       }
-      if (_backPath != null) {
-        await prefs.setString('pan_back_path', _backPath!);
-      }
+
+      await prefs.setBool('pan_verified', true);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -151,44 +103,10 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
   }
 
   bool get _isFormValid {
-    return _panController.text.length == 10 &&
-        _nameController.text.isNotEmpty &&
-        _dobController.text.isNotEmpty &&
-        _frontPath != null &&
-        _backPath != null;
+    return _frontPath != null;
   }
 
-  Future<void> _selectDate() async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate ?? DateTime(2000),
-      firstDate: DateTime(1950),
-      lastDate: DateTime.now(),
-      locale: const Locale('en', 'US'),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primaryOrangeStart,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: AppColors.textPrimary,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-        _dobController.text =
-            '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
-      });
-    }
-  }
-
-  Future<void> _pickImage(bool isFront) async {
+  Future<void> _pickImage() async {
     final screenWidth = MediaQuery.of(context).size.width;
     final fontSize = (screenWidth * 0.048).clamp(17.0, 20.0);
     final spacing = (screenWidth * 0.064).clamp(24.0, 28.0);
@@ -206,9 +124,7 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              isFront
-                  ? AppLocalizations.of(context)!.frontSidePhoto
-                  : AppLocalizations.of(context)!.backSidePhoto,
+              AppLocalizations.of(context)!.frontSidePhoto,
               style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: spacing),
@@ -220,7 +136,7 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
                   label: AppLocalizations.of(context)!.camera,
                   onTap: () {
                     Navigator.pop(context);
-                    _handlePermissionAndPickImage(isFront, ImageSource.camera);
+                    _handlePermissionAndPickImage(ImageSource.camera);
                   },
                 ),
                 _buildSourceOption(
@@ -228,7 +144,7 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
                   label: AppLocalizations.of(context)!.gallery,
                   onTap: () {
                     Navigator.pop(context);
-                    _handlePermissionAndPickImage(isFront, ImageSource.gallery);
+                    _handlePermissionAndPickImage(ImageSource.gallery);
                   },
                 ),
               ],
@@ -240,10 +156,7 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
     );
   }
 
-  Future<void> _handlePermissionAndPickImage(
-    bool isFront,
-    ImageSource source,
-  ) async {
+  Future<void> _handlePermissionAndPickImage(ImageSource source) async {
     if (source == ImageSource.camera) {
       if (kIsWeb) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -275,21 +188,19 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
         // For gallery/photos access on mobile
         PermissionStatus status;
         if (Platform.isAndroid) {
-          status = await Permission.photos.status;
-          if (status.isDenied) {
+          // For Android 13+ (SDK 33), we need Permission.photos
+          // For older versions, we need Permission.storage
+          if (await Permission.photos.isGranted ||
+              await Permission.storage.isGranted) {
+            status = PermissionStatus.granted;
+          } else {
             status = await Permission.photos.request();
-          }
-          if (status.isRestricted || status.isLimited) {
-            status = await Permission.storage.status;
-            if (status.isDenied) {
+            if (status.isDenied || status.isPermanentlyDenied) {
               status = await Permission.storage.request();
             }
           }
         } else {
-          status = await Permission.photos.status;
-          if (status.isDenied) {
-            status = await Permission.photos.request();
-          }
+          status = await Permission.photos.request();
         }
 
         if (!status.isGranted && !status.isLimited) {
@@ -317,11 +228,7 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
       );
       if (image != null) {
         setState(() {
-          if (isFront) {
-            _frontPath = image.path;
-          } else {
-            _backPath = image.path;
-          }
+          _frontPath = image.path;
         });
       }
     } catch (e) {
@@ -868,21 +775,7 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Section 1: Enter PAN Details
-                      _buildPanDetailsSection(
-                        context,
-                        screenWidth,
-                        cardPadding,
-                        spacing,
-                        titleFontSize,
-                        subtitleFontSize,
-                        bodyFontSize,
-                        iconSize,
-                        borderRadius,
-                      ),
-                      SizedBox(height: spacing),
-
-                      // Section 2: Upload Documents
+                      // Section: Upload PAN Card
                       _buildUploadDocumentsSection(
                         context,
                         screenWidth,
@@ -946,137 +839,6 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  // Section 1: Enter PAN Details
-  Widget _buildPanDetailsSection(
-    BuildContext context,
-    double screenWidth,
-    double cardPadding,
-    double spacing,
-    double titleFontSize,
-    double subtitleFontSize,
-    double bodyFontSize,
-    double iconSize,
-    double borderRadius,
-  ) {
-    return Container(
-      width: double.infinity,
-      constraints: BoxConstraints(
-        maxWidth: screenWidth > 600 ? 600 : double.infinity,
-      ),
-      padding: EdgeInsets.all(cardPadding),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(borderRadius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(cardPadding * 0.5),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryOrangeStart.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(borderRadius * 0.625),
-                ),
-                child: Icon(
-                  Icons.credit_card,
-                  color: AppColors.primaryOrangeStart,
-                  size: iconSize * 1.1,
-                ),
-              ),
-              SizedBox(width: spacing * 0.6),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppLocalizations.of(context)!.enterPanDetails,
-                      style: TextStyle(
-                        fontSize: titleFontSize,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    SizedBox(height: spacing * 0.1),
-                    Text(
-                      AppLocalizations.of(context)!.fillPanInfo,
-                      style: TextStyle(
-                        fontSize: subtitleFontSize,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: spacing),
-
-          // PAN Number Field
-          _buildTextField(
-            context: context,
-            label: AppLocalizations.of(context)!.panNumber,
-            hint: 'ABCDE1234F',
-            controller: _panController,
-            keyboardType: TextInputType.text,
-            textCapitalization: TextCapitalization.characters,
-            inputFormatters: [
-              EnglishDigitFormatter(),
-              PanNumberFormatter(),
-              LengthLimitingTextInputFormatter(10),
-            ],
-            prefixIcon: Icons.badge_outlined,
-            bodyFontSize: bodyFontSize,
-            subtitleFontSize: subtitleFontSize,
-            iconSize: iconSize,
-            borderRadius: borderRadius,
-            spacing: spacing,
-          ),
-          SizedBox(height: spacing * 0.8),
-
-          // Name as per PAN
-          _buildTextField(
-            context: context,
-            label: AppLocalizations.of(context)!.fullNameAsPerPan,
-            hint: AppLocalizations.of(context)!.enterNameAsOnPan,
-            controller: _nameController,
-            keyboardType: TextInputType.name,
-            textCapitalization: TextCapitalization.words,
-            prefixIcon: Icons.person_outline,
-            bodyFontSize: bodyFontSize,
-            subtitleFontSize: subtitleFontSize,
-            iconSize: iconSize,
-            borderRadius: borderRadius,
-            spacing: spacing,
-          ),
-          SizedBox(height: spacing * 0.8),
-
-          // Date of Birth
-          _buildDateField(
-            context: context,
-            label: AppLocalizations.of(context)!.dateOfBirth,
-            hint: 'DD/MM/YYYY',
-            controller: _dobController,
-            onTap: _selectDate,
-            bodyFontSize: bodyFontSize,
-            subtitleFontSize: subtitleFontSize,
-            iconSize: iconSize,
-            borderRadius: borderRadius,
-            spacing: spacing,
-          ),
-        ],
       ),
     );
   }
@@ -1170,27 +932,11 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
           ),
           SizedBox(height: spacing),
 
-          // Front Side Upload
           _buildUploadCard(
             context: context,
             title: AppLocalizations.of(context)!.frontSide,
             imagePath: _frontPath,
-            onTap: () => _pickImage(true),
-            screenWidth: screenWidth,
-            bodyFontSize: bodyFontSize,
-            subtitleFontSize: subtitleFontSize,
-            iconSize: iconSize,
-            borderRadius: borderRadius,
-            spacing: spacing,
-          ),
-          SizedBox(height: spacing * 0.6),
-
-          // Back Side Upload
-          _buildUploadCard(
-            context: context,
-            title: AppLocalizations.of(context)!.backSide,
-            imagePath: _backPath,
-            onTap: () => _pickImage(false),
+            onTap: _pickImage,
             screenWidth: screenWidth,
             bodyFontSize: bodyFontSize,
             subtitleFontSize: subtitleFontSize,
@@ -1200,152 +946,6 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildTextField({
-    required BuildContext context,
-    required String label,
-    required String hint,
-    required TextEditingController controller,
-    required double bodyFontSize,
-    required double subtitleFontSize,
-    required double iconSize,
-    required double borderRadius,
-    required double spacing,
-    TextInputType keyboardType = TextInputType.text,
-    TextCapitalization textCapitalization = TextCapitalization.none,
-    List<TextInputFormatter>? inputFormatters,
-    IconData? prefixIcon,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: bodyFontSize,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        SizedBox(height: spacing * 0.4),
-        TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          textCapitalization: textCapitalization,
-          inputFormatters: inputFormatters,
-          onChanged: (_) => setState(() {}),
-          enabled: !_isVerified,
-          style: TextStyle(fontSize: bodyFontSize),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(
-              color: Colors.grey[400],
-              fontSize: subtitleFontSize,
-            ),
-            prefixIcon: prefixIcon != null
-                ? Icon(prefixIcon, color: Colors.grey[500], size: iconSize)
-                : null,
-            filled: true,
-            fillColor: Colors.grey[50],
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: spacing * 0.8,
-              vertical: spacing * 0.7,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(borderRadius * 0.75),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(borderRadius * 0.75),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(borderRadius * 0.75),
-              borderSide: const BorderSide(
-                color: AppColors.primaryOrangeStart,
-                width: 1.5,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDateField({
-    required BuildContext context,
-    required String label,
-    required String hint,
-    required TextEditingController controller,
-    required VoidCallback onTap,
-    required double bodyFontSize,
-    required double subtitleFontSize,
-    required double iconSize,
-    required double borderRadius,
-    required double spacing,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: bodyFontSize,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        SizedBox(height: spacing * 0.4),
-        GestureDetector(
-          onTap: _isVerified ? null : onTap,
-          child: AbsorbPointer(
-            child: TextField(
-              controller: controller,
-              style: TextStyle(fontSize: bodyFontSize),
-              decoration: InputDecoration(
-                hintText: hint,
-                hintStyle: TextStyle(
-                  color: Colors.grey[400],
-                  fontSize: subtitleFontSize,
-                ),
-                prefixIcon: Icon(
-                  Icons.calendar_today_outlined,
-                  color: Colors.grey[500],
-                  size: iconSize,
-                ),
-                suffixIcon: Icon(
-                  Icons.arrow_drop_down,
-                  color: Colors.grey[500],
-                  size: iconSize * 1.2,
-                ),
-                filled: true,
-                fillColor: _isVerified ? Colors.grey[100] : Colors.grey[50],
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: spacing * 0.8,
-                  vertical: spacing * 0.7,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(borderRadius * 0.75),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(borderRadius * 0.75),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(borderRadius * 0.75),
-                  borderSide: const BorderSide(
-                    color: AppColors.primaryOrangeStart,
-                    width: 1.5,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 

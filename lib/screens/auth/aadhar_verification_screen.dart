@@ -9,36 +9,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import '../../core/app_colors.dart';
 import '../../l10n/app_localizations.dart';
-import '../../core/localization_helper.dart';
-
-// Custom formatter for Aadhar number (XXXX XXXX XXXX)
-class AadharNumberFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final text = LocalizationHelper.convertBengaliToEnglish(
-      newValue.text,
-    ).replaceAll(' ', '');
-    if (text.length > 12) {
-      return oldValue;
-    }
-
-    final buffer = StringBuffer();
-    for (int i = 0; i < text.length; i++) {
-      buffer.write(text[i]);
-      if ((i + 1) % 4 == 0 && i != text.length - 1 && i < 11) {
-        buffer.write(' ');
-      }
-    }
-
-    return TextEditingValue(
-      text: buffer.toString(),
-      selection: TextSelection.collapsed(offset: buffer.length),
-    );
-  }
-}
+import '../../core/network/api_client.dart';
+import '../../core/network/api_endpoints.dart';
+import '../../repositories/partner_document_repository.dart';
 
 class AadharVerificationScreen extends StatefulWidget {
   const AadharVerificationScreen({super.key});
@@ -56,11 +29,10 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
   bool _hideHelp = false;
   bool _isVerified = false;
 
-  // Form controllers
-  final TextEditingController _aadharController = TextEditingController();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _dobController = TextEditingController();
-  DateTime? _selectedDate;
+  final PartnerDocumentRepository _documentRepository =
+      PartnerDocumentRepositoryImpl(
+        apiClient: ApiClient(baseUrl: ApiEndpoints.baseUrl),
+      );
 
   @override
   void initState() {
@@ -81,9 +53,6 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
 
   @override
   void dispose() {
-    _aadharController.dispose();
-    _nameController.dispose();
-    _dobController.dispose();
     super.dispose();
   }
 
@@ -92,9 +61,6 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
       final prefs = await SharedPreferences.getInstance();
       setState(() {
         _isVerified = prefs.getString('status_aadhar') == 'verified';
-        _aadharController.text = prefs.getString('aadhar_number') ?? '';
-        _nameController.text = prefs.getString('aadhar_name') ?? '';
-        _dobController.text = prefs.getString('aadhar_dob') ?? '';
         _frontPath = prefs.getString('aadhar_front_path');
         _backPath = prefs.getString('aadhar_back_path');
       });
@@ -107,15 +73,28 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
     setState(() => _isLoading = true);
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('aadhar_number', _aadharController.text);
-      await prefs.setString('aadhar_name', _nameController.text);
-      await prefs.setString('aadhar_dob', _dobController.text);
+
+      // 1. Upload front side
       if (_frontPath != null) {
+        await _documentRepository.uploadDocument(
+          documentType: 'AADHAR_CARD',
+          filePath: _frontPath!,
+          side: 'FRONT',
+        );
         await prefs.setString('aadhar_front_path', _frontPath!);
       }
+
+      // 2. Upload back side
       if (_backPath != null) {
+        await _documentRepository.uploadDocument(
+          documentType: 'AADHAR_CARD',
+          filePath: _backPath!,
+          side: 'BACK',
+        );
         await prefs.setString('aadhar_back_path', _backPath!);
       }
+
+      await prefs.setBool('aadhar_verified', true);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -138,50 +117,15 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
     }
   }
 
-  Future<void> _selectDate() async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate ?? DateTime(2000),
-      firstDate: DateTime(1950),
-      lastDate: DateTime.now(),
-      locale: const Locale('en', 'US'),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primaryOrangeStart,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: AppColors.textPrimary,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-        _dobController.text =
-            '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
-      });
-    }
-  }
-
   bool get _isFormValid {
-    final aadharNumber = _aadharController.text.replaceAll(' ', '');
-    return aadharNumber.length == 12 &&
-        _nameController.text.isNotEmpty &&
-        _dobController.text.isNotEmpty &&
-        _frontPath != null &&
-        _backPath != null;
+    return _frontPath != null && _backPath != null;
   }
 
   Future<void> _pickImage(bool isFront) async {
     final screenWidth = MediaQuery.of(context).size.width;
     final fontSize = (screenWidth * 0.048).clamp(17.0, 20.0);
     final spacing = (screenWidth * 0.064).clamp(24.0, 28.0);
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -264,26 +208,19 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
         // For gallery/photos access on mobile
         PermissionStatus status;
         if (Platform.isAndroid) {
-          // Check SDK version for Android 13+ (SDK 33)
-          // Note: permission_handler's Permission.photos handles this internally usually
-          // but explicitly checking Permission.photos for Android 13+ and storage for older
-          status = await Permission.photos.status;
-          if (status.isDenied) {
+          // For Android 13+ (SDK 33), we need Permission.photos
+          // For older versions, we need Permission.storage
+          if (await Permission.photos.isGranted ||
+              await Permission.storage.isGranted) {
+            status = PermissionStatus.granted;
+          } else {
             status = await Permission.photos.request();
-          }
-
-          // If photos permission is not available (older android), fallback to storage
-          if (status.isRestricted || status.isLimited) {
-            status = await Permission.storage.status;
-            if (status.isDenied) {
+            if (status.isDenied || status.isPermanentlyDenied) {
               status = await Permission.storage.request();
             }
           }
         } else {
-          status = await Permission.photos.status;
-          if (status.isDenied) {
-            status = await Permission.photos.request();
-          }
+          status = await Permission.photos.request();
         }
 
         if (!status.isGranted && !status.isLimited) {
@@ -292,6 +229,10 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
               SnackBar(
                 content: Text(
                   AppLocalizations.of(context)!.galleryPermissionRequired,
+                ),
+                action: SnackBarAction(
+                  label: AppLocalizations.of(context)!.settings,
+                  onPressed: () => openAppSettings(),
                 ),
               ),
             );
@@ -326,8 +267,6 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
           ),
         ),
       );
-    } finally {
-      // Done picking
     }
   }
 
@@ -340,7 +279,7 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
     final iconSize = (screenWidth * 0.085).clamp(32.0, 40.0);
     final fontSize = (screenWidth * 0.037).clamp(13.0, 16.0);
     final padding = (screenWidth * 0.043).clamp(16.0, 20.0);
-    
+
     return InkWell(
       onTap: onTap,
       child: Column(
@@ -351,7 +290,11 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
               color: AppColors.primaryOrangeStart.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: AppColors.primaryOrangeStart, size: iconSize),
+            child: Icon(
+              icon,
+              color: AppColors.primaryOrangeStart,
+              size: iconSize,
+            ),
           ),
           SizedBox(height: screenWidth * 0.02),
           Text(
@@ -367,7 +310,7 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     final fontSize = (screenWidth * 0.04).clamp(14.0, 16.0);
     final buttonPadding = (screenWidth * 0.05).clamp(20.0, 24.0);
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -402,12 +345,11 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context); // Close dialog
-              // Clear login status
               final prefs = await SharedPreferences.getInstance();
               await prefs.setBool('is_logged_in', false);
               await prefs.remove('login_method');
 
-              if (context.mounted) {
+              if (mounted) {
                 Navigator.pushNamedAndRemoveUntil(
                   context,
                   '/login',
@@ -441,7 +383,7 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = (screenWidth * 0.064).clamp(24.0, 28.0);
     final titleFontSize = (screenWidth * 0.048).clamp(17.0, 20.0);
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -456,7 +398,6 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Header
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
                 child: Row(
@@ -490,13 +431,12 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
               SizedBox(height: screenWidth * 0.043),
               const Divider(height: 1),
               SizedBox(height: screenWidth * 0.021),
-              // Options
               _buildHelpOption(
                 // ignore: deprecated_member_use
                 icon: MdiIcons.whatsapp,
                 title: AppLocalizations.of(context)!.chatWithSupport,
                 subtitle: AppLocalizations.of(context)!.whatsAppSupport,
-                color: const Color(0xFF25D366), // WhatsApp Green
+                color: const Color(0xFF25D366),
                 onTap: () async {
                   Navigator.pop(context);
                   const String phoneNumber = "918016867006";
@@ -507,7 +447,7 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
                     whatsappUri,
                     mode: LaunchMode.externalApplication,
                   )) {
-                    if (!context.mounted) return;
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
@@ -537,7 +477,7 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
                 subtitle: AppLocalizations.of(context)!.signOutOfYourAccount,
                 color: Colors.red,
                 onTap: () {
-                  Navigator.pop(context); // Close bottom sheet
+                  Navigator.pop(context);
                   _showLogoutConfirmation();
                 },
               ),
@@ -556,7 +496,7 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
     final titleFontSize = (screenWidth * 0.048).clamp(17.0, 20.0);
     final bodyFontSize = (screenWidth * 0.035).clamp(12.0, 15.0);
     final iconSize = (screenWidth * 0.064).clamp(24.0, 28.0);
-    
+
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -596,7 +536,10 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
                 padding: EdgeInsets.symmetric(horizontal: padding),
                 child: Text(
                   AppLocalizations.of(context)!.aadharShouldLookLikeThis,
-                  style: TextStyle(fontSize: bodyFontSize, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: bodyFontSize,
+                    color: Colors.grey[600],
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -611,8 +554,14 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
                         debugPrint('Error loading sample image: $error');
-                        final errorIconSize = (screenWidth * 0.107).clamp(40.0, 50.0);
-                        final errorFontSize = (screenWidth * 0.032).clamp(11.0, 14.0);
+                        final errorIconSize = (screenWidth * 0.107).clamp(
+                          40.0,
+                          50.0,
+                        );
+                        final errorFontSize = (screenWidth * 0.032).clamp(
+                          11.0,
+                          14.0,
+                        );
                         return Container(
                           height: (screenHeight * 0.19).clamp(140.0, 180.0),
                           width: double.infinity,
@@ -665,7 +614,7 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
     final iconSize = (screenWidth * 0.064).clamp(24.0, 28.0);
     final titleFontSize = (screenWidth * 0.043).clamp(15.0, 18.0);
     final subtitleFontSize = (screenWidth * 0.035).clamp(12.0, 15.0);
-    
+
     return ListTile(
       contentPadding: EdgeInsets.symmetric(
         horizontal: horizontalPadding,
@@ -702,7 +651,6 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    // Responsive sizing
     final horizontalPadding = (screenWidth * 0.04).clamp(16.0, 24.0);
     final sectionPadding = (screenWidth * 0.05).clamp(16.0, 24.0);
     final headingFontSize = (screenWidth * 0.045).clamp(16.0, 20.0);
@@ -723,7 +671,6 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // Styled Header
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.symmetric(
@@ -777,7 +724,6 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
                         ],
                       ),
                     ),
-                    // Help button
                     if (!_hideHelp)
                       InkWell(
                         onTap: _showHelpOptions,
@@ -819,15 +765,6 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Section 1: Enter Aadhar Details
-                      _buildAadharDetailsSection(
-                        sectionPadding: sectionPadding,
-                        headingFontSize: headingFontSize,
-                        labelFontSize: labelFontSize,
-                        iconSize: iconSize,
-                      ),
-                      const SizedBox(height: 24),
-                      // Section 2: Upload Aadhar Card
                       _buildUploadSection(
                         sectionPadding: sectionPadding,
                         headingFontSize: headingFontSize,
@@ -835,7 +772,6 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
                         iconSize: iconSize,
                       ),
                       const SizedBox(height: 32),
-                      // Submit Button
                       if (!_isVerified)
                         SizedBox(
                           width: double.infinity,
@@ -854,7 +790,7 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
                               elevation: 0,
                             ),
                             child: _isLoading
-                                ? SizedBox(
+                                ? const SizedBox(
                                     height: 20,
                                     width: 20,
                                     child: CircularProgressIndicator(
@@ -885,6 +821,106 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildUploadSection({
+    required double sectionPadding,
+    required double headingFontSize,
+    required double labelFontSize,
+    required double iconSize,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(sectionPadding.clamp(18.0, 24.0)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(iconSize * 0.45),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryOrangeStart.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.upload_file,
+                  color: AppColors.primaryOrangeStart,
+                  size: iconSize.clamp(20.0, 24.0),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      AppLocalizations.of(context)!.uploadAadharCard,
+                      style: TextStyle(
+                        fontSize: headingFontSize.clamp(16.0, 20.0),
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      AppLocalizations.of(context)!.uploadClearPhotos,
+                      style: TextStyle(
+                        fontSize: labelFontSize.clamp(12.0, 14.0),
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () => _showSampleImage('Front'),
+                icon: Icon(
+                  Icons.visibility_outlined,
+                  size: (iconSize * 0.7).clamp(14.0, 18.0),
+                ),
+                label: Text(
+                  AppLocalizations.of(context)!.sample,
+                  style: TextStyle(
+                    fontSize: labelFontSize.clamp(11.0, 13.0),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primaryOrangeStart,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildUploadCard(
+            title: AppLocalizations.of(context)!.frontSide,
+            imagePath: _frontPath,
+            onTap: () => _pickImage(true),
+            labelFontSize: labelFontSize,
+          ),
+          const SizedBox(height: 12),
+          _buildUploadCard(
+            title: AppLocalizations.of(context)!.backSide,
+            imagePath: _backPath,
+            onTap: () => _pickImage(false),
+            labelFontSize: labelFontSize,
+          ),
+        ],
       ),
     );
   }
@@ -945,7 +981,6 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
                             fit: BoxFit.cover,
                           ),
                   ),
-                  // Preview button
                   Positioned(
                     top: 8,
                     right: 8,
@@ -1057,7 +1092,7 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
     final padding = (screenWidth * 0.043).clamp(16.0, 20.0);
     final titleFontSize = (screenWidth * 0.043).clamp(15.0, 18.0);
     final iconSize = (screenWidth * 0.064).clamp(24.0, 28.0);
-    
+
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -1116,278 +1151,6 @@ class _AadharVerificationScreenState extends State<AadharVerificationScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  // Section 1: Aadhar Details
-  Widget _buildAadharDetailsSection({
-    required double sectionPadding,
-    required double headingFontSize,
-    required double labelFontSize,
-    required double iconSize,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(sectionPadding.clamp(18.0, 24.0)),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(iconSize * 0.45),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.badge_outlined,
-                  color: Colors.blue,
-                  size: iconSize.clamp(20.0, 24.0),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Flexible(
-                child: Text(
-                  AppLocalizations.of(context)!.enterAadharDetails,
-                  style: TextStyle(
-                    fontSize: headingFontSize.clamp(16.0, 20.0),
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          // Aadhar Number
-          _buildTextField(
-            label: AppLocalizations.of(context)!.aadharNumber,
-            controller: _aadharController,
-            hintText: AppLocalizations.of(context)!.aadharHint,
-            keyboardType: TextInputType.number,
-            readOnly: _isVerified,
-            inputFormatters: [
-              EnglishDigitFormatter(),
-              FilteringTextInputFormatter.digitsOnly,
-              AadharNumberFormatter(),
-            ],
-            maxLength: 14, // 12 digits + 2 spaces
-            prefixIcon: Icons.credit_card,
-            labelFontSize: labelFontSize,
-          ),
-          const SizedBox(height: 16),
-          // Full Name as per Aadhar
-          _buildTextField(
-            label: AppLocalizations.of(context)!.fullNameAsPerAadhar,
-            controller: _nameController,
-            hintText: AppLocalizations.of(context)!.enterYourFullName,
-            keyboardType: TextInputType.name,
-            readOnly: _isVerified,
-            textCapitalization: TextCapitalization.words,
-            prefixIcon: Icons.person_outline,
-            labelFontSize: labelFontSize,
-          ),
-          const SizedBox(height: 16),
-          // Date of Birth
-          _buildTextField(
-            label: AppLocalizations.of(context)!.dateOfBirth,
-            controller: _dobController,
-            hintText: AppLocalizations.of(context)!.dobHint,
-            readOnly: true,
-            onTap: _isVerified ? null : _selectDate,
-            prefixIcon: Icons.calendar_today,
-            suffixIcon: Icons.arrow_drop_down,
-            labelFontSize: labelFontSize,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required String label,
-    required TextEditingController controller,
-    String? hintText,
-    TextInputType? keyboardType,
-    List<TextInputFormatter>? inputFormatters,
-    int? maxLength,
-    bool readOnly = false,
-    VoidCallback? onTap,
-    IconData? prefixIcon,
-    IconData? suffixIcon,
-    TextCapitalization textCapitalization = TextCapitalization.none,
-    required double labelFontSize,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: labelFontSize.clamp(13.0, 15.0),
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          inputFormatters: inputFormatters,
-          maxLength: maxLength,
-          readOnly: readOnly,
-          onTap: onTap,
-          textCapitalization: textCapitalization,
-          decoration: InputDecoration(
-            hintText: hintText,
-            hintStyle: TextStyle(color: Colors.grey[400]),
-            counterText: '',
-            prefixIcon: prefixIcon != null
-                ? Icon(prefixIcon, color: Colors.grey[500], size: 20)
-                : null,
-            suffixIcon: suffixIcon != null
-                ? Icon(suffixIcon, color: Colors.grey[500])
-                : null,
-            filled: true,
-            fillColor: readOnly ? Colors.grey[50] : Colors.white,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: AppColors.primaryOrangeStart,
-                width: 1.5,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // Section 2: Upload Aadhar Card
-  Widget _buildUploadSection({
-    required double sectionPadding,
-    required double headingFontSize,
-    required double labelFontSize,
-    required double iconSize,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(sectionPadding.clamp(18.0, 24.0)),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(iconSize * 0.45),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryOrangeStart.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.upload_file,
-                  color: AppColors.primaryOrangeStart,
-                  size: iconSize.clamp(20.0, 24.0),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppLocalizations.of(context)!.uploadAadharCard,
-                      style: TextStyle(
-                        fontSize: headingFontSize.clamp(16.0, 20.0),
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      AppLocalizations.of(context)!.uploadClearPhotos,
-                      style: TextStyle(
-                        fontSize: labelFontSize.clamp(12.0, 14.0),
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              TextButton.icon(
-                onPressed: () => _showSampleImage('Front'),
-                icon: Icon(
-                  Icons.visibility_outlined,
-                  size: (iconSize * 0.7).clamp(14.0, 18.0),
-                ),
-                label: Text(
-                  AppLocalizations.of(context)!.sample,
-                  style: TextStyle(
-                    fontSize: labelFontSize.clamp(11.0, 13.0),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primaryOrangeStart,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          // Front Side Upload
-          _buildUploadCard(
-            title: AppLocalizations.of(context)!.frontSide,
-            imagePath: _frontPath,
-            onTap: () => _pickImage(true),
-            labelFontSize: labelFontSize,
-          ),
-          const SizedBox(height: 12),
-          // Back Side Upload
-          _buildUploadCard(
-            title: AppLocalizations.of(context)!.backSide,
-            imagePath: _backPath,
-            onTap: () => _pickImage(false),
-            labelFontSize: labelFontSize,
-          ),
-        ],
       ),
     );
   }

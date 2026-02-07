@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/app_colors.dart';
+import '../../services/notification_service.dart';
 import '../../l10n/app_localizations.dart';
+import '../../core/network/api_client.dart';
+import '../../core/network/api_endpoints.dart';
+import '../../repositories/auth_repository.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,6 +18,7 @@ class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
+  late final AuthRepository _authRepository;
 
   @override
   void initState() {
@@ -27,6 +32,10 @@ class _SplashScreenState extends State<SplashScreen>
         setState(() {});
       });
 
+    _authRepository = AuthRepositoryImpl(
+      apiClient: ApiClient(baseUrl: ApiEndpoints.baseUrl),
+    );
+
     _controller.forward().then((value) async {
       // Check login status
       final prefs = await SharedPreferences.getInstance();
@@ -34,7 +43,60 @@ class _SplashScreenState extends State<SplashScreen>
 
       if (mounted) {
         if (isLoggedIn) {
-          Navigator.pushReplacementNamed(context, '/home');
+          // Attempt to refresh token
+          final authResponse = await _authRepository.refreshToken();
+
+          if (authResponse != null) {
+            // Refresh successful, continue to appropriate screen
+            final isVerified = authResponse.data.isVerified;
+            // Update pref just in case it changed on backend
+            await prefs.setBool('is_verified', isVerified);
+
+            if (mounted) {
+              if (isVerified) {
+                // Background update of FCM Token
+                NotificationService.instance.getToken().then((token) {
+                  if (token != null) {
+                    _authRepository.updateFcmToken(token);
+                  }
+                });
+
+                Navigator.pushReplacementNamed(context, '/home');
+              } else {
+                // Check if user has already filled details locally OR has a partner ID from backend OR has a name (partial signup)
+                final partnerId = authResponse.data.partnerId;
+                final hasPartnerId = partnerId != null && partnerId.isNotEmpty;
+                final hasRemoteName = authResponse.data.name.isNotEmpty;
+
+                final hasName =
+                    (prefs.getString('profile_name') ?? '').isNotEmpty;
+                final hasAadhar =
+                    (prefs.getString('aadhar_front_path') ?? '').isNotEmpty;
+                final hasServices =
+                    (prefs.getStringList('profile_services') ?? []).isNotEmpty;
+                final hasWork =
+                    (prefs.getString('work_experience') ?? '').isNotEmpty;
+
+                debugPrint(
+                  'Local Verification Check: PartnerId=$hasPartnerId, Name=$hasRemoteName, Aadhar=$hasAadhar, Services=$hasServices, Work=$hasWork',
+                );
+
+                if (hasPartnerId ||
+                    hasRemoteName ||
+                    (hasName && hasAadhar && (hasServices || hasWork))) {
+                  Navigator.pushReplacementNamed(context, '/home');
+                } else {
+                  Navigator.pushReplacementNamed(context, '/verification');
+                }
+              }
+            }
+          } else {
+            // Refresh failed or no refresh token, logout and go to login
+            await _authRepository.logout();
+            if (mounted) {
+              Navigator.pushReplacementNamed(context, '/login');
+            }
+          }
         } else {
           Navigator.pushReplacementNamed(context, '/login');
         }

@@ -8,6 +8,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import '../../core/app_colors.dart';
 import '../../l10n/app_localizations.dart';
+import '../../repositories/auth_repository.dart';
+import '../../core/network/api_client.dart';
+import '../../core/network/api_endpoints.dart';
 
 class DocumentVerificationScreen extends StatefulWidget {
   const DocumentVerificationScreen({super.key});
@@ -36,6 +39,8 @@ class _DocumentVerificationScreenState
   bool _isDlVerified = false;
   bool _isWorkVerified = false;
   bool _isPermissionGranted = false;
+  bool _isWorkUploaded = false;
+  bool _isAadharUploaded = false;
 
   // Form fields
   final TextEditingController _nameController = TextEditingController();
@@ -43,7 +48,40 @@ class _DocumentVerificationScreenState
   @override
   void initState() {
     super.initState();
+    _forceSyncProfile();
     _loadSavedData();
+  }
+
+  Future<void> _forceSyncProfile() async {
+    try {
+      final authRepository = AuthRepositoryImpl(
+        apiClient: ApiClient(baseUrl: ApiEndpoints.baseUrl),
+      );
+      final authResponse = await authRepository.refreshToken();
+
+      if (authResponse != null) {
+        final data = authResponse.data;
+        if (data.name.isNotEmpty || data.partnerId != null) {
+          final prefs = await SharedPreferences.getInstance();
+          // Restore critical data
+          if (data.name.isNotEmpty)
+            await prefs.setString('profile_name', data.name);
+          if (data.partnerId != null)
+            await prefs.setString('profile_id', data.partnerId!);
+          if (data.mobileNumber.isNotEmpty)
+            await prefs.setString('profile_phone', data.mobileNumber);
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Profile synced: ${data.name}')),
+            );
+            Navigator.pushReplacementNamed(context, '/home');
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Force sync failed: $e');
+    }
   }
 
   Future<void> _loadSavedData() async {
@@ -91,6 +129,10 @@ class _DocumentVerificationScreenState
 
         // Profile
         _profilePhotoPath = prefs.getString('profile_photo_path');
+
+        // Bools for upload status
+        _isAadharUploaded = prefs.getBool('aadhar_verified') ?? false;
+        _isWorkUploaded = prefs.getBool('skill_verified') ?? false;
 
         _checkVerificationStatus();
       });
@@ -289,7 +331,8 @@ class _DocumentVerificationScreenState
   }
 
   bool _isAadharComplete() {
-    return _idProofFrontPath != null && _idProofBackPath != null;
+    return _isAadharUploaded ||
+        (_idProofFrontPath != null && _idProofBackPath != null);
   }
 
   bool _isPanComplete() {
@@ -301,12 +344,15 @@ class _DocumentVerificationScreenState
   }
 
   bool _isWorkComplete() {
-    return _workExperience != null;
+    return _isWorkUploaded || _workExperience != null;
   }
 
   bool _isProfileComplete() {
     return _profilePhotoPath != null && _nameController.text.isNotEmpty;
   }
+
+  bool get _canProceed =>
+      _isProfileComplete() && _isAadharComplete() && _isWorkComplete();
 
   @override
   Widget build(BuildContext context) {
@@ -695,27 +741,42 @@ class _DocumentVerificationScreenState
                         borderRadius: borderRadius,
                       ),
                       SizedBox(height: verticalPadding * 1.5),
-                      // Skip for now (Dev Mode)
-                      Center(
-                        child: TextButton(
-                          onPressed: () async {
-                            final prefs = await SharedPreferences.getInstance();
-                            if (prefs.getString('partner_access_date') ==
-                                null) {
-                              await prefs.setString(
-                                'partner_access_date',
-                                DateTime.now().toIso8601String(),
-                              );
-                            }
-                            if (!context.mounted) return;
-                            Navigator.pushReplacementNamed(context, '/home');
-                          },
+                      SizedBox(height: verticalPadding * 2),
+                      // Done Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: _canProceed
+                              ? () async {
+                                  final prefs =
+                                      await SharedPreferences.getInstance();
+                                  await prefs.setBool(
+                                    'verification_skipped',
+                                    true,
+                                  );
+                                  if (mounted) {
+                                    Navigator.pushReplacementNamed(
+                                      context,
+                                      '/home',
+                                    );
+                                  }
+                                }
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryOrangeStart,
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor: Colors.grey[300],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
                           child: Text(
-                            AppLocalizations.of(context)!.skipForNowDevMode,
+                            AppLocalizations.of(context)!.done,
                             style: TextStyle(
-                              color: Colors.grey[500],
-                              fontSize: 13,
-                              decoration: TextDecoration.underline,
+                              fontSize: bodyFontSize,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),

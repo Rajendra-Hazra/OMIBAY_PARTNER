@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
 import 'dart:async';
 import 'package:pinput/pinput.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 // import 'package:firebase_auth/firebase_auth.dart';
 // import 'package:google_sign_in/google_sign_in.dart';
@@ -13,6 +11,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../core/app_colors.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/localization_helper.dart';
+import '../../core/network/api_client.dart';
+import '../../core/network/api_endpoints.dart';
+import '../../repositories/auth_repository.dart';
 
 enum LoginStep { phone, otp, gmail, recovery }
 
@@ -79,7 +80,11 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _recoveryPhoneError;
   String? _recoveryEmailError;
   bool _isLoading = false;
+  bool _isOtpLoading = false;
+  bool _isGoogleLoading = false;
   String _findAccountMethod = 'phone'; // 'phone' or 'email'
+  String? _verificationId;
+  late final AuthRepository _authRepository;
 
   // Lazy initialization (Removed for static operation)
 
@@ -126,6 +131,11 @@ class _LoginScreenState extends State<LoginScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _handlePermissions();
     });
+
+    // Initialize AuthRepository
+    _authRepository = AuthRepositoryImpl(
+      apiClient: ApiClient(baseUrl: ApiEndpoints.baseUrl),
+    );
   }
 
   @override
@@ -140,55 +150,49 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // Google Sign-In Method (Mocked for static operation)
+  // Google Sign-In Method (Real implementation)
   Future<void> _signInWithGoogle() async {
     setState(() {
-      _isLoading = true;
+      _isGoogleLoading = true;
     });
 
     try {
-      // Simulate network delay
-      await Future.delayed(const Duration(seconds: 2));
+      final authResponse = await _authRepository.signInWithGoogle();
 
       if (!mounted) return;
       setState(() {
-        _isLoading = false;
+        _isGoogleLoading = false;
       });
 
-      // Save login method as 'google'
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('is_logged_in', true);
-      await prefs.setString('login_method', 'google');
-      await prefs.setString('profile_email', 'partner@gmail.com'); // Mock email
-      await prefs.setString('profile_rating', '4.9');
-      await prefs.setString('today_rating', '0.0');
-      await prefs.setString('profile_level', 'Expert');
-      await prefs.setString(
-        'profile_referral_code',
-        'REF${Random().nextInt(9999)}',
-      );
-      await prefs.setInt('total_referrals', 12);
-      await prefs.setDouble('total_referral_earnings', 2400.0);
+      // Successful login - Check if profile/documents are verified
+      // Successful login - Check if profile/documents are verified
+      final partnerId = authResponse.data.partnerId;
+      final hasPartnerId = partnerId != null && partnerId.isNotEmpty;
+      final hasRemoteName = authResponse.data.name.isNotEmpty;
 
-      if (!mounted) return;
+      if (authResponse.data.isVerified || hasPartnerId || hasRemoteName) {
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        Navigator.pushReplacementNamed(context, '/verification');
+      }
 
-      // Mock success navigation
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.welcomeBackPartnerMock),
+          content: Text(
+            '${AppLocalizations.of(context)!.welcome} ${authResponse.data.name}',
+          ),
           backgroundColor: AppColors.successGreen,
         ),
       );
-      Navigator.pushReplacementNamed(context, '/verification');
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _isLoading = false;
+        _isGoogleLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '${AppLocalizations.of(context)!.failedToSignIn} ${e.toString()}',
+            '${AppLocalizations.of(context)!.failedToSignIn}: ${e.toString()}',
           ),
         ),
       );
@@ -284,73 +288,117 @@ class _LoginScreenState extends State<LoginScreen> {
         _phoneError == null;
   }
 
-  // Send OTP (Mocked for static operation)
+  // Send OTP (Using Firebase)
   Future<void> _sendOtp() async {
-    if (!_isPhoneValid || _isLoading) return;
+    if (!_isPhoneValid || _isOtpLoading) return;
 
     setState(() {
-      _isLoading = true;
+      _isOtpLoading = true;
     });
 
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (mounted) {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-        _currentStep = LoginStep.otp; // Switch to OTP step
-      });
-      _startResendTimer();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)!.debugOtpSent),
-          backgroundColor: AppColors.successGreen,
-        ),
+    try {
+      await _authRepository.sendOtp(
+        phoneNumber: _phoneController.text,
+        onCodeSent: (verificationId, resendToken) {
+          if (mounted) {
+            setState(() {
+              _verificationId = verificationId;
+              _isOtpLoading = false;
+              _currentStep = LoginStep.otp; // Switch to OTP step
+            });
+            _startResendTimer();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(AppLocalizations.of(context)!.debugOtpSent),
+                backgroundColor: AppColors.successGreen,
+              ),
+            );
+          }
+        },
+        onVerificationFailed: (e) {
+          if (mounted) {
+            setState(() {
+              _isOtpLoading = false;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Verification failed: ${e.message}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
+        onVerificationCompleted: (credential) {
+          // Could handle auto-verification here
+        },
+        onCodeAutoRetrievalTimeout: (verificationId) {
+          _verificationId = verificationId;
+        },
       );
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isOtpLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
-  // Verify OTP (Mocked for static operation)
+  // Verify OTP (Using Backend API via /partner)
   Future<void> _verifyOtp() async {
     if (_otpController.text.length != 6 || _isLoading) return;
+
+    if (_verificationId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Verification ID missing. Resend OTP.')),
+      );
+      return;
+    }
 
     setState(() {
       _isLoading = true;
     });
 
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (!mounted) return;
-    setState(() {
-      _isLoading = false;
-    });
-
-    if (_otpController.text == '123456') {
-      // Save login method as 'phone'
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('is_logged_in', true);
-      await prefs.setString('login_method', 'phone');
-      await prefs.setString('profile_phone', _phoneController.text);
-      await prefs.setBool('phone_verified', true);
-      await prefs.setString('profile_rating', '4.8');
-      await prefs.setString('today_rating', '0.0');
-      await prefs.setString('profile_level', 'Expert');
-      await prefs.setString(
-        'profile_referral_code',
-        'REF${Random().nextInt(9999)}',
+    try {
+      final authResponse = await _authRepository.verifyOtp(
+        verificationId: _verificationId!,
+        smsCode: _otpController.text,
+        phoneNumber: _phoneController.text,
       );
-      await prefs.setInt('total_referrals', 8);
-      await prefs.setDouble('total_referral_earnings', 1600.0);
 
       if (!mounted) return;
-      // Successful mock login
-      Navigator.pushReplacementNamed(context, '/verification');
-    } else {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.invalidOtp)),
-      );
+      setState(() {
+        _isLoading = false;
+      });
+
+      // Successful login - Check if profile/documents are verified
+      // Successful login - Check if profile/documents are verified
+      final partnerId = authResponse.data.partnerId;
+      final hasPartnerId = partnerId != null && partnerId.isNotEmpty;
+      final hasRemoteName = authResponse.data.name.isNotEmpty;
+
+      if (authResponse.data.isVerified || hasPartnerId || hasRemoteName) {
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        Navigator.pushReplacementNamed(context, '/verification');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Invalid OTP or Login failed: ${e.toString()}'),
+          ),
+        );
+      }
     }
   }
 
@@ -569,14 +617,17 @@ class _LoginScreenState extends State<LoginScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: (_isPhoneValid && !_isLoading) ? _sendOtp : null,
+                onPressed:
+                    (_isPhoneValid && !_isOtpLoading && !_isGoogleLoading)
+                    ? _sendOtp
+                    : null,
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 56),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: _isLoading
+                child: _isOtpLoading
                     ? const SizedBox(
                         width: 20,
                         height: 20,
@@ -595,7 +646,9 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 16),
             OutlinedButton(
-              onPressed: _isLoading ? null : _signInWithGoogle,
+              onPressed: (_isOtpLoading || _isGoogleLoading)
+                  ? null
+                  : _signInWithGoogle,
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 56),
                 shape: RoundedRectangleBorder(
@@ -603,11 +656,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 side: const BorderSide(color: AppColors.border),
               ),
-              child: _isLoading
+              child: _isGoogleLoading
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.primaryOrangeStart,
+                      ),
                     )
                   : Row(
                       mainAxisSize: MainAxisSize.min,
@@ -649,24 +705,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-            // DEV SKIP: Hidden button for developers to skip login entirely
-            if (kDebugMode)
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: TextButton(
-                  onPressed: () async {
-                    final prefs = await SharedPreferences.getInstance();
-                    await prefs.setBool('is_logged_in', true);
-                    if (mounted) {
-                      Navigator.pushReplacementNamed(context, '/verification');
-                    }
-                  },
-                  child: Text(
-                    AppLocalizations.of(context)!.devSkipToVerification,
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
-                ),
-              ),
           ],
         ),
       ),

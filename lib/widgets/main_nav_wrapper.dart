@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/jobs/jobs_list_screen.dart';
 import '../screens/earnings/earnings_screen.dart';
@@ -8,6 +9,9 @@ import '../screens/account/account_screen.dart';
 import '../core/app_colors.dart';
 import '../l10n/app_localizations.dart';
 import '../services/notification_service.dart';
+import '../core/network/api_endpoints.dart';
+import '../repositories/order_repository.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'incoming_job_modal.dart';
 
 class MainNavigationWrapper extends StatefulWidget {
@@ -22,12 +26,49 @@ class _MainNavigationWrapperState extends State<MainNavigationWrapper> {
   late int _selectedIndex;
   StreamSubscription<Map<String, dynamic>>? _incomingJobSubscription;
   bool _isJobModalShowing = false;
+  late final OrderRepository _orderRepository;
 
   @override
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
+    _orderRepository = OrderRepositoryImpl(baseUrl: ApiEndpoints.baseUrl);
+    _checkDocumentVerification();
     _listenForIncomingJobs();
+  }
+
+  Future<void> _checkDocumentVerification() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isAadharVerified = prefs.getBool('aadhar_verified') ?? false;
+    final isPanVerified = prefs.getBool('pan_verified') ?? false;
+    final isDlVerified = prefs.getBool('dl_verified') ?? false;
+    final isSkillVerified = prefs.getBool('skill_verified') ?? false;
+
+    final isAllVerified =
+        isAadharVerified && isPanVerified && isDlVerified && isSkillVerified;
+    final isVerificationSkipped =
+        prefs.getBool('verification_skipped') ?? false;
+
+    // Check if profile details are filled (using name as a proxy, or check login method)
+    // If user has verified Work and Aadhar, and has basic profile details, we can skip
+    final hasProfileName = prefs.getString('profile_name')?.isNotEmpty ?? false;
+    final isProfileVerified =
+        hasProfileName || prefs.getBool('phone_verified') == true;
+
+    // Allow access if:
+    // 1. All docs verified OR
+    // 2. Verification skipped explicitly OR
+    // 3. (Work Selected AND Aadhar Verified AND Profile details filled) -> User request
+    final canBypass =
+        isAllVerified ||
+        isVerificationSkipped ||
+        hasProfileName || // Allow access if we have a profile name (partially onboarded/restored)
+        (isSkillVerified && isAadharVerified && isProfileVerified);
+
+    if (!canBypass && mounted) {
+      // Redirect to verification screen if any required document is not verified and not skipped
+      Navigator.pushReplacementNamed(context, '/verification');
+    }
   }
 
   @override
@@ -75,12 +116,12 @@ class _MainNavigationWrapperState extends State<MainNavigationWrapper> {
       builder: (context) => IncomingJobModal(
         job: jobData,
         onAccept: () {
-          Navigator.of(context).pop();
+          // Modal closes itself now
           _isJobModalShowing = false;
           _handleJobAccepted(jobData);
         },
         onDecline: () {
-          Navigator.of(context).pop();
+          // Modal closes itself now
           _isJobModalShowing = false;
           _handleJobDeclined(jobData);
         },
@@ -91,25 +132,54 @@ class _MainNavigationWrapperState extends State<MainNavigationWrapper> {
   }
 
   /// Handle when user accepts the job
-  void _handleJobAccepted(Map<String, dynamic> jobData) {
-    debugPrint('Job accepted: ${jobData['id']}');
-    // Navigate to active job screen
-    Navigator.pushNamed(context, '/active-job', arguments: jobData);
+  Future<void> _handleJobAccepted(Map<String, dynamic> jobData) async {
+    final orderId = jobData['id'] ?? jobData['job_id'];
+    debugPrint('Job accepted: $orderId');
+
+    if (orderId == null) return;
+
+    final success = await _orderRepository.acceptOrder(orderId);
+
+    if (success) {
+      Fluttertoast.showToast(msg: "Order accepted successfully!");
+      // Navigate to active job screen or jobs tab
+      // If we are on home tab, it will refresh.
+      // Moving to Jobs tab (index 1) might be better?
+      // For now keeping existing behavior but maybe refreshing?
+
+      // Actually, let's navigate to active jobs page which shows details
+      // Or switch to Jobs tab
+      Navigator.pushNamed(context, '/active-job', arguments: jobData);
+    } else {
+      Fluttertoast.showToast(
+        msg: "Failed to accept order",
+        backgroundColor: Colors.red,
+      );
+    }
   }
 
   /// Handle when user declines the job
-  void _handleJobDeclined(Map<String, dynamic> jobData) {
-    debugPrint('Job declined: ${jobData['id']}');
-    // Could show a snackbar or log analytics
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          AppLocalizations.of(context)?.jobDeclined ?? 'Job declined',
-        ),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-      ),
+  Future<void> _handleJobDeclined(Map<String, dynamic> jobData) async {
+    final orderId = jobData['id'] ?? jobData['job_id'];
+    debugPrint('Job declined: $orderId');
+
+    if (orderId == null) return;
+
+    final success = await _orderRepository.rejectOrder(
+      orderId,
+      reason: "Partner declined",
     );
+
+    if (success) {
+      Fluttertoast.showToast(
+        msg: AppLocalizations.of(context)?.jobDeclined ?? 'Job declined',
+      );
+    } else {
+      Fluttertoast.showToast(
+        msg: "Failed to decline order",
+        backgroundColor: Colors.red,
+      );
+    }
   }
 
   final List<Widget> _screens = const [

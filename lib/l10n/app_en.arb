@@ -234,7 +234,7 @@
   "selectVideoSource": "Select Video Source",
   "files": "Files",
   "videoPreview": "Video Preview",
-  "videoMustBeBetween": "Video must be between 5 seconds and 1 minute",
+  "videoMustBeBetween": "Video must be between 30 seconds and 1 minute",
   "videoUploadedSuccessfully": "Video uploaded successfully!",
   "workVerificationSaved": "Work verification details saved successfully!",
   "serviceSubmittedForVerification": "Service submitted for verification! We will notify you once approved.",

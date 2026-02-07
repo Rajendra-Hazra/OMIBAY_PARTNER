@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -11,6 +12,12 @@ import 'package:pinput/pinput.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/app_colors.dart';
 import '../../core/localization_helper.dart';
+import '../../repositories/user_repository.dart';
+import '../../repositories/auth_repository.dart';
+import '../../core/network/api_client.dart';
+import '../../core/network/api_endpoints.dart';
+import '../../models/auth_response.dart';
+import 'package:intl/intl.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -21,10 +28,11 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _ageController = TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _dobController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  late final UserRepository _userRepository;
+  late final AuthRepository _authRepository;
   final ImagePicker _picker = ImagePicker();
   String? _photoUrl;
   String? _localPhotoPath;
@@ -37,6 +45,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _userRepository = UserRepositoryImpl(
+      apiClient: ApiClient(baseUrl: ApiEndpoints.baseUrl),
+    );
+    _authRepository = AuthRepositoryImpl(
+      apiClient: ApiClient(baseUrl: ApiEndpoints.baseUrl),
+    );
     _loadSavedData();
     AppColors.profileUpdateNotifier.addListener(_loadSavedData);
   }
@@ -54,8 +68,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void dispose() {
     AppColors.profileUpdateNotifier.removeListener(_loadSavedData);
     _nameController.dispose();
-    _ageController.dispose();
-    _addressController.dispose();
+    _dobController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     super.dispose();
@@ -65,35 +78,57 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (!mounted) return;
     setState(() => _isLoading = true);
     try {
+      // First try to load from backend
+      UserData? userData;
       final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('accessToken');
+
+      if (token != null && token.isNotEmpty) {
+        try {
+          userData = await _userRepository.getUserProfile();
+        } catch (e) {
+          debugPrint('Error loading backend profile: $e');
+        }
+      }
+
       if (!mounted) return;
+
       // Load login method
       _loginMethod = prefs.getString('login_method') ?? 'phone';
       _isPhoneVerified = prefs.getBool('phone_verified') ?? false;
 
-      // Load Personal Info
-      final savedName = prefs.getString('profile_name');
-      final savedAge = prefs.getString('profile_age');
-      final savedAddress = prefs.getString('profile_address');
-      final savedEmail = prefs.getString('profile_email');
-      final savedPhone = prefs.getString('profile_phone');
-
-      final l10n = AppLocalizations.of(context)!;
-      _photoUrl =
-          prefs.getString('profile_photo_url') ?? l10n.placeholderPhotoUrl;
-
-      final savedLocalPhoto = prefs.getString('profile_photo_path');
-
       setState(() {
-        _nameController.text = LocalizationHelper.getLocalizedCustomerName(
-          context,
-          savedName,
-        );
-        _ageController.text = savedAge ?? '';
-        _addressController.text = savedAddress ?? '';
-        _emailController.text = savedEmail ?? '';
-        _phoneController.text = savedPhone ?? '';
-        _localPhotoPath = savedLocalPhoto;
+        if (userData != null) {
+          _nameController.text = userData.fullName ?? userData.name;
+          _dobController.text = userData.dateOfBirth ?? '';
+          _emailController.text = userData.email ?? '';
+          _phoneController.text = userData.mobileNumber;
+          if (userData.profilePictureUrl != null &&
+              userData.profilePictureUrl!.isNotEmpty) {
+            _photoUrl = userData.profilePictureUrl!;
+          }
+        } else {
+          // Fallback to Prefs
+          final savedName = prefs.getString('profile_name');
+          final savedDob = prefs.getString('profile_dob');
+          final savedEmail = prefs.getString('profile_email');
+          final savedPhone = prefs.getString('profile_phone');
+
+          _nameController.text = LocalizationHelper.getLocalizedCustomerName(
+            context,
+            savedName,
+          );
+          _dobController.text = savedDob ?? '';
+          _emailController.text = savedEmail ?? '';
+          _phoneController.text = savedPhone ?? '';
+        }
+
+        final l10n = AppLocalizations.of(context)!;
+        _photoUrl =
+            userData?.profilePictureUrl ??
+            prefs.getString('profile_photo_url') ??
+            l10n.placeholderPhotoUrl;
+        _localPhotoPath = prefs.getString('profile_photo_path');
         _isLoading = false;
       });
     } catch (e) {
@@ -109,6 +144,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     bool isSubmitting = false;
     String? statusMessage;
     bool isErrorStatus = false;
+    String? verificationId;
+    // ignore: unused_local_variable
+    int? resendToken;
 
     showModalBottomSheet(
       context: context,
@@ -116,6 +154,42 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       isScrollControlled: true,
       builder: (context) => StatefulBuilder(
         builder: (context, setSheetState) {
+          // Callbacks for Phone Auth
+          void onCodeSent(String vid, int? token) {
+            if (context.mounted) {
+              setSheetState(() {
+                otpSent = true;
+                isSubmitting = false;
+                statusMessage = AppLocalizations.of(
+                  context,
+                )!.otpSentSuccessfully;
+                isErrorStatus = false;
+                verificationId = vid;
+                resendToken = token;
+              });
+            }
+          }
+
+          void onVerificationFailed(FirebaseAuthException e) {
+            if (context.mounted) {
+              setSheetState(() {
+                isSubmitting = false;
+                statusMessage = e.message ?? 'Verification failed';
+                isErrorStatus = true;
+              });
+            }
+          }
+
+          void onVerificationCompleted(PhoneAuthCredential credential) {
+            // Auto-retrieval or instant verification
+            // We can proceed to update mobile here if desired,
+            // but usually we wait for user to click "Verify" or handle it automatically.
+          }
+
+          void onCodeAutoRetrievalTimeout(String vid) {
+            verificationId = vid;
+          }
+
           return Container(
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -164,11 +238,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       const SizedBox(height: 8),
                       Text(
                         otpSent
-                            ? AppLocalizations.of(context)!.enterOtpSentTo(
-                                type == 'Phone'
-                                    ? AppLocalizations.of(context)!.phone
-                                    : AppLocalizations.of(context)!.email,
-                              )
+                            ? (type == 'Phone'
+                                  ? AppLocalizations.of(
+                                      context,
+                                    )!.enterOtpSentTo(
+                                      AppLocalizations.of(context)!.phone,
+                                    )
+                                  : "Please enter your current password to confirm email change.")
                             : AppLocalizations.of(
                                 context,
                               )!.enterNewToReceiveCode(
@@ -278,40 +354,67 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ),
                         )
                       else
-                        Center(
-                          child: Pinput(
-                            length: 6,
-                            controller: otpController,
-                            defaultPinTheme: PinTheme(
-                              width: 45,
-                              height: 50,
-                              textStyle: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey[300]!),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            focusedPinTheme: PinTheme(
-                              width: 45,
-                              height: 50,
-                              textStyle: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: AppColors.primaryOrangeStart,
+                        (type == 'Phone')
+                            ? Center(
+                                child: Pinput(
+                                  length: 6,
+                                  controller: otpController,
+                                  defaultPinTheme: PinTheme(
+                                    width: 45,
+                                    height: 50,
+                                    textStyle: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: Colors.grey[300]!,
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  focusedPinTheme: PinTheme(
+                                    width: 45,
+                                    height: 50,
+                                    textStyle: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: AppColors.primaryOrangeStart,
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
                                 ),
-                                borderRadius: BorderRadius.circular(8),
+                              )
+                            : TextField(
+                                controller: otpController,
+                                obscureText: true,
+                                decoration: InputDecoration(
+                                  hintText: "Current Password",
+                                  prefixIcon: const Icon(Icons.lock_outline),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey[300]!,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: AppColors.primaryOrangeStart,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                        ),
                       const SizedBox(height: 32),
                       SizedBox(
                         width: double.infinity,
@@ -347,31 +450,79 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       isSubmitting = true;
                                       statusMessage = null;
                                     });
-                                    await Future.delayed(
-                                      const Duration(seconds: 1),
-                                    );
-                                    setSheetState(() {
-                                      otpSent = true;
-                                      isSubmitting = false;
-                                      statusMessage = AppLocalizations.of(
-                                        context,
-                                      )!.otpSentSuccessfully;
-                                      isErrorStatus = false;
-                                    });
+
+                                    // Send Logic
+                                    if (type == 'Phone') {
+                                      try {
+                                        await _authRepository.sendOtp(
+                                          phoneNumber: val,
+                                          onCodeSent: onCodeSent,
+                                          onVerificationFailed:
+                                              onVerificationFailed,
+                                          onVerificationCompleted:
+                                              onVerificationCompleted,
+                                          onCodeAutoRetrievalTimeout:
+                                              onCodeAutoRetrievalTimeout,
+                                        );
+                                      } catch (e) {
+                                        if (context.mounted) {
+                                          setSheetState(() {
+                                            isSubmitting = false;
+                                            statusMessage = e.toString();
+                                            isErrorStatus = true;
+                                          });
+                                        }
+                                      }
+                                    } else {
+                                      // Email Mock (keeping existing logic)
+                                      await Future.delayed(
+                                        const Duration(seconds: 1),
+                                      );
+                                      setSheetState(() {
+                                        otpSent = true;
+                                        isSubmitting = false;
+                                        statusMessage = AppLocalizations.of(
+                                          context,
+                                        )!.otpSentSuccessfully;
+                                        isErrorStatus = false;
+                                      });
+                                    }
                                   } else {
-                                    if (otpController.text == '123456') {
+                                    // Verify And Update Logic
+                                    if (type == 'Phone') {
+                                      if (otpController.text.length != 6)
+                                        return;
+
                                       setSheetState(() {
                                         isSubmitting = true;
                                         statusMessage = null;
                                       });
-                                      await Future.delayed(
-                                        const Duration(seconds: 1),
-                                      );
 
-                                      // Save data locally
-                                      final prefs =
-                                          await SharedPreferences.getInstance();
-                                      if (type == 'Phone') {
+                                      try {
+                                        if (verificationId == null)
+                                          throw Exception(
+                                            "Verification ID missing",
+                                          );
+
+                                        final credential =
+                                            PhoneAuthProvider.credential(
+                                              verificationId: verificationId!,
+                                              smsCode: otpController.text,
+                                            );
+
+                                        // Verify by signing in or linking
+                                        // Using signInWithCredential to verify OTP validity
+                                        await FirebaseAuth.instance
+                                            .signInWithCredential(credential);
+                                        // Note: Current user context might change here.
+                                        // Assuming success means OTP is valid.
+
+                                        await _userRepository.updateMobile(
+                                          inputController.text.trim(),
+                                        );
+
+                                        final prefs =
+                                            await SharedPreferences.getInstance();
                                         await prefs.setString(
                                           'profile_phone',
                                           inputController.text.trim(),
@@ -380,41 +531,89 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                           'phone_verified',
                                           true,
                                         );
-                                      } else {
+
+                                        if (context.mounted) {
+                                          Navigator.pop(context);
+                                          _loadSavedData();
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                AppLocalizations.of(
+                                                  context,
+                                                )!.phoneUpdatedSuccessfully,
+                                              ),
+                                              backgroundColor:
+                                                  AppColors.successGreen,
+                                            ),
+                                          );
+                                        }
+                                      } catch (e) {
+                                        if (context.mounted) {
+                                          setSheetState(() {
+                                            isSubmitting = false;
+                                            statusMessage = e.toString();
+                                            isErrorStatus = true;
+                                          });
+                                        }
+                                      }
+                                    } else {
+                                      // Email Verify via Password (Mock Removed)
+                                      if (otpController.text.isEmpty) {
+                                        setSheetState(() {
+                                          statusMessage =
+                                              "Please enter password";
+                                          isErrorStatus = true;
+                                        });
+                                        return;
+                                      }
+
+                                      setSheetState(() {
+                                        isSubmitting = true;
+                                        statusMessage = null;
+                                      });
+
+                                      try {
+                                        await _userRepository.updateEmail(
+                                          inputController.text.trim(),
+                                          otpController
+                                              .text, // Sending password
+                                        );
+
+                                        final prefs =
+                                            await SharedPreferences.getInstance();
                                         await prefs.setString(
                                           'profile_email',
                                           inputController.text.trim(),
                                         );
-                                      }
 
-                                      if (context.mounted) {
-                                        Navigator.pop(context);
-                                        _loadSavedData();
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              type == 'Phone'
-                                                  ? AppLocalizations.of(
-                                                      context,
-                                                    )!.phoneUpdatedSuccessfully
-                                                  : AppLocalizations.of(
-                                                      context,
-                                                    )!.emailUpdatedSuccessfully,
+                                        if (context.mounted) {
+                                          Navigator.pop(context);
+                                          _loadSavedData();
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                AppLocalizations.of(
+                                                  context,
+                                                )!.emailUpdatedSuccessfully,
+                                              ),
+                                              backgroundColor:
+                                                  AppColors.successGreen,
                                             ),
-                                            backgroundColor:
-                                                AppColors.successGreen,
-                                          ),
-                                        );
+                                          );
+                                        }
+                                      } catch (e) {
+                                        if (context.mounted) {
+                                          setSheetState(() {
+                                            isSubmitting = false;
+                                            statusMessage = e.toString();
+                                            isErrorStatus = true;
+                                          });
+                                        }
                                       }
-                                    } else {
-                                      setSheetState(() {
-                                        statusMessage = AppLocalizations.of(
-                                          context,
-                                        )!.invalidOtpDemo;
-                                        isErrorStatus = true;
-                                      });
                                     }
                                   }
                                 },
@@ -441,9 +640,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       ? AppLocalizations.of(
                                           context,
                                         )!.confirmChange
-                                      : AppLocalizations.of(
-                                          context,
-                                        )!.sendVerificationCode,
+                                      : (type == 'Phone'
+                                            ? AppLocalizations.of(
+                                                context,
+                                              )!.sendVerificationCode
+                                            : "Continue"),
                                 ),
                         ),
                       ),
@@ -669,14 +870,49 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (_nameController.text.trim().isEmpty) {
       errors.add(AppLocalizations.of(context)!.fullName);
     }
-    if (_ageController.text.trim().isEmpty) {
-      errors.add(AppLocalizations.of(context)!.age);
-    }
-    if (_addressController.text.trim().isEmpty) {
-      errors.add(AppLocalizations.of(context)!.address);
+    if (_dobController.text.trim().isEmpty) {
+      errors.add(AppLocalizations.of(context)!.dateOfBirth);
     }
 
     return errors;
+  }
+
+  Future<void> _selectDate() async {
+    DateTime initialDate = DateTime.now().subtract(
+      const Duration(days: 365 * 18),
+    );
+    if (_dobController.text.isNotEmpty) {
+      try {
+        initialDate = DateTime.parse(_dobController.text);
+      } catch (_) {}
+    }
+
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(1950),
+      lastDate: DateTime.now().subtract(
+        const Duration(days: 365 * 15),
+      ), // Minimum 15 years old
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primaryOrangeStart,
+              onPrimary: Colors.white,
+              onSurface: AppColors.textPrimary,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _dobController.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
   }
 
   // Show validation error dialog
@@ -766,9 +1002,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
 
+      // Save to backend
+      await _userRepository.updateProfile(
+        fullName: _nameController.text.trim(),
+        dateOfBirth: _dobController.text.trim(),
+        profilePicture: _localPhotoPath != null ? File(_localPhotoPath!) : null,
+      );
+
+      // Also save to Prefs for offline access/speed
       await prefs.setString('profile_name', _nameController.text.trim());
-      await prefs.setString('profile_age', _ageController.text.trim());
-      await prefs.setString('profile_address', _addressController.text.trim());
+      await prefs.setString('profile_dob', _dobController.text.trim());
 
       if (_localPhotoPath != null) {
         await prefs.setString('profile_photo_path', _localPhotoPath!);
@@ -1095,6 +1338,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     bool readOnly = false,
     String? actionLabel,
     VoidCallback? onActionTap,
+    VoidCallback? onTap,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1129,6 +1373,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 keyboardType: keyboardType,
                 inputFormatters: inputFormatters,
                 readOnly: readOnly,
+                onTap: onTap,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
@@ -1290,12 +1535,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
           const SizedBox(height: 16),
           _buildTextField(
-            AppLocalizations.of(context)!.age,
-            _ageController,
-            keyboardType: TextInputType.number,
-            inputFormatters: [EnglishDigitFormatter()],
+            AppLocalizations.of(context)!.dateOfBirth,
+            _dobController,
+            readOnly: true,
+            onTap: _selectDate,
             prefixIcon: Icons.calendar_today_outlined,
-            hintText: AppLocalizations.of(context)!.enterYourAge,
+            hintText: 'YYYY-MM-DD',
           ),
           const SizedBox(height: 16),
           // Mobile Number field with verify option for Google login
@@ -1321,13 +1566,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ? AppLocalizations.of(context)!.add
                 : AppLocalizations.of(context)!.change,
             onActionTap: () => _showChangeContactPopup('Email'),
-          ),
-          const SizedBox(height: 16),
-          _buildTextField(
-            AppLocalizations.of(context)!.address,
-            _addressController,
-            prefixIcon: Icons.location_on_outlined,
-            hintText: AppLocalizations.of(context)!.enterYourFullAddress,
           ),
         ],
       ),

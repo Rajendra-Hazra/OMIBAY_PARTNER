@@ -10,6 +10,9 @@ import 'package:flutter_material_design_icons/flutter_material_design_icons.dart
 import '../../l10n/app_localizations.dart';
 import '../../core/app_colors.dart';
 import '../../core/localization_helper.dart';
+import '../../core/network/api_client.dart';
+import '../../core/network/api_endpoints.dart';
+import '../../repositories/partner_document_repository.dart';
 
 // DL Number Formatter (e.g., KA0120200012345)
 class DlNumberFormatter extends TextInputFormatter {
@@ -53,6 +56,10 @@ class _DlVerificationScreenState extends State<DlVerificationScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _dobController = TextEditingController();
   DateTime? _selectedDate;
+  final PartnerDocumentRepository _documentRepository =
+      PartnerDocumentRepositoryImpl(
+        apiClient: ApiClient(baseUrl: ApiEndpoints.baseUrl),
+      );
 
   @override
   void initState() {
@@ -102,12 +109,28 @@ class _DlVerificationScreenState extends State<DlVerificationScreen> {
       await prefs.setString('dl_number', _dlNumberController.text);
       await prefs.setString('dl_name', _nameController.text);
       await prefs.setString('dl_dob', _dobController.text);
+
+      // 1. Upload front side
       if (_frontPath != null) {
+        await _documentRepository.uploadDocument(
+          documentType: 'DRIVING_LICENSE',
+          filePath: _frontPath!,
+          side: 'FRONT',
+        );
         await prefs.setString('dl_front_path', _frontPath!);
       }
+
+      // 2. Upload back side
       if (_backPath != null) {
+        await _documentRepository.uploadDocument(
+          documentType: 'DRIVING_LICENSE',
+          filePath: _backPath!,
+          side: 'BACK',
+        );
         await prefs.setString('dl_back_path', _backPath!);
       }
+
+      await prefs.setBool('dl_verified', true);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -251,21 +274,19 @@ class _DlVerificationScreenState extends State<DlVerificationScreen> {
         // For gallery/photos access on mobile
         PermissionStatus status;
         if (Platform.isAndroid) {
-          status = await Permission.photos.status;
-          if (status.isDenied) {
+          // For Android 13+ (SDK 33), we need Permission.photos
+          // For older versions, we need Permission.storage
+          if (await Permission.photos.isGranted ||
+              await Permission.storage.isGranted) {
+            status = PermissionStatus.granted;
+          } else {
             status = await Permission.photos.request();
-          }
-          if (status.isRestricted || status.isLimited) {
-            status = await Permission.storage.status;
-            if (status.isDenied) {
+            if (status.isDenied || status.isPermanentlyDenied) {
               status = await Permission.storage.request();
             }
           }
         } else {
-          status = await Permission.photos.status;
-          if (status.isDenied) {
-            status = await Permission.photos.request();
-          }
+          status = await Permission.photos.request();
         }
 
         if (!status.isGranted && !status.isLimited) {

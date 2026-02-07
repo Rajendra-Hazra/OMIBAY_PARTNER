@@ -658,7 +658,7 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get videoMustBeBetween =>
-      'ভিডিও 5 সেকেন্ড থেকে 1 মিনিটের মধ্যে হতে হবে';
+      'ভিডিও 30 সেকেন্ড থেকে 1 মিনিটের মধ্যে হতে হবে';
 
   @override
   String get videoUploadedSuccessfully => 'ভিডিও সফলভাবে আপলোড হয়েছে!';

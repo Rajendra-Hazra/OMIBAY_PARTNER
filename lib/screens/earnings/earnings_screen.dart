@@ -7,6 +7,13 @@ import '../../core/localization_helper.dart';
 
 import 'package:intl/intl.dart';
 import '../../services/wallet_service.dart';
+import '../../core/network/api_client.dart';
+import '../../core/network/api_endpoints.dart';
+import '../../repositories/earnings_repository.dart';
+import '../../models/earnings_stats.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
+import '../../repositories/wallet_repository.dart';
+import '../../models/wallet_transaction.dart';
 
 class EarningsScreen extends StatefulWidget {
   const EarningsScreen({super.key});
@@ -25,14 +32,31 @@ class _EarningsScreenState extends State<EarningsScreen> {
   bool _bankAccountAdded = false;
   bool _upiIdAdded = false;
   int? _selectedBarIndex;
+  Map<String, List<double>> _monthlyData = {};
+  WeeklyBonus? _weeklyBonus;
+  ReferralOffer? _referralOffer;
   String _selectedMonth = '';
   final TextEditingController _amountController = TextEditingController();
 
-  Map<String, List<double>> _monthlyData = {};
+  // Repository instance
+  late final EarningsRepository _earningsRepository;
+  late final WalletRepository _walletRepository;
+  late Razorpay _razorpay;
+  bool _isProcessing = false;
 
   @override
   void initState() {
     super.initState();
+    // Initialize Repository
+    // Note: Ideally ApiClient should be provided via DI or Provider
+    _earningsRepository = EarningsRepository(
+      apiClient: ApiClient(baseUrl: ApiEndpoints.baseUrl),
+    );
+    _walletRepository = WalletRepositoryImpl(
+      apiClient: ApiClient(baseUrl: ApiEndpoints.baseUrl),
+    );
+    _initializeRazorpay();
+
     // Initialize with a default, will be updated in didChangeDependencies
     _selectedMonth = 'Jan 2026';
     // Listen for updates
@@ -45,14 +69,8 @@ class _EarningsScreenState extends State<EarningsScreen> {
     final l10n = AppLocalizations.of(context)!;
     if (_monthlyData.isEmpty) {
       _selectedMonth = '${l10n.monthJan} 2026';
-      _monthlyData = {
-        '${l10n.monthAug} 2025': List.filled(31, 0.0),
-        '${l10n.monthSep} 2025': List.filled(30, 0.0),
-        '${l10n.monthOct} 2025': List.filled(31, 0.0),
-        '${l10n.monthNov} 2025': List.filled(30, 0.0),
-        '${l10n.monthDec} 2025': List.filled(31, 0.0),
-        '${l10n.monthJan} 2026': List.filled(31, 0.0),
-      };
+      // Initialize with empty, will be populated by API graph data
+      _monthlyData = {};
     }
     _loadData();
   }
@@ -61,106 +79,175 @@ class _EarningsScreenState extends State<EarningsScreen> {
   void dispose() {
     AppColors.jobUpdateNotifier.removeListener(_loadData);
     _amountController.dispose();
+    _razorpay.clear();
     super.dispose();
   }
 
+  void _initializeRazorpay() {
+    _razorpay = Razorpay();
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+  }
+
+  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    setState(() => _isProcessing = true);
+    try {
+      if (response.paymentId != null && response.signature != null) {
+        await _walletRepository.verifyRecharge(
+          response.orderId!,
+          response.paymentId!,
+          response.signature!,
+        );
+        _loadData();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Payment successful! Wallet updated.')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Verification failed: $e')));
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
+  void _handlePaymentError(PaymentFailureResponse response) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Payment failed: ${response.message}')),
+    );
+    setState(() => _isProcessing = false);
+  }
+
+  void _handleExternalWallet(ExternalWalletResponse response) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('External wallet: ${response.walletName}')),
+    );
+  }
+
   Future<void> _loadData() async {
+    if (!mounted) return;
+    setState(() => _isLoading = true);
+
     final prefs = await SharedPreferences.getInstance();
 
-    // We'll calculate these from the list to ensure manual transactions don't affect them
-    double calculatedEarnings = 0.0;
-    double calculatedTips = 0.0;
-    int calculatedJobs = 0;
-
-    final double balance = prefs.getDouble('wallet_balance') ?? 0.0;
-
-    // Check for saved payment methods by reading the JSON arrays
+    // Check local pref for bank/upi existence (keeping this local for now as it wasn't part of the API plan explicitly)
     final String bankJson = prefs.getString('saved_bank_accounts') ?? '[]';
     final String upiJson = prefs.getString('saved_upi_ids') ?? '[]';
-
     final bool bankAdded = (jsonDecode(bankJson) as List).isNotEmpty;
     final bool upiAdded = (jsonDecode(upiJson) as List).isNotEmpty;
-    if (!mounted) return;
-    final l10n = AppLocalizations.of(context)!;
 
-    // Load completed jobs for transaction history
-    final List<String> completedList =
-        prefs.getStringList('completed_jobs_list') ?? [];
+    try {
+      // 1. Fetch Stats
+      final stats = await _earningsRepository.getEarningsStats();
 
-    // Reset monthly data before populating
-    _monthlyData.forEach((key, value) => value.fillRange(0, value.length, 0.0));
+      // 2. Fetch Graph Data (for current month/year or selected)
+      // For simplicity, we fetch current month's graph data initially or based on selected
+      // We'll just fetch current month for now to populate the chart
+      final now = DateTime.now();
+      final graphData = await _earningsRepository.getEarningsGraph(
+        month: now.month,
+        year: now.year,
+      );
 
-    final List<Map<String, dynamic>> transactionData = completedList.map((
-      item,
-    ) {
-      final data = jsonDecode(item) as Map<String, dynamic>;
-      final title = data['title']?.toString() ?? '';
-      final bool isJob = title.startsWith('Job:') || title.startsWith('কাজ:');
+      // 3. Fetch History
+      final transactions = await _walletRepository.getTransactions();
 
-      // Update stats and monthly data ONLY for actual jobs, exclude manual withdrawals/payments
-      if (isJob) {
-        final double earnings =
-            double.tryParse(data['partnerEarning']?.toString() ?? '0') ?? 0.0;
-        final double tips =
-            double.tryParse(data['tipAmount']?.toString() ?? '0') ?? 0.0;
+      if (!mounted) return;
 
-        calculatedEarnings += earnings;
-        calculatedTips += tips;
-        calculatedJobs++;
+      final l10n = AppLocalizations.of(context)!;
 
-        if (data['date'] != null) {
-          try {
-            final date = DateTime.parse(data['date']);
-            final String monthKey = _getLocalizedMonthYear(date);
-            if (_monthlyData.containsKey(monthKey)) {
-              final dayIndex = date.day - 1;
-              if (dayIndex >= 0 && dayIndex < _monthlyData[monthKey]!.length) {
-                _monthlyData[monthKey]![dayIndex] += earnings;
-              }
-            }
-          } catch (_) {}
+      // Process Graph Data into _monthlyData
+      // Backend returns list of {date, day, amount}
+      // We need to map it to the requested format for the chart widget
+      // Current chart widget expects map key "Month Year" -> List<double>
+
+      final String currentMonthKey = _getLocalizedMonthYear(now);
+      final int daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+      final List<double> dailyEarnings = List.filled(daysInMonth, 0.0);
+
+      for (var point in graphData) {
+        final int day = point['day'] as int;
+        final double amount = (point['amount'] as num).toDouble();
+        if (day >= 1 && day <= daysInMonth) {
+          dailyEarnings[day - 1] = amount;
         }
       }
+      _monthlyData[currentMonthKey] = dailyEarnings;
+      _selectedMonth = currentMonthKey;
 
-      String timeDisplay = l10n.justNow;
-      if (data['date'] != null) {
-        try {
-          final date = DateTime.parse(data['date']);
-          final locale = Localizations.localeOf(context).toString();
-          timeDisplay = LocalizationHelper.convertBengaliToEnglish(
-            DateFormat('dd MMM, hh:mm a', locale).format(date),
-          );
-        } catch (_) {}
-      }
+      // Process History
+      final List<Map<String, dynamic>> transactionData = transactions.map((
+        txn,
+      ) {
+        return {
+          'title': txn.description.isNotEmpty ? txn.description : l10n.unknown,
+          'subtitle': txn.paymentMode,
+          'amount': txn.formattedAmount,
+          'isCredit': txn.isCredit,
+          'time': LocalizationHelper.convertBengaliToEnglish(
+            DateFormat(
+              'dd MMM, hh:mm a',
+              Localizations.localeOf(context).toString(),
+            ).format(txn.createdAt),
+          ),
+          'paymentMode': txn.paymentMode,
+          'isJob': txn.isJob,
+        };
+      }).toList();
 
-      return {
-        ...data,
-        'title':
-            data['title'] ??
-            l10n.jobWithService(data['service'] ?? l10n.unknown),
-        'subtitle': data['subtitle'] ?? data['customer'] ?? l10n.unknown,
-        'amount':
-            data['amount'] ?? '+${l10n.currencySymbol}${data['price'] ?? '0'}',
-        'isCredit': data['isCredit'] ?? (data['type'] == 'Credit'),
-        'time': timeDisplay,
-        'paymentMode':
-            data['paymentMode'] ??
-            (data['isCredit'] == true ? l10n.online : l10n.cash),
-        'isJob': isJob,
-      };
-    }).toList();
-
-    if (mounted) {
       setState(() {
-        _totalEarnings = calculatedEarnings;
-        _totalTips = calculatedTips;
-        _totalJobsDone = calculatedJobs;
-        _walletBalance = balance;
+        _totalEarnings = stats.totalEarnings;
+        _totalTips = stats.totalTips;
+        _totalJobsDone = stats.totalEarnings > 0
+            ? stats.todayJobs
+            : 0; // Wait, totalJobsDone should be total lifetime jobs? The API returns "todayJobs" and "totalCompletedServices" (in partner entity).
+        // My DTO: todayJobs. Partner Entity: totalCompletedServices.
+        // The API returns todayJobs.
+        // The UI variable is `_totalJobsDone`.
+        // Let's check `PartnerEarningsStatsDTO` again.
+        // It has `todayJobs`. It does NOT have `totalJobs`.
+        // However, `Partner` entity has `totalCompletedServices`.
+        // I should have included `totalJobs` in the DTO?
+        // Let's re-read DTO.
+        // `totalEarnings`, `walletBalance`, `totalTips`, `todayEarnings`, `todayJobs`.
+        // It seems I missed `totalCompletedServices` in the DTO or the UI calls it today jobs?
+        // _totalJobsDone usually implies lifetime.
+        // I'll update the DTO and Service to include totalJobs if needed, or just map what I have.
+        // For now, I'll map `todayJobs` if that's what was intended, OR I'll update the backend to include `totalJobs`.
+        // The detailed plan said: "Returns totalEarnings... totalTips... todayEarnings, todayJobs".
+        // The UI `_totalJobsDone` was calculated from "completed_jobs_list" which is history. So it was likely lifetime.
+        // I should update the backend to return total jobs.
+        // BUT, I can't update backend easily now without restart issues (maybe).
+        // Let's assume `_totalJobsDone` is OK to start with 0 or `todayJobs` for now, or check if I can quick-fix backend.
+        // Actually, I can fix backend. I'm in EXECUTION.
+        // Ideally, I should add `totalJobs` to DTO.
+        // Implementation plan said: "Returns data ... total jobs completed".
+        // My DTO has `todayJobs`. I missed `totalJobs`.
+        // I'll fix the backend DTO and Service in a follow-up or right now.
+        // It's better to fix it now.
+
+        _totalJobsDone = stats.totalJobs;
+        _weeklyBonus = stats.weeklyBonus;
+        _referralOffer = stats.referralOffer;
+        _walletBalance = stats.walletBalance;
         _bankAccountAdded = bankAdded;
         _upiIdAdded = upiAdded;
         _transactions = transactionData;
+        _weeklyBonus = stats.weeklyBonus;
         _isLoading = false;
       });
+    } catch (e) {
+      debugPrint('Error loading earnings: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          // Fallback to local? Or just show 0.
+        });
+      }
     }
   }
 
@@ -236,83 +323,101 @@ class _EarningsScreenState extends State<EarningsScreen> {
     }
 
     return Scaffold(
-      body: SafeArea(
-        top: false,
-        child: RefreshIndicator(
-          onRefresh: _loadData,
-          color: AppColors.primaryOrangeStart,
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              children: [
-                _buildHeader(context, titleFontSize, borderRadius, hPadding),
-                _buildWalletHeader(
-                  context,
-                  balanceFontSize,
-                  borderRadius,
-                  hPadding,
-                  bodyFontSize,
-                  buttonHeight,
-                ),
-                Padding(
-                  padding: EdgeInsets.all(hPadding),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildSectionTitle(l10n.earnings, sectionTitleSize),
-                      _buildPerformanceGrid(bodyFontSize, borderRadius),
-                      SizedBox(height: spacing),
-                      _buildMonthlyEarningsChart(
-                        chartHeight,
-                        borderRadius,
-                        bodyFontSize,
-                      ),
-                      SizedBox(height: spacing),
-                      _buildSectionTitle(
-                        l10n.incentivesAndOffers,
-                        sectionTitleSize,
-                      ),
-                      _buildBonusCard(borderRadius, bodyFontSize),
-                      SizedBox(height: 16 * paddingScale),
-                      _buildReferCard(borderRadius, bodyFontSize),
-                      SizedBox(height: spacing),
-                      Row(
+      body: Stack(
+        children: [
+          SafeArea(
+            top: false,
+            child: RefreshIndicator(
+              onRefresh: _loadData,
+              color: AppColors.primaryOrangeStart,
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  children: [
+                    _buildHeader(
+                      context,
+                      titleFontSize,
+                      borderRadius,
+                      hPadding,
+                    ),
+                    _buildWalletHeader(
+                      context,
+                      balanceFontSize,
+                      borderRadius,
+                      hPadding,
+                      bodyFontSize,
+                      buttonHeight,
+                    ),
+                    Padding(
+                      padding: EdgeInsets.all(hPadding),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: _buildSectionTitle(
-                              l10n.transactionHistory,
-                              sectionTitleSize,
-                            ),
+                          _buildSectionTitle(l10n.earnings, sectionTitleSize),
+                          _buildPerformanceGrid(bodyFontSize, borderRadius),
+                          SizedBox(height: spacing),
+                          _buildMonthlyEarningsChart(
+                            chartHeight,
+                            borderRadius,
+                            bodyFontSize,
                           ),
-                          if (_transactions.isNotEmpty) ...[
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pushNamed(
-                                  context,
-                                  '/withdrawal-history',
-                                );
-                              },
-                              child: Text(
-                                AppLocalizations.of(context)!.viewAll,
-                                style: TextStyle(fontSize: bodyFontSize),
+                          SizedBox(height: spacing),
+                          _buildSectionTitle(
+                            l10n.incentivesAndOffers,
+                            sectionTitleSize,
+                          ),
+                          _buildBonusCard(borderRadius, bodyFontSize),
+                          SizedBox(height: 16 * paddingScale),
+                          // _buildReferCard(borderRadius, bodyFontSize),
+                          SizedBox(height: spacing),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildSectionTitle(
+                                  l10n.transactionHistory,
+                                  sectionTitleSize,
+                                ),
                               ),
-                            ),
-                          ],
+                              if (_transactions.isNotEmpty) ...[
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pushNamed(
+                                      context,
+                                      '/withdrawal-history',
+                                    );
+                                  },
+                                  child: Text(
+                                    AppLocalizations.of(context)!.viewAll,
+                                    style: TextStyle(fontSize: bodyFontSize),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          _buildTransactionList(
+                            bodyFontSize,
+                            borderRadius,
+                            iconSize,
+                          ),
+                          SizedBox(height: 20 * paddingScale),
                         ],
                       ),
-                      _buildTransactionList(
-                        bodyFontSize,
-                        borderRadius,
-                        iconSize,
-                      ),
-                      SizedBox(height: 20 * paddingScale),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+          if (_isProcessing)
+            Container(
+              color: Colors.black.withValues(alpha: 0.5),
+              child: const Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.primaryOrangeStart,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -408,7 +513,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
               height: buttonHeight,
               child: ElevatedButton(
                 onPressed: () =>
-                    _showPayNowDialog(context, borderRadius, bodyFontSize),
+                    _showAddMoneyDialog(context, borderRadius, bodyFontSize),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red.shade400,
                   foregroundColor: Colors.white,
@@ -433,26 +538,20 @@ class _EarningsScreenState extends State<EarningsScreen> {
                   child: SizedBox(
                     height: buttonHeight * 0.8,
                     child: ElevatedButton.icon(
-                      onPressed: () => _showWithdrawDialog(
+                      onPressed: () => _showAddMoneyDialog(
                         context,
-                        'Bank',
                         borderRadius,
                         bodyFontSize,
                       ),
-                      icon: Icon(
-                        Icons.account_balance,
-                        size: bodyFontSize * 1.1,
-                      ),
+                      icon: Icon(Icons.add_card, size: bodyFontSize * 1.1),
                       label: Text(
-                        AppLocalizations.of(context)!.bankTransfer,
+                        'Add Money',
                         style: TextStyle(fontSize: bodyFontSize * 0.85),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white.withValues(alpha: 0.1),
-                        foregroundColor: Colors.white,
-                        side: const BorderSide(color: Colors.white24),
+                        backgroundColor: AppColors.primaryOrangeStart,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
                             borderRadius * 0.4,
@@ -467,21 +566,25 @@ class _EarningsScreenState extends State<EarningsScreen> {
                   child: SizedBox(
                     height: buttonHeight * 0.8,
                     child: ElevatedButton.icon(
-                      onPressed: () => _showWithdrawDialog(
+                      onPressed: () => _showWithdrawSelectionDialog(
                         context,
-                        'UPI',
                         borderRadius,
                         bodyFontSize,
                       ),
-                      icon: Icon(Icons.qr_code, size: bodyFontSize * 1.1),
+                      icon: Icon(
+                        Icons.account_balance_wallet,
+                        size: bodyFontSize * 1.1,
+                      ),
                       label: Text(
-                        AppLocalizations.of(context)!.upiWithdraw,
+                        l10n.withdraw,
                         style: TextStyle(fontSize: bodyFontSize * 0.85),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryOrangeStart,
+                        backgroundColor: Colors.white.withValues(alpha: 0.1),
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white24),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
                             borderRadius * 0.4,
@@ -675,6 +778,57 @@ class _EarningsScreenState extends State<EarningsScreen> {
     );
   }
 
+  void _showWithdrawSelectionDialog(
+    BuildContext context,
+    double borderRadius,
+    double fontSize,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(borderRadius * 0.6),
+        ),
+        title: Text(
+          l10n.withdraw,
+          style: TextStyle(
+            fontSize: fontSize * 1.2,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(
+                Icons.account_balance,
+                color: AppColors.primaryOrangeStart,
+              ),
+              title: Text(l10n.bankTransfer),
+              onTap: () {
+                Navigator.pop(context);
+                _showWithdrawDialog(context, 'Bank', borderRadius, fontSize);
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(
+                Icons.qr_code,
+                color: AppColors.primaryOrangeStart,
+              ),
+              title: Text(l10n.upiWithdraw),
+              onTap: () {
+                Navigator.pop(context);
+                _showWithdrawDialog(context, 'UPI', borderRadius, fontSize);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showWithdrawDialog(
     BuildContext context,
     String method,
@@ -814,7 +968,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
     );
   }
 
-  void _showPayNowDialog(
+  void _showAddMoneyDialog(
     BuildContext context,
     double borderRadius,
     double fontSize,
@@ -835,7 +989,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
           borderRadius: BorderRadius.circular(borderRadius * 0.6),
         ),
         title: Text(
-          l10n.payNow,
+          'Add Money', // Hardcoded fallback for now
           style: TextStyle(
             fontSize: fontSize * 1.2,
             fontWeight: FontWeight.bold,
@@ -932,27 +1086,41 @@ class _EarningsScreenState extends State<EarningsScreen> {
 
               Navigator.pop(context);
 
-              // Record Payment Transaction (Partner pays OmiBay)
-              // This is a CREDIT to the wallet (increases balance)
-              await WalletService.recordManualTransaction(
-                title: l10n.dueAmountPaid,
-                titleKey: 'dueAmountPaid',
-                amount: amount,
-                isCredit: true,
-                subtitle: l10n.paymentForPlatformFees,
-                subtitleKey: 'paymentForPlatformFees',
-              );
+              // ---------------------------------------------------------
+              // REAL PAYMENT IMPLEMENTATION
+              // ---------------------------------------------------------
+              setState(() => _isProcessing = true);
+              final messenger = ScaffoldMessenger.of(context);
 
-              // Update local state
-              _loadData();
-
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(l10n.paymentProcessedSuccessfully),
-                    duration: const Duration(seconds: 2),
-                  ),
+              try {
+                // 1. Create Order on Backend
+                final orderData = await _walletRepository.createRechargeOrder(
+                  amount,
                 );
+
+                // 2. Get User Info for Prefill
+                final prefs = await SharedPreferences.getInstance();
+                // Partner data might be different, but Razorpay needs contact/email
+                final userPhone = prefs.getString('user_phone') ?? '';
+                final userEmail = prefs.getString('user_email') ?? '';
+
+                // 3. Open Razorpay
+                final options = {
+                  'key': orderData['key'],
+                  'amount': orderData['amount'],
+                  'name': 'OmiBay Partner',
+                  'order_id': orderData['orderId'],
+                  'description': 'Wallet Recharge',
+                  'timeout': 300,
+                  'prefill': {'contact': userPhone, 'email': userEmail},
+                };
+
+                _razorpay.open(options);
+              } catch (e) {
+                messenger.showSnackBar(
+                  SnackBar(content: Text('Failed to initiate payment: $e')),
+                );
+                setState(() => _isProcessing = false);
               }
             },
             style: ElevatedButton.styleFrom(
@@ -1280,8 +1448,16 @@ class _EarningsScreenState extends State<EarningsScreen> {
 
   Widget _buildBonusCard(double borderRadius, double fontSize) {
     final l10n = AppLocalizations.of(context)!;
-    double progress = (_totalJobsDone / 15).clamp(0.0, 1.0);
-    bool isComplete = progress >= 1.0;
+
+    // Use backend data if available, otherwise default/hidden
+    if (_weeklyBonus == null) {
+      return SizedBox.shrink(); // Or show loading/placeholder
+    }
+
+    final bonus = _weeklyBonus!;
+
+    double progress = (bonus.completedJobs / bonus.targetJobs).clamp(0.0, 1.0);
+    bool isComplete = bonus.isCompleted;
 
     return Container(
       width: double.infinity,
@@ -1345,7 +1521,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            l10n.weeklyBonusChallenge.toUpperCase(),
+                            bonus.title.toUpperCase(), // Use title from backend
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w900,
@@ -1354,9 +1530,19 @@ class _EarningsScreenState extends State<EarningsScreen> {
                             ),
                           ),
                           Text(
-                            l10n.weeklyBonusSubtitle,
+                            bonus.subtitle, // Use subtitle from backend
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.6),
+                              fontSize: fontSize * 0.75,
+                            ),
+                          ),
+                          Text(
+                            bonus.endsIn.isNotEmpty
+                                ? 'Ends in ${bonus.endsIn}'
+                                : '',
+                            style: TextStyle(
+                              color: AppColors.primaryOrangeStart,
+                              fontWeight: FontWeight.bold,
                               fontSize: fontSize * 0.75,
                             ),
                           ),
@@ -1394,7 +1580,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                     Text(
                       l10n.jobsDoneWithProgress(
                         LocalizationHelper.convertBengaliToEnglish(
-                          _totalJobsDone,
+                          bonus.completedJobs,
                         ),
                       ),
                       style: TextStyle(
@@ -1404,7 +1590,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                       ),
                     ),
                     Text(
-                      l10n.jobsGoal,
+                      'Goal: ${LocalizationHelper.convertBengaliToEnglish(bonus.targetJobs)}',
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.5),
                         fontSize: fontSize * 0.75,
@@ -1478,7 +1664,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                       ),
                       const Spacer(),
                       Text(
-                        '${l10n.currencySymbol}${LocalizationHelper.convertBengaliToEnglish((500).toStringAsFixed(0))}',
+                        '${l10n.currencySymbol}${LocalizationHelper.convertBengaliToEnglish(bonus.rewardAmount.toInt().toString())}',
                         style: TextStyle(
                           color: Colors.greenAccent,
                           fontWeight: FontWeight.bold,
@@ -1496,6 +1682,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
     );
   }
 
+  /*
   Widget _buildReferCard(double borderRadius, double fontSize) {
     final l10n = AppLocalizations.of(context)!;
     return Builder(
@@ -1522,7 +1709,9 @@ class _EarningsScreenState extends State<EarningsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      l10n.referAndEarnWithAmount('200'),
+                      _referralOffer != null
+                          ? '${_referralOffer!.title} ${l10n.currencySymbol}${LocalizationHelper.convertBengaliToEnglish(_referralOffer!.amount.toInt().toString())}'
+                          : l10n.referAndEarnWithAmount('200'),
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -1531,7 +1720,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      l10n.referSubtitle,
+                      _referralOffer?.subtitle ?? l10n.referSubtitle,
                       style: TextStyle(
                         color: Colors.white70,
                         fontSize: fontSize * 0.75,
@@ -1551,7 +1740,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   textStyle: TextStyle(fontSize: fontSize * 0.8),
                 ),
-                child: Text(l10n.invite),
+                child: Text(_referralOffer?.actionText ?? l10n.invite),
               ),
             ],
           ),
@@ -1559,6 +1748,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
       ),
     );
   }
+  */
 
   Widget _buildTransactionList(
     double fontSize,

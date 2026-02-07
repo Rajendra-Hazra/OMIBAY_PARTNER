@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
+import 'package:video_compress/video_compress.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/app_colors.dart';
 import '../../core/localization_helper.dart';
+import '../../repositories/partner_service_repository.dart';
+import '../../repositories/partner_document_repository.dart';
+import '../../core/network/api_client.dart';
+import '../../core/network/api_endpoints.dart';
 
 // Service option model class for type safety
 class ServiceOption {
@@ -42,94 +48,54 @@ class WorkVerificationScreen extends StatefulWidget {
 class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
   final ImagePicker _picker = ImagePicker();
   bool _isLoading = false;
+  String? _compressionStatus;
   bool _addNewServiceMode =
       false; // Flag to indicate adding new service from Edit Services
+  final PartnerServiceRepository _serviceRepository =
+      PartnerServiceRepositoryImpl(
+        apiClient: ApiClient(baseUrl: ApiEndpoints.baseUrl),
+      );
+  final PartnerDocumentRepository _documentRepository =
+      PartnerDocumentRepositoryImpl(
+        apiClient: ApiClient(baseUrl: ApiEndpoints.baseUrl),
+      );
+  List<ServiceType> _availableServiceTypes = [];
 
-  String _getLocalizedName(BuildContext context, String id) {
-    final l10n = AppLocalizations.of(context)!;
-    final Map<String, String> nameMap = {
-      'plumber': l10n.plumber,
-      'electrician': l10n.electrician,
-      'carpenter': l10n.carpenter,
-      'gardening': l10n.gardening,
-      'cleaning': l10n.cleaning,
-      'men_salon': l10n.menSalon,
-      'women_salon': l10n.womenSalon,
-      'makeup_beauty': l10n.makeupAndBeauty,
-      'quick_transport': l10n.quickTransport,
-      'appliances_repair': l10n.appliancesRepair,
-      'ac': l10n.ac,
-      'air_cooler': l10n.airCooler,
-      'chimney': l10n.chimney,
-      'geyser': l10n.geyser,
-      'laptop': l10n.laptop,
-      'refrigerator': l10n.refrigerator,
-      'washing_machine': l10n.washingMachine,
-      'microwave': l10n.microwave,
-      'television': l10n.television,
-      'water_purifier': l10n.waterPurifier,
-    };
-    return nameMap[id] ?? id;
+  IconData _getIconData(String? iconName) {
+    switch (iconName) {
+      case 'plumbing':
+        return Icons.plumbing;
+      case 'electrical_services':
+        return Icons.electrical_services;
+      case 'carpenter':
+        return Icons.carpenter;
+      case 'grass':
+        return Icons.grass;
+      case 'cleaning_services':
+        return Icons.cleaning_services;
+      case 'face':
+        return Icons.face;
+      case 'face_3':
+        return Icons.face_3;
+      case 'brush':
+        return Icons.brush;
+      case 'local_shipping':
+        return Icons.local_shipping;
+      case 'home_repair_service':
+        return Icons.home_repair_service;
+      default:
+        return Icons.work_outline;
+    }
   }
 
   // Already verified services (non-clickable in addNewService mode)
   Set<String> _alreadyVerifiedServices = {};
-  Set<String> _alreadyVerifiedAppliances = {};
 
   // Service selection state
   final Set<String> _selectedServices = {};
-  final Set<String> _selectedApplianceSubOptions = {};
-  bool _isAppliancesExpanded = false;
 
-  // Available services
-  static const List<ServiceOption> _services = [
-    ServiceOption(id: 'plumber', name: 'Plumber', icon: Icons.plumbing),
-    ServiceOption(
-      id: 'electrician',
-      name: 'Electrician',
-      icon: Icons.electrical_services,
-    ),
-    ServiceOption(id: 'carpenter', name: 'Carpenter', icon: Icons.carpenter),
-    ServiceOption(id: 'gardening', name: 'Gardening', icon: Icons.grass),
-    ServiceOption(
-      id: 'cleaning',
-      name: 'Cleaning',
-      icon: Icons.cleaning_services,
-    ),
-    ServiceOption(id: 'men_salon', name: 'Men Salon', icon: Icons.face),
-    ServiceOption(id: 'women_salon', name: 'Women Salon', icon: Icons.face_3),
-    ServiceOption(
-      id: 'makeup_beauty',
-      name: 'Makeup & Beauty',
-      icon: Icons.brush,
-    ),
-    ServiceOption(
-      id: 'quick_transport',
-      name: 'Quick Transport',
-      icon: Icons.local_shipping,
-    ),
-    ServiceOption(
-      id: 'appliances_repair',
-      name: 'Appliances Repair & Replacement',
-      icon: Icons.home_repair_service,
-    ),
-  ];
-
-  // Appliance sub-options
-  static const List<ApplianceOption> _applianceSubOptions = [
-    ApplianceOption(id: 'ac', name: 'AC'),
-    ApplianceOption(id: 'air_cooler', name: 'Air Cooler'),
-    ApplianceOption(id: 'chimney', name: 'Chimney'),
-    ApplianceOption(id: 'geyser', name: 'Geyser'),
-    ApplianceOption(id: 'laptop', name: 'Laptop'),
-    ApplianceOption(id: 'refrigerator', name: 'Refrigerator'),
-    ApplianceOption(id: 'washing_machine', name: 'Washing Machine'),
-    ApplianceOption(id: 'microwave', name: 'Microwave'),
-    ApplianceOption(id: 'television', name: 'Television'),
-    ApplianceOption(id: 'water_purifier', name: 'Water Purifier'),
-  ];
-
-  // Dynamic data for each service
+  // Available services (removed hardcoded list)
+  // Appliance sub-options (removed hardcoded list)
   final Map<String, TextEditingController> _serviceExperienceControllers = {};
   final Map<String, TextEditingController> _serviceSkillsControllers = {};
   final Map<String, String?> _serviceVideoPaths = {};
@@ -140,8 +106,23 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
     super.initState();
     // Delay to get route arguments after build
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchAvailableServices();
       _checkArguments();
     });
+  }
+
+  Future<void> _fetchAvailableServices() async {
+    setState(() => _isLoading = true);
+    try {
+      final services = await _serviceRepository.getAvailableServiceTypes();
+      setState(() {
+        _availableServiceTypes = services;
+      });
+    } catch (e) {
+      debugPrint('Error fetching available services: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   void _checkArguments() async {
@@ -154,7 +135,6 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
       setState(() {
         _addNewServiceMode = true;
         _selectedServices.clear();
-        _selectedApplianceSubOptions.clear();
       });
     } else {
       // Normal flow - load saved data
@@ -167,14 +147,11 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final savedServices = prefs.getStringList('profile_services') ?? [];
-      final savedAppliances = prefs.getStringList('profile_appliances') ?? [];
 
       Set<String> verifiedServices = {};
-      Set<String> verifiedAppliances = {};
 
       // Check which services are fully verified (have experience + video)
       for (String serviceId in savedServices) {
-        if (serviceId == 'appliances_repair') continue;
         final hasExperience =
             prefs.getString('exp_$serviceId')?.isNotEmpty ?? false;
         final hasVideo = prefs.getString('video_$serviceId') != null;
@@ -183,19 +160,8 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
         }
       }
 
-      // Check which appliances are fully verified
-      for (String applianceId in savedAppliances) {
-        final hasExperience =
-            prefs.getString('exp_$applianceId')?.isNotEmpty ?? false;
-        final hasVideo = prefs.getString('video_$applianceId') != null;
-        if (hasExperience && hasVideo) {
-          verifiedAppliances.add(applianceId);
-        }
-      }
-
       setState(() {
         _alreadyVerifiedServices = verifiedServices;
-        _alreadyVerifiedAppliances = verifiedAppliances;
       });
     } catch (e) {
       debugPrint('Error loading verified services: $e');
@@ -236,7 +202,6 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
 
       // Load selected services
       final savedServices = prefs.getStringList('profile_services');
-      final savedAppliances = prefs.getStringList('profile_appliances');
 
       setState(() {
         if (savedServices != null) {
@@ -250,25 +215,6 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
                 prefs.getString('skills_$serviceId') ?? '';
             _serviceVideoPaths[serviceId] = prefs.getString('video_$serviceId');
           }
-
-          if (_selectedServices.contains('appliances_repair')) {
-            _isAppliancesExpanded = true;
-          }
-        }
-
-        if (savedAppliances != null) {
-          _selectedApplianceSubOptions.clear();
-          _selectedApplianceSubOptions.addAll(savedAppliances);
-
-          for (String applianceId in savedAppliances) {
-            _getExperienceController(applianceId).text =
-                prefs.getString('exp_$applianceId') ?? '';
-            _getSkillsController(applianceId).text =
-                prefs.getString('skills_$applianceId') ?? '';
-            _serviceVideoPaths[applianceId] = prefs.getString(
-              'video_$applianceId',
-            );
-          }
         }
       });
     } catch (e) {
@@ -279,94 +225,69 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
   Future<void> _saveData() async {
     setState(() => _isLoading = true);
     try {
-      if (_selectedApplianceSubOptions.isEmpty) {
-        _selectedServices.remove('appliances_repair');
-      }
-
       final prefs = await SharedPreferences.getInstance();
 
-      // If in addNewService mode, merge with existing services
-      if (_addNewServiceMode) {
-        // Get existing services
-        final existingServices = prefs.getStringList('profile_services') ?? [];
-        final existingAppliances =
-            prefs.getStringList('profile_appliances') ?? [];
+      List<PartnerServiceDetail> serviceDetails = [];
 
-        // Merge new services with existing ones (avoid duplicates)
-        final mergedServices = {
-          ...existingServices,
-          ..._selectedServices,
-        }.toList();
-        final mergedAppliances = {
-          ...existingAppliances,
-          ..._selectedApplianceSubOptions,
-        }.toList();
-
-        await prefs.setStringList('profile_services', mergedServices);
-        await prefs.setStringList('profile_appliances', mergedAppliances);
-      } else {
-        // Normal mode - replace all
-        await prefs.setStringList(
-          'profile_services',
-          _selectedServices.toList(),
-        );
-        await prefs.setStringList(
-          'profile_appliances',
-          _selectedApplianceSubOptions.toList(),
-        );
-      }
-
+      // 1. Process each selected service
       for (String serviceId in _selectedServices) {
-        // Skip general category if specific appliances are selected
-        if (serviceId == 'appliances_repair' &&
-            _selectedApplianceSubOptions.isNotEmpty) {
-          continue;
-        }
+        String? videoUrl;
 
-        await prefs.setString(
-          'exp_$serviceId',
-          _serviceExperienceControllers[serviceId]?.text ?? '',
-        );
-        await prefs.setString(
-          'skills_$serviceId',
-          _serviceSkillsControllers[serviceId]?.text ?? '',
-        );
-        if (_serviceVideoPaths[serviceId] != null) {
-          await prefs.setString(
-            'video_$serviceId',
-            _serviceVideoPaths[serviceId]!,
+        // Compress and Upload video if exists
+        String? videoPath = _serviceVideoPaths[serviceId];
+        if (videoPath != null && !videoPath.startsWith('http')) {
+          // Compressing video before upload
+          if (!kIsWeb) {
+            setState(() => _compressionStatus = 'Compressing Skill Video...');
+            final compressedVideo = await _compressVideo(videoPath);
+            if (compressedVideo != null) {
+              videoPath = compressedVideo;
+            }
+            setState(() => _compressionStatus = null);
+          }
+
+          // It's a local path, needs upload
+          await _documentRepository.uploadDocument(
+            documentType: 'SKILL_VIDEO',
+            filePath: videoPath,
           );
         }
-        // Set status as 'pending' for new services (will be changed to 'verified' by admin)
-        // Only set to pending if not already verified
-        final currentStatus = prefs.getString('status_$serviceId');
-        if (currentStatus != 'verified') {
-          await prefs.setString('status_$serviceId', 'pending');
+
+        serviceDetails.add(
+          PartnerServiceDetail(
+            serviceTypeId: serviceId,
+            experience: _serviceExperienceControllers[serviceId]?.text,
+            specialSkills: _serviceSkillsControllers[serviceId]?.text,
+            videoUrl:
+                videoUrl, // This might be null or the path if backend doesn't return URL
+          ),
+        );
+
+        // Save locally too for offline/state persistence
+        if (_serviceExperienceControllers[serviceId]?.text.isNotEmpty ??
+            false) {
+          await prefs.setString(
+            'exp_$serviceId',
+            _serviceExperienceControllers[serviceId]!.text,
+          );
+        }
+        if (_serviceSkillsControllers[serviceId]?.text.isNotEmpty ?? false) {
+          await prefs.setString(
+            'skills_$serviceId',
+            _serviceSkillsControllers[serviceId]!.text,
+          );
+        }
+        if (videoPath != null) {
+          await prefs.setString('video_$serviceId', videoPath);
         }
       }
 
-      for (String applianceId in _selectedApplianceSubOptions) {
-        await prefs.setString(
-          'exp_$applianceId',
-          _serviceExperienceControllers[applianceId]?.text ?? '',
-        );
-        await prefs.setString(
-          'skills_$applianceId',
-          _serviceSkillsControllers[applianceId]?.text ?? '',
-        );
-        if (_serviceVideoPaths[applianceId] != null) {
-          await prefs.setString(
-            'video_$applianceId',
-            _serviceVideoPaths[applianceId]!,
-          );
-        }
-        // Set status as 'pending' for new appliances (will be changed to 'verified' by admin)
-        // Only set to pending if not already verified
-        final currentStatus = prefs.getString('status_$applianceId');
-        if (currentStatus != 'verified') {
-          await prefs.setString('status_$applianceId', 'pending');
-        }
-      }
+      // 2. Update partner services on backend
+      await _serviceRepository.updatePartnerServices(serviceDetails);
+
+      // 3. Mark as verified in local prefs
+      await prefs.setBool('skill_verified', true);
+      await prefs.setStringList('profile_services', _selectedServices.toList());
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -391,29 +312,40 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
         ),
       );
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
+  Future<String?> _compressVideo(String videoPath) async {
+    try {
+      // Show compression progress or message if possible
+      debugPrint('Starting video compression for: $videoPath');
+
+      final MediaInfo? mediaInfo = await VideoCompress.compressVideo(
+        videoPath,
+        quality: VideoQuality.LowQuality,
+        deleteOrigin: false, // Keep original just in case
+        includeAudio: true,
+      );
+
+      if (mediaInfo != null && mediaInfo.path != null) {
+        debugPrint('Compression finished: ${mediaInfo.path}');
+        return mediaInfo.path;
+      }
+    } catch (e) {
+      debugPrint('Video compression error: $e');
+    }
+    return null;
+  }
+
   bool get _isFormValid {
-    if (_selectedServices.isEmpty && _selectedApplianceSubOptions.isEmpty) {
+    if (_selectedServices.isEmpty) {
       return false;
     }
 
     for (String serviceId in _selectedServices) {
-      // Skip general category if specific appliances are selected
-      if (serviceId == 'appliances_repair' &&
-          _selectedApplianceSubOptions.isNotEmpty) {
-        continue;
-      }
-
       if (_getExperienceController(serviceId).text.isEmpty) return false;
       if (_serviceVideoPaths[serviceId] == null) return false;
-    }
-
-    for (String applianceId in _selectedApplianceSubOptions) {
-      if (_getExperienceController(applianceId).text.isEmpty) return false;
-      if (_serviceVideoPaths[applianceId] == null) return false;
     }
 
     return true;
@@ -651,39 +583,17 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
                         iconSize,
                         borderRadius,
                       ),
-                      ..._selectedServices
-                          .where(
-                            (id) =>
-                                id != 'appliances_repair' ||
-                                _selectedApplianceSubOptions.isEmpty,
-                          )
-                          .map((serviceId) {
-                            final service = _services.firstWhere(
-                              (s) => s.id == serviceId,
-                              orElse: () => _services[0],
-                            );
-                            return _buildServiceSpecificSection(
-                              context: context,
-                              id: service.id,
-                              name: _getLocalizedName(context, service.id),
-                              icon: service.icon,
-                              cardPadding: cardPadding,
-                              spacing: spacing,
-                              titleFontSize: titleFontSize,
-                              bodyFontSize: bodyFontSize,
-                              iconSize: iconSize,
-                              borderRadius: borderRadius,
-                            );
-                          }),
-                      ..._selectedApplianceSubOptions.map((applianceId) {
-                        final appliance = _applianceSubOptions.firstWhere(
-                          (a) => a.id == applianceId,
+                      ..._selectedServices.map((serviceId) {
+                        final service = _availableServiceTypes.firstWhere(
+                          (s) => s.id == serviceId,
+                          orElse: () =>
+                              ServiceType(id: serviceId, name: serviceId),
                         );
                         return _buildServiceSpecificSection(
                           context: context,
-                          id: appliance.id,
-                          name: _getLocalizedName(context, appliance.id),
-                          icon: Icons.settings_suggest_outlined,
+                          id: service.id,
+                          name: service.name,
+                          icon: _getIconData(service.icon),
                           cardPadding: cardPadding,
                           spacing: spacing,
                           titleFontSize: titleFontSize,
@@ -714,15 +624,31 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
                               disabledBackgroundColor: Colors.grey[300],
                             ),
                             child: _isLoading
-                                ? SizedBox(
-                                    height: iconSize,
-                                    width: iconSize,
-                                    child: const CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
+                                ? Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SizedBox(
+                                        height: iconSize,
+                                        width: iconSize,
+                                        child: const CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                Colors.white,
+                                              ),
+                                        ),
                                       ),
-                                    ),
+                                      if (_compressionStatus != null) ...[
+                                        SizedBox(width: spacing * 0.5),
+                                        Text(
+                                          _compressionStatus!,
+                                          style: TextStyle(
+                                            fontSize: bodyFontSize * 0.9,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
                                   )
                                 : Text(
                                     AppLocalizations.of(
@@ -928,6 +854,64 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
   }
 
   Future<void> _handleVideoPicking(String serviceId, ImageSource source) async {
+    if (source == ImageSource.camera) {
+      if (kIsWeb) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.requestingCameraAccess),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      } else {
+        var status = await Permission.camera.status;
+        if (!status.isGranted) {
+          status = await Permission.camera.request();
+          if (!status.isGranted) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    AppLocalizations.of(context)!.cameraPermissionRequired,
+                  ),
+                ),
+              );
+            }
+            return;
+          }
+        }
+      }
+    } else if (source == ImageSource.gallery) {
+      if (!kIsWeb) {
+        PermissionStatus status;
+        if (Platform.isAndroid) {
+          if (await Permission.photos.isGranted ||
+              await Permission.storage.isGranted) {
+            status = PermissionStatus.granted;
+          } else {
+            status = await Permission.photos.request();
+            if (status.isDenied || status.isPermanentlyDenied) {
+              status = await Permission.storage.request();
+            }
+          }
+        } else {
+          status = await Permission.photos.request();
+        }
+
+        if (!status.isGranted && !status.isLimited) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  AppLocalizations.of(context)!.galleryPermissionRequired,
+                ),
+              ),
+            );
+          }
+          return;
+        }
+      }
+    }
+
     try {
       final XFile? video = await _picker.pickVideo(
         source: source,
@@ -955,22 +939,22 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
 
         try {
           await controller.initialize();
-          final durationSec = controller.value.duration.inSeconds;
+          // final durationSec = controller.value.duration.inSeconds;
 
-          if (durationSec < 5 || durationSec > 60) {
-            await controller.dispose();
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    AppLocalizations.of(context)!.videoMustBeBetween,
-                  ),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-            return;
-          }
+          // if (durationSec < 30 || durationSec > 60) {
+          //   await controller.dispose();
+          //   if (mounted) {
+          //     ScaffoldMessenger.of(context).showSnackBar(
+          //       SnackBar(
+          //         content: Text(
+          //           AppLocalizations.of(context)!.videoMustBeBetween,
+          //         ),
+          //         backgroundColor: Colors.red,
+          //       ),
+          //     );
+          //   }
+          //   return;
+          // }
 
           setState(() {
             _serviceVideoPaths[serviceId] = video.path;
@@ -1322,28 +1306,19 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
           Wrap(
             spacing: 10,
             runSpacing: 10,
-            children: _services.where((s) => s.id != 'appliances_repair').map((
-              service,
-            ) {
+            children: _availableServiceTypes.map((service) {
               final isSelected = _selectedServices.contains(service.id);
               final isAlreadyVerified =
                   _addNewServiceMode &&
                   _alreadyVerifiedServices.contains(service.id);
               return _buildServiceChip(
                 id: service.id,
-                name: _getLocalizedName(context, service.id),
-                icon: service.icon,
+                name: service.name,
+                icon: _getIconData(service.icon),
                 isSelected: isSelected,
                 isAlreadyVerified: isAlreadyVerified,
               );
             }).toList(),
-          ),
-          SizedBox(height: spacing * 0.8),
-          _buildAppliancesSection(
-            context,
-            iconSize,
-            bodyFontSize,
-            borderRadius,
           ),
         ],
       ),
@@ -1436,300 +1411,6 @@ class _WorkVerificationScreenState extends State<WorkVerificationScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildAppliancesSection(
-    BuildContext context,
-    double iconSize,
-    double bodyFontSize,
-    double borderRadius,
-  ) {
-    final isSelected = _selectedServices.contains('appliances_repair');
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isSelected ? AppColors.primaryOrangeStart : Colors.grey[300]!,
-          width: isSelected ? 1.5 : 1,
-        ),
-      ),
-      child: Column(
-        children: [
-          // Header
-          InkWell(
-            onTap: () {
-              setState(() {
-                if (isSelected) {
-                  _selectedServices.remove('appliances_repair');
-
-                  // Cleanup general category data
-                  _serviceExperienceControllers['appliances_repair']?.dispose();
-                  _serviceExperienceControllers.remove('appliances_repair');
-                  _serviceSkillsControllers['appliances_repair']?.dispose();
-                  _serviceSkillsControllers.remove('appliances_repair');
-                  _videoControllers['appliances_repair']?.dispose();
-                  _videoControllers.remove('appliances_repair');
-                  _serviceVideoPaths.remove('appliances_repair');
-
-                  // Also cleanup all sub-options data
-                  for (var optionId in _selectedApplianceSubOptions) {
-                    _serviceExperienceControllers[optionId]?.dispose();
-                    _serviceExperienceControllers.remove(optionId);
-                    _serviceSkillsControllers[optionId]?.dispose();
-                    _serviceSkillsControllers.remove(optionId);
-                    _videoControllers[optionId]?.dispose();
-                    _videoControllers.remove(optionId);
-                    _serviceVideoPaths.remove(optionId);
-                  }
-                  _selectedApplianceSubOptions.clear();
-                  _isAppliancesExpanded = false;
-                } else {
-                  _selectedServices.add('appliances_repair');
-                  _isAppliancesExpanded = true;
-                }
-              });
-            },
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.primaryOrangeStart.withValues(alpha: 0.15)
-                          : Colors.grey[200],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.home_repair_service,
-                      size: iconSize,
-                      color: isSelected
-                          ? AppColors.primaryOrangeStart
-                          : Colors.grey[600],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          AppLocalizations.of(context)!.appliancesRepair,
-                          style: TextStyle(
-                            fontSize: bodyFontSize,
-                            fontWeight: FontWeight.w600,
-                            color: isSelected
-                                ? AppColors.primaryOrangeStart
-                                : AppColors.textPrimary,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (_selectedApplianceSubOptions.isNotEmpty)
-                          Text(
-                            AppLocalizations.of(context)!.countSelected(
-                              _selectedApplianceSubOptions.length,
-                            ),
-                            style: TextStyle(
-                              fontSize: bodyFontSize * 0.86,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  // Checkbox
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.primaryOrangeStart
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.primaryOrangeStart
-                            : Colors.grey[400]!,
-                        width: 2,
-                      ),
-                    ),
-                    child: isSelected
-                        ? const Icon(Icons.check, size: 16, color: Colors.white)
-                        : null,
-                  ),
-                  if (isSelected) ...[
-                    const SizedBox(width: 8),
-                    InkWell(
-                      onTap: () {
-                        setState(() {
-                          _isAppliancesExpanded = !_isAppliancesExpanded;
-                        });
-                      },
-                      child: Icon(
-                        _isAppliancesExpanded
-                            ? Icons.keyboard_arrow_up
-                            : Icons.keyboard_arrow_down,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          // Sub-options (expandable)
-          if (isSelected && _isAppliancesExpanded) ...[
-            const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    AppLocalizations.of(context)!.selectAppliancesRepair,
-                    style: TextStyle(
-                      fontSize: bodyFontSize * 0.93,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _applianceSubOptions.map((option) {
-                      final isSubSelected = _selectedApplianceSubOptions
-                          .contains(option.id);
-                      final isAlreadyVerified =
-                          _addNewServiceMode &&
-                          _alreadyVerifiedAppliances.contains(option.id);
-
-                      // Already verified appliance - show with green tick, non-clickable
-                      if (isAlreadyVerified) {
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.successGreen.withValues(
-                              alpha: 0.15,
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: AppColors.successGreen,
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                _getLocalizedName(context, option.id),
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.successGreen,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              const Icon(
-                                Icons.check_circle,
-                                size: 14,
-                                color: AppColors.successGreen,
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            if (isSubSelected) {
-                              _selectedApplianceSubOptions.remove(option.id);
-                              // Cleanup
-                              _serviceExperienceControllers[option.id]
-                                  ?.dispose();
-                              _serviceExperienceControllers.remove(option.id);
-                              _serviceSkillsControllers[option.id]?.dispose();
-                              _serviceSkillsControllers.remove(option.id);
-                              _videoControllers[option.id]?.dispose();
-                              _videoControllers.remove(option.id);
-                              _serviceVideoPaths.remove(option.id);
-                            } else {
-                              _selectedApplianceSubOptions.add(option.id);
-                              // Ensure main category is selected
-                              _selectedServices.add('appliances_repair');
-                            }
-
-                            // If no sub-options are selected, uncheck the main category
-                            if (_selectedApplianceSubOptions.isEmpty) {
-                              _selectedServices.remove('appliances_repair');
-                              _isAppliancesExpanded = false;
-                            }
-                          });
-                        },
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isSubSelected
-                                ? AppColors.primaryOrangeStart.withValues(
-                                    alpha: 0.15,
-                                  )
-                                : Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isSubSelected
-                                  ? AppColors.primaryOrangeStart
-                                  : Colors.grey[300]!,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (isSubSelected)
-                                const Padding(
-                                  padding: EdgeInsets.only(right: 4),
-                                  child: Icon(
-                                    Icons.check_circle,
-                                    size: 14,
-                                    color: AppColors.primaryOrangeStart,
-                                  ),
-                                ),
-                              Text(
-                                _getLocalizedName(context, option.id),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: isSubSelected
-                                      ? FontWeight.w600
-                                      : FontWeight.w500,
-                                  color: isSubSelected
-                                      ? AppColors.primaryOrangeStart
-                                      : Colors.grey[700],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
       ),
     );
   }

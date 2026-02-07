@@ -3,6 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/app_colors.dart';
+import '../../repositories/partner_service_repository.dart';
+import '../../core/network/api_client.dart';
+import '../../core/network/api_endpoints.dart';
 
 // Service status enum
 enum ServiceStatus { verified, pending }
@@ -55,6 +58,60 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
   List<PartnerService> _appliances = [];
   bool _isLoading = true;
   bool _hideHelp = false;
+  final PartnerServiceRepository _serviceRepository =
+      PartnerServiceRepositoryImpl(
+        apiClient: ApiClient(baseUrl: ApiEndpoints.baseUrl),
+      );
+
+  // Available types from backend to map UUIDs
+  List<ServiceType> _availableServiceTypes = [];
+
+  IconData _getIconData(String? iconName) {
+    switch (iconName) {
+      case 'plumbing':
+        return Icons.plumbing;
+      case 'electrical_services':
+        return Icons.electrical_services;
+      case 'carpenter':
+        return Icons.carpenter;
+      case 'grass':
+        return Icons.grass;
+      case 'cleaning_services':
+        return Icons.cleaning_services;
+      case 'face':
+        return Icons.face;
+      case 'face_3':
+        return Icons.face_3;
+      case 'brush':
+        return Icons.brush;
+      case 'local_shipping':
+        return Icons.local_shipping;
+      case 'home_repair_service':
+        return Icons.home_repair_service;
+      case 'ac':
+        return Icons.ac_unit;
+      case 'air_cooler':
+        return Icons.air;
+      case 'chimney':
+        return Icons.kitchen;
+      case 'geyser':
+        return Icons.water_drop;
+      case 'laptop':
+        return Icons.laptop;
+      case 'refrigerator':
+        return Icons.kitchen;
+      case 'washing_machine':
+        return Icons.local_laundry_service;
+      case 'microwave':
+        return Icons.microwave;
+      case 'television':
+        return Icons.tv;
+      case 'water_purifier':
+        return Icons.water;
+      default:
+        return Icons.work_outline;
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -366,6 +423,57 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
 
+      // 1. Fetch from Backend
+      List<String> remoteServiceIds = [];
+      try {
+        remoteServiceIds = await _serviceRepository
+            .getPartnerSelectedServices();
+      } catch (e) {
+        debugPrint('Failed to fetch remote services: $e');
+      }
+
+      // 1b. Fetch Available Definitions (to query by UUID)
+      try {
+        _availableServiceTypes = await _serviceRepository
+            .getAvailableServiceTypes();
+      } catch (e) {
+        debugPrint('Failed to load available types: $e');
+      }
+
+      // Helper to find service type by ID
+      ServiceType? findServiceType(String id) {
+        try {
+          return _availableServiceTypes.firstWhere((s) => s.id == id);
+        } catch (_) {
+          return null;
+        }
+      }
+
+      // 2. Merge Remote IDs into Local Prefs if missing
+      Set<String> localServices = Set.from(
+        prefs.getStringList('profile_services') ?? [],
+      );
+      bool changed = false;
+
+      for (String id in remoteServiceIds) {
+        if (!localServices.contains(id)) {
+          // If we can find it in backend definitions OR our hardcoded fallback
+          final type = findServiceType(id);
+          if (type != null ||
+              _serviceDefinitions.containsKey(id) ||
+              _applianceDefinitions.containsKey(id)) {
+            localServices.add(id);
+            changed = true;
+          }
+        }
+      }
+
+      if (changed) {
+        // Save merged list
+        await prefs.setStringList('profile_services', localServices.toList());
+      }
+
+      // 3. Load from Prefs (Now updated)
       // Load saved services that have been verified in work verification
       final savedServices = prefs.getStringList('profile_services') ?? [];
       final savedAppliances = prefs.getStringList('profile_appliances') ?? [];
@@ -373,48 +481,74 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
       List<PartnerService> servicesList = [];
       List<PartnerService> appliancesList = [];
 
-      // Load services with complete data
+      // Load services
       for (String serviceId in savedServices) {
-        if (serviceId == 'appliances_repair') continue; // Handle separately
+        if (serviceId == 'appliances_repair') continue;
 
         final experience = prefs.getString('exp_$serviceId') ?? '';
         final videoPath = prefs.getString('video_$serviceId');
+        // If we fetched from backend, we trust it's verified
+        final isRemote = remoteServiceIds.contains(serviceId);
+
         // Check if service is verified or pending
-        final statusStr = prefs.getString('status_$serviceId') ?? 'pending';
+        String statusStr = prefs.getString('status_$serviceId') ?? 'pending';
+        // Force verified if remote says so
+        if (isRemote) statusStr = 'verified';
+
         final status = statusStr == 'verified'
             ? ServiceStatus.verified
             : ServiceStatus.pending;
 
-        // Only add if has experience AND video (submitted for verification)
-        if (experience.isNotEmpty && videoPath != null) {
-          final definition = _serviceDefinitions[serviceId];
-          if (definition != null) {
-            servicesList.add(
-              PartnerService(
-                id: serviceId,
-                name: definition.name,
-                icon: definition.icon,
-                experience: experience,
-                videoPath: videoPath,
-                status: status,
-              ),
-            );
+        // Condition to show: Has local details OR is Remote (Server Verified)
+        if ((experience.isNotEmpty && videoPath != null) || isRemote) {
+          // Try to resolve definition dynamically
+          String name = serviceId;
+          IconData icon = Icons.work_outline;
+
+          final type = findServiceType(serviceId);
+          if (type != null) {
+            name = type.name;
+            icon = _getIconData(type.icon);
+          } else {
+            // Fallback to hardcoded maps
+            final def = _serviceDefinitions[serviceId];
+            if (def != null) {
+              name = def.name;
+              icon = def.icon;
+            } else if (_applianceDefinitions.containsKey(serviceId)) {
+              continue; // Skip appliances here
+            }
           }
+
+          servicesList.add(
+            PartnerService(
+              id: serviceId,
+              name: name,
+              icon: icon,
+              experience: experience.isNotEmpty
+                  ? experience
+                  : 'Server Verified',
+              videoPath: videoPath, // Might be null
+              status: status,
+            ),
+          );
         }
       }
 
-      // Load appliances with complete data
+      // Load appliances
       for (String applianceId in savedAppliances) {
         final experience = prefs.getString('exp_$applianceId') ?? '';
         final videoPath = prefs.getString('video_$applianceId');
-        // Check if appliance is verified or pending
-        final statusStr = prefs.getString('status_$applianceId') ?? 'pending';
+
+        final isRemote = remoteServiceIds.contains(applianceId);
+        String statusStr = prefs.getString('status_$applianceId') ?? 'pending';
+        if (isRemote) statusStr = 'verified';
+
         final status = statusStr == 'verified'
             ? ServiceStatus.verified
             : ServiceStatus.pending;
 
-        // Only add if has experience AND video (submitted for verification)
-        if (experience.isNotEmpty && videoPath != null) {
+        if ((experience.isNotEmpty && videoPath != null) || isRemote) {
           final definition = _applianceDefinitions[applianceId];
           if (definition != null) {
             appliancesList.add(
@@ -422,7 +556,9 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
                 id: applianceId,
                 name: definition.name,
                 icon: definition.icon,
-                experience: experience,
+                experience: experience.isNotEmpty
+                    ? experience
+                    : 'Server Verified',
                 videoPath: videoPath,
                 status: status,
               ),
@@ -439,6 +575,66 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
     } catch (e) {
       debugPrint('Error loading services: $e');
       setState(() => _isLoading = false);
+    }
+  }
+
+  // Sync current services to backend
+  Future<void> _syncServicesToBackend() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedServices = prefs.getStringList('profile_services') ?? [];
+      final savedAppliances = prefs.getStringList('profile_appliances') ?? [];
+
+      List<PartnerServiceDetail> serviceDetails = [];
+
+      // Add Services
+      for (String serviceId in savedServices) {
+        if (serviceId == 'appliances_repair') continue;
+
+        final experience = prefs.getString('exp_$serviceId');
+        final videoPath = prefs.getString('video_$serviceId');
+        // We might not have skills here, but backend might accept null or empty.
+        // WorkVerificationScreen saves 'skills_$id', let's try to read it.
+        final skills = prefs.getString('skills_$serviceId');
+
+        if (experience != null && videoPath != null) {
+          serviceDetails.add(
+            PartnerServiceDetail(
+              serviceTypeId: serviceId,
+              experience: experience,
+              specialSkills: skills,
+              videoUrl:
+                  videoPath, // This assumes it's already an uploaded URL if format is http, else it might be local path not synced?
+              // Usually videoUrl in prefs is the uploaded URL if saved correctly.
+            ),
+          );
+        }
+      }
+
+      // Add Appliances
+      for (String appId in savedAppliances) {
+        final experience = prefs.getString('exp_$appId');
+        final videoPath = prefs.getString('video_$appId');
+        final skills = prefs.getString('skills_$appId');
+
+        if (experience != null && videoPath != null) {
+          serviceDetails.add(
+            PartnerServiceDetail(
+              serviceTypeId: appId,
+              experience: experience,
+              specialSkills: skills,
+              videoUrl: videoPath,
+            ),
+          );
+        }
+      }
+
+      await _serviceRepository.updatePartnerServices(serviceDetails);
+      debugPrint('Successfully synced services to backend after deletion');
+    } catch (e) {
+      debugPrint('Failed to sync services to backend: $e');
+      // We don't block the UI for this, but maybe we should show a warning?
+      // For now, silent failure log.
     }
   }
 
@@ -500,6 +696,9 @@ class _EditServicesScreenState extends State<EditServicesScreen> {
         await prefs.remove('video_${service.id}');
         await prefs.remove('status_${service.id}');
       }
+
+      // SYNC TO BACKEND
+      await _syncServicesToBackend();
 
       // Reload services
       await _loadVerifiedServices();

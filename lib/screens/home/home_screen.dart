@@ -2,14 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'dart:async';
-import 'dart:math';
+import 'package:url_launcher/url_launcher.dart';
 // import 'package:firebase_auth/firebase_auth.dart';
 // import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../widgets/incoming_job_modal.dart';
+// import '../../widgets/incoming_job_modal.dart';
+import '../../widgets/order_otp_dialog.dart';
+import '../../widgets/pause_order_dialog.dart';
+import '../../widgets/complete_order_dialog.dart';
 import '../../core/app_colors.dart';
 import '../../services/wallet_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/localization_helper.dart';
+import '../../core/network/api_client.dart';
+import '../../core/network/api_endpoints.dart';
+import '../../repositories/partner_service_repository.dart';
+import '../../repositories/order_repository.dart';
+// import '../../services/notification_service.dart';
+import '../../services/location_service.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:geolocator/geolocator.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,38 +35,378 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   String _photoUrl = 'https://via.placeholder.com/150';
   String _rating = '0.0';
   String _todayRating = '0.0';
-  String _locationCity = '';
   double _todayBusiness = 0.0;
   int _todayJobsDone = 0;
-  Timer? _jobSimulationTimer;
   Timer? _onlineTimer;
   int _onlineSeconds = 0;
   bool _isInitialLoad = true;
   List<Map<String, dynamic>> _activeJobs = [];
+  // Weekly Incentive State
+  int _weeklyOrderCount = 0;
+  int _weeklyIncentiveTarget = 0;
+  double _weeklyIncentiveAmount = 0.0;
+
+  late final PartnerServiceRepository _partnerRepository;
+  late final OrderRepository _orderRepository;
+  // StreamSubscription<Map<String, dynamic>>? _notificationSubscription;
+
+  // Location tracking
+  String _currentLocation = 'Detecting location...';
+  Position? _currentPosition;
+  bool _isLoadingLocation = true;
 
   @override
   void initState() {
     super.initState();
+    _partnerRepository = PartnerServiceRepositoryImpl(
+      apiClient: ApiClient(baseUrl: ApiEndpoints.baseUrl),
+    );
+    _orderRepository = OrderRepositoryImpl(baseUrl: ApiEndpoints.baseUrl);
     WidgetsBinding.instance.addObserver(this);
     _loadProfileData();
     _loadActiveJob();
-    _loadOnlineStatus();
+    _loadOnlineStatus(); // Consolidate loading
     // Listen for global profile updates
     AppColors.profileUpdateNotifier.addListener(_loadProfileData);
     AppColors.jobUpdateNotifier.addListener(_loadActiveJob);
     AppColors.jobUpdateNotifier.addListener(_loadProfileData);
+    // Listen for incoming order notifications - MOVED TO MainNavigationWrapper
+    // _setupNotificationListener();
+    // Request location permission and get current location
+    _initializeLocation();
   }
+
+  // Refactored to fetch status & stats from backend
+  Future<void> _loadOnlineStatus() async {
+    try {
+      final status = await _partnerRepository.getPartnerStatus();
+
+      if (status != null) {
+        if (mounted) {
+          setState(() {
+            _isOnline = status.isOnline;
+            _weeklyOrderCount = status.weeklyOrderCount;
+            _weeklyIncentiveTarget = status.weeklyIncentiveTarget;
+            _weeklyIncentiveAmount = status.weeklyIncentiveAmount;
+            _weeklyIncentiveAmount = status.weeklyIncentiveAmount;
+            _rating = status.rating.toStringAsFixed(1);
+            _todayBusiness = status.todayEarnings;
+            _todayJobsDone = status.todayJobs;
+          });
+        }
+
+        if (status.isOnline) {
+          // Catch up on time if the app was killed while online
+          await _catchUpOnlineTime();
+          _startOnlineTimer();
+        }
+      } else {
+        // Fallback to local storage if API fails
+        final prefs = await SharedPreferences.getInstance();
+        final savedIsOnline = prefs.getBool('partner_is_online') ?? false;
+        if (savedIsOnline) {
+          setState(() {
+            _isOnline = true;
+          });
+          await _catchUpOnlineTime();
+          _startOnlineTimer();
+        }
+      }
+
+      // After loading, wait for one frame then enable animations
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _isInitialLoad = false;
+          });
+        }
+      });
+    } catch (e) {
+      debugPrint('Error loading online status: $e');
+      if (mounted) {
+        setState(() {
+          _isInitialLoad = false;
+        });
+      }
+    }
+  }
+
+  // ... (Keep existing _saveOnlineStatus, timers, etc.)
+
+  Widget _buildChallengesAndReferralCard(
+    double borderRadius,
+    double bodyFontSize,
+    double smallFontSize,
+  ) {
+    // Logic for progress bar
+    double progress = 0.0;
+    if (_weeklyIncentiveTarget > 0) {
+      progress = (_weeklyOrderCount / _weeklyIncentiveTarget).clamp(0.0, 1.0);
+    }
+
+    // Logic for display text
+    // "Complete X jobs"
+    String challengeText;
+    if (_weeklyIncentiveTarget > 0) {
+      challengeText = "Complete $_weeklyIncentiveTarget jobs this week";
+    } else {
+      challengeText = "Weekly challenge unavailable";
+    }
+
+    return Card(
+      elevation: 0,
+      color: const Color(0xFF0A192F),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(borderRadius * 0.6),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.1), width: 1),
+      ),
+      child: Column(
+        children: [
+          // Weekly Bonus Challenge Section
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.emoji_events,
+                        color: Colors.orange,
+                        size: bodyFontSize,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        AppLocalizations.of(
+                          context,
+                        )!.weeklyBonusChallenge, // Ensure this key exists or use hardcoded string if needed
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: bodyFontSize,
+                          color: Colors.white,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.05),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              challengeText,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white,
+                                fontSize: smallFontSize,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          if (_weeklyIncentiveTarget > 0)
+                            Text(
+                              "Win ₹${_weeklyIncentiveAmount.toStringAsFixed(0)}",
+                              style: TextStyle(
+                                color: const Color(0xFF34D399),
+                                fontWeight: FontWeight.bold,
+                                fontSize: smallFontSize,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          backgroundColor: Colors.white.withValues(alpha: 0.1),
+                          color: Colors.orange,
+                          minHeight: 8,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          "$_weeklyOrderCount/$_weeklyIncentiveTarget Completed",
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            fontSize: smallFontSize * 0.9,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          /*
+          Divider(height: 1, color: Colors.white.withValues(alpha: 0.05)),
+          // Share & Earn Section
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.card_giftcard_rounded,
+                      color: const Color(0xFF60A5FA),
+                      size: bodyFontSize * 1.5,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      AppLocalizations.of(context)!.shareAndEarn,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: bodyFontSize,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  AppLocalizations.of(context)!.inviteYourFriends,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.7),
+                    fontSize: smallFontSize,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/referral');
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E293B),
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 44),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.share_outlined, size: smallFontSize * 1.5),
+                      const SizedBox(width: 8),
+                      Text(
+                        AppLocalizations.of(context)!.invite,
+                        style: TextStyle(fontSize: bodyFontSize),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          */
+        ],
+      ),
+    );
+  }
+
+  // Notification listeners and handlers moved to MainNavigationWrapper to prevent duplicates
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     AppColors.profileUpdateNotifier.removeListener(_loadProfileData);
     AppColors.jobUpdateNotifier.removeListener(_loadActiveJob);
-    _jobSimulationTimer?.cancel();
     _onlineTimer?.cancel();
     _saveOnlineTime();
-    // Don't stop timer or change status on dispose - keep it running
     super.dispose();
+  }
+
+  /// Show toast message
+  void _showToast(String message, {bool isError = false}) {
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: isError ? Colors.red : Colors.green,
+      textColor: Colors.white,
+      fontSize: 16.0,
+    );
+  }
+
+  /// Initialize location service
+  Future<void> _initializeLocation() async {
+    try {
+      // Try to get saved location first
+      final savedAddress = await LocationService.instance.getSavedAddress();
+      if (savedAddress != null) {
+        setState(() {
+          _currentLocation = savedAddress;
+          _isLoadingLocation = false;
+        });
+      }
+
+      // Request permission
+      bool hasPermission = await LocationService.instance.requestPermission();
+      if (!hasPermission) {
+        setState(() {
+          _currentLocation = 'Location permission denied';
+          _isLoadingLocation = false;
+        });
+        return;
+      }
+
+      // Get current location
+      Position? position = await LocationService.instance.getCurrentLocation();
+      if (position != null) {
+        _currentPosition = position;
+
+        // Get address from coordinates
+        String? address = await LocationService.instance
+            .getAddressFromCoordinates(position.latitude, position.longitude);
+
+        if (mounted) {
+          setState(() {
+            _currentLocation = address ?? 'Location detected';
+            _isLoadingLocation = false;
+          });
+        }
+      } else {
+        setState(() {
+          _currentLocation = 'Unable to detect location';
+          _isLoadingLocation = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error initializing location: $e');
+      setState(() {
+        _currentLocation = 'Location error';
+        _isLoadingLocation = false;
+      });
+    }
   }
 
   @override
@@ -108,13 +459,26 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _loadActiveJob() async {
     try {
-      // Load from new multi-job list
-      final jobs = await WalletService.getActiveJobs();
+      // Load active jobs from backend API instead of local storage
+      final jobs = await _orderRepository.getActiveOrders();
       setState(() {
         _activeJobs = jobs;
       });
+      debugPrint('✅ Loaded ${jobs.length} active jobs from backend');
     } catch (e) {
-      debugPrint('Error loading active jobs: $e');
+      debugPrint('Error loading active jobs from backend: $e');
+      // Fallback: try to load from local storage if backend fails
+      try {
+        final localJobs = await WalletService.getActiveJobs();
+        setState(() {
+          _activeJobs = localJobs;
+        });
+        debugPrint(
+          '⚠️ Loaded ${localJobs.length} jobs from local storage (fallback)',
+        );
+      } catch (e2) {
+        debugPrint('Error loading from local storage: $e2');
+      }
     }
   }
 
@@ -141,7 +505,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           _photoUrl = savedPhotoPath;
         }
         if (savedRating != null && savedRating.isNotEmpty) {
-          // Show only the calculated average rating (no mock level)
           _rating = savedRating;
         } else {
           _rating = '0.0';
@@ -151,9 +514,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         } else {
           _todayRating = '0.0';
         }
-        if (savedCity != null && savedCity.isNotEmpty) {
-          _locationCity = savedCity;
-        }
+        // Note: Removed _locationCity as it's replaced by _currentLocation from LocationService
         _todayBusiness = savedTodayBusiness;
         _todayJobsDone = savedTodayJobsDone;
         _onlineSeconds = savedOnlineSeconds;
@@ -163,43 +524,33 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _loadOnlineStatus() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final savedIsOnline = prefs.getBool('partner_is_online') ?? false;
-
-      if (savedIsOnline) {
-        setState(() {
-          _isOnline = true;
-        });
-        // Catch up on time if the app was killed while online
-        await _catchUpOnlineTime();
-        _startJobSimulation();
-        _startOnlineTimer();
-      }
-
-      // After loading, wait for one frame then enable animations
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            _isInitialLoad = false;
-          });
-        }
-      });
-    } catch (e) {
-      debugPrint('Error loading online status: $e');
-      if (mounted) {
-        setState(() {
-          _isInitialLoad = false;
-        });
-      }
-    }
-  }
-
   Future<void> _saveOnlineStatus(bool isOnline) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('partner_is_online', isOnline);
+
+      // Get fresh location if going online
+      double? latitude;
+      double? longitude;
+
+      if (isOnline) {
+        Position? position = await LocationService.instance
+            .getCurrentLocation();
+        if (position != null) {
+          latitude = position.latitude;
+          longitude = position.longitude;
+          _currentPosition = position;
+
+          debugPrint('📍 Going online with location: $latitude, $longitude');
+        }
+      }
+
+      // Sync with backend
+      await _partnerRepository.updateOnlineStatus(
+        isOnline,
+        latitude: latitude,
+        longitude: longitude,
+      );
     } catch (e) {
       debugPrint('Error saving online status: $e');
     }
@@ -414,15 +765,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     ),
                     const SizedBox(width: 4),
                     Flexible(
-                      child: Text(
-                        _locationCity.isEmpty ? l10n.location : _locationCity,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      child: _isLoadingLocation
+                          ? const SizedBox(
+                              width: 12,
+                              height: 12,
+                              child: CircularProgressIndicator(
+                                color: Colors.white70,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Text(
+                              _currentLocation,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
                   ],
                 ),
@@ -463,10 +823,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           });
           _saveOnlineStatus(_isOnline);
           if (_isOnline) {
-            _startJobSimulation();
             _startOnlineTimer();
           } else {
-            _jobSimulationTimer?.cancel();
             _stopOnlineTimer();
           }
         },
@@ -475,14 +833,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             if (!_isOnline) {
               setState(() => _isOnline = true);
               _saveOnlineStatus(true);
-              _startJobSimulation();
               _startOnlineTimer();
             }
           } else if (details.primaryVelocity! < -100) {
             if (_isOnline) {
               setState(() => _isOnline = false);
               _saveOnlineStatus(false);
-              _jobSimulationTimer?.cancel();
               _stopOnlineTimer();
             }
           }
@@ -670,141 +1026,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  void _startJobSimulation() {
-    _jobSimulationTimer?.cancel();
-    // Random delay between 5 to 10 seconds for dev mode
-    // Updated delay to 10-15 seconds as per project specification for dev mode
-    final seconds = 10 + Random().nextInt(6);
-    _jobSimulationTimer = Timer(Duration(seconds: seconds), () {
-      if (mounted && _isOnline) {
-        _showIncomingJob();
-      }
-    });
-  }
-
-  void _showIncomingJob() {
-    final bool isScheduled = Random().nextBool();
-    final bool isOnline = Random().nextBool();
-    final double tipAmount = Random().nextDouble() > 0.7 ? 50.0 : 0.0;
-
-    // Multiple job types for testing variety
-    final List<Map<String, String>> jobTemplates = [
-      {
-        'serviceKey': 'fullHomeCleaning',
-        'customer': AppLocalizations.of(context)!.mockCustomerName,
-        'location': AppLocalizations.of(context)!.mockLocation,
-        'price': '1,499',
-        'distance': '2.4 km',
-        'paymentTypeKey': '', // Random (Online/Cash)
-      },
-      {
-        'serviceKey': 'kitchenDeepClean',
-        'customer': 'Priya Patel',
-        'location': AppLocalizations.of(context)!.mockLocation,
-        'price': '799',
-        'distance': '1.8 km',
-        'paymentTypeKey': 'prepaid', // Already paid online
-      },
-      {
-        'serviceKey': 'bathroomSanitization',
-        'customer': 'Amit Kumar',
-        'location': AppLocalizations.of(context)!.mockLocation,
-        'price': '599',
-        'distance': '3.2 km',
-        'paymentTypeKey': '', // Random (Online/Cash)
-      },
-      {
-        'serviceKey': 'sofaAndCarpetCleaning',
-        'customer': 'Sneha Reddy',
-        'location': AppLocalizations.of(context)!.mockLocation,
-        'price': '1,299',
-        'distance': '5.1 km',
-        'paymentTypeKey': 'prepaid', // Already paid online
-      },
-      {
-        'serviceKey': 'acServiceAndRepair',
-        'customer': 'Vikram Singh',
-        'location': AppLocalizations.of(context)!.mockLocation,
-        'price': '499',
-        'distance': '2.0 km',
-        'paymentTypeKey': '', // Random (Online/Cash)
-      },
-      {
-        'serviceKey': 'pestControl',
-        'customer': 'Meera Nair',
-        'location': AppLocalizations.of(context)!.mockLocation,
-        'price': '1,999',
-        'distance': '4.5 km',
-        'paymentTypeKey': '', // Random (Online/Cash)
-      },
-    ];
-
-    // Randomly select a job template
-    final selectedJob = jobTemplates[Random().nextInt(jobTemplates.length)];
-
-    final int etaMins = 10 + Random().nextInt(20);
-    final String scheduledDate = '${20 + Random().nextInt(10)} Jan';
-    final String scheduledTime = '${9 + Random().nextInt(4)}:00 AM';
-
-    final mockJob = {
-      'serviceKey': selectedJob['serviceKey']!,
-      'customer': selectedJob['customer']!,
-      'location': selectedJob['location']!,
-      'etaMins': etaMins.toString(),
-      'isScheduled': isScheduled.toString(),
-      'scheduledDate': scheduledDate,
-      'scheduledTime': scheduledTime,
-      'price': selectedJob['price']!,
-      'tip': tipAmount.toStringAsFixed(0),
-      'distance': selectedJob['distance']!,
-      'paymentTypeKey': selectedJob['paymentTypeKey']!.isNotEmpty
-          ? selectedJob['paymentTypeKey']!
-          : (isOnline ? 'online' : 'cash'),
-    };
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => IncomingJobModal(
-        job: mockJob,
-        onAccept: () async {
-          // Generate unique job ID
-          final String jobId = '#OK${Random().nextInt(999999)}';
-
-          // Create job data map for multi-job storage
-          final jobData = {
-            'id': jobId,
-            'serviceKey': mockJob['serviceKey'],
-            'customer': mockJob['customer'],
-            'location': mockJob['location'],
-            'price': mockJob['price'],
-            'tip': mockJob['tip'],
-            'isScheduled': mockJob['isScheduled'],
-            'scheduledDate': mockJob['scheduledDate'],
-            'scheduledTime': mockJob['scheduledTime'],
-            'distance': mockJob['distance'],
-            'etaMins': mockJob['etaMins'],
-            'paymentTypeKey': mockJob['paymentTypeKey'],
-          };
-
-          // Add to active jobs list
-          await WalletService.addActiveJob(jobData);
-
-          AppColors.jobUpdateNotifier.value++;
-
-          if (!context.mounted) return;
-          Navigator.pop(context);
-          _showFeedbackPopup(true);
-        },
-        onDecline: () {
-          if (!context.mounted) return;
-          Navigator.pop(context);
-          _showFeedbackPopup(false);
-        },
       ),
     );
   }
@@ -1012,12 +1233,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     double bodyFontSize,
     double smallFontSize,
   ) {
-    // Helper to get localized service name
+    // Helper to get service name from API response
     String getServiceName() {
-      return LocalizationHelper.getLocalizedServiceName(
-        context,
-        job['serviceKey'] ?? job['service'],
-      );
+      // Use serviceName directly from API response
+      return job['serviceName']?.toString() ?? 'Service';
     }
 
     // Helper to get localized time type
@@ -1079,7 +1298,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   Text(
                     AppLocalizations.of(context)!.bookingId(
                       LocalizationHelper.convertBengaliToEnglish(
-                        job['id'] ?? 'N/A',
+                        job['displayId'] ?? job['orderId'] ?? 'N/A',
                       ),
                     ),
                     style: TextStyle(
@@ -1122,7 +1341,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               Expanded(
                 child: _buildActiveJobInfo(
                   Icons.payments_outlined,
-                  '₹${LocalizationHelper.convertBengaliToEnglish(job['price'] ?? '0')}',
+                  '₹${LocalizationHelper.convertBengaliToEnglish(job['totalPrice']?.toString() ?? '0')}',
                   smallFontSize,
                   color: AppColors.primaryOrangeStart,
                 ),
@@ -1160,40 +1379,378 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
           const SizedBox(height: 8),
           _buildActiveJobInfo(Icons.timer_outlined, getEta(), smallFontSize),
-          const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushNamed(
-                context,
-                '/job-details',
-                arguments: {
-                  ...job,
-                  'service': getServiceName(),
-                  'timeType': getTimeType(),
-                  'eta': getEta(),
-                  'paymentType': getPaymentType(),
-                },
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryOrangeStart,
-              minimumSize: const Size(double.infinity, 38),
-              shape: RoundedRectangleBorder(
+
+          // Customer Details Section (show when order is beyond PENDING/FINDING_PARTNER)
+          if (job['status'] != null &&
+              job['status'] != 'PENDING' &&
+              job['status'] != 'FINDING_PARTNER' &&
+              job['status'] != 'PARTNER_NOT_FOUND' &&
+              job['status'] != 'CANCELLED') ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Customer Details',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: smallFontSize,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Name',
+                              style: TextStyle(
+                                color: Colors.white60,
+                                fontSize: smallFontSize * 0.9,
+                              ),
+                            ),
+                            Text(
+                              job['customerName'] ?? 'Customer',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: smallFontSize,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Phone',
+                              style: TextStyle(
+                                color: Colors.white60,
+                                fontSize: smallFontSize * 0.9,
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () async {
+                                final phone = job['customerPhone'];
+                                if (phone != null) {
+                                  final uri = Uri.parse('tel:$phone');
+                                  if (await canLaunchUrl(uri)) {
+                                    await launchUrl(uri);
+                                  }
+                                }
+                              },
+                              child: Text(
+                                job['customerPhone'] ?? 'N/A',
+                                style: TextStyle(
+                                  color: Colors.blue,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: smallFontSize,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: () async {
+                      if (job['customerLatitude'] != null &&
+                          job['customerLongitude'] != null) {
+                        final uri = Uri.parse(
+                          'https://www.google.com/maps/dir/?api=1&destination='
+                          '${job['customerLatitude']},${job['customerLongitude']}',
+                        );
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(
+                            uri,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        }
+                      }
+                    },
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.directions,
+                          size: smallFontSize,
+                          color: Colors.blue,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Get Directions ↗',
+                          style: TextStyle(
+                            color: Colors.blue,
+                            fontSize: smallFontSize * 0.9,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          // Payment Method Indicator
+          const SizedBox(height: 8),
+          if (job['paymentMethod'] == 'COD')
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.money, color: Colors.orange, size: smallFontSize),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Collect Cash',
+                    style: TextStyle(
+                      color: Colors.orange,
+                      fontWeight: FontWeight.bold,
+                      fontSize: smallFontSize * 0.9,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.green.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.account_balance_wallet,
+                    color: Colors.green,
+                    size: smallFontSize,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Paid Online',
+                    style: TextStyle(
+                      color: Colors.green,
+                      fontWeight: FontWeight.bold,
+                      fontSize: smallFontSize * 0.9,
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Text(
-              AppLocalizations.of(context)!.viewDetails,
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: bodyFontSize,
-              ),
-            ),
-          ),
+
+          const SizedBox(height: 12),
+
+          // Status-based Action Buttons
+          _buildOrderActionButtons(job, bodyFontSize),
         ],
       ),
     );
+  }
+
+  /// Build action buttons based on order status
+  Widget _buildOrderActionButtons(Map<String, dynamic> job, double fontSize) {
+    final status = job['status']?.toString() ?? '';
+    final orderId = job['orderId'] ?? job['id'];
+
+    if (orderId == null) return const SizedBox.shrink();
+
+    // ALLOCATED: Start Trip
+    if (status == 'ALLOCATED') {
+      return _ActionButton(
+        label: "Start Trip",
+        color: Colors.blue,
+        icon: Icons.directions_car,
+        onPressed: () => _handleMarkOnWay(orderId),
+      );
+    }
+
+    // PARTNER_ON_WAY: I've Arrived
+    if (status == 'PARTNER_ON_WAY') {
+      return _ActionButton(
+        label: "I've Arrived",
+        color: Colors.orange,
+        icon: Icons.location_on,
+        onPressed: () => _handleMarkArrived(orderId),
+      );
+    }
+
+    // PARTNER_ARRIVED: Enter Arrival OTP
+    if (status == 'PARTNER_ARRIVED') {
+      return _ActionButton(
+        label: "Enter Arrival OTP",
+        color: Colors.green,
+        icon: Icons.verified_user,
+        onPressed: () => _handleVerifyArrival(orderId),
+      );
+    }
+
+    // IN_PROGRESS: Pause and Complete buttons
+    if (status == 'IN_PROGRESS') {
+      return Row(
+        children: [
+          Expanded(
+            child: _ActionButton(
+              label: "Pause",
+              color: Colors.grey[700]!,
+              icon: Icons.pause,
+              onPressed: () => _handlePauseOrder(orderId),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _ActionButton(
+              label: "Complete Job",
+              color: Colors.green,
+              icon: Icons.check_circle,
+              onPressed: () => _handleCompleteOrder(orderId),
+            ),
+          ),
+        ],
+      );
+    }
+
+    // PAUSED: Resume button
+    if (status == 'PAUSED') {
+      return _ActionButton(
+        label: "Resume (Enter OTP)",
+        color: Colors.blue,
+        icon: Icons.play_arrow,
+        onPressed: () => _handleResumeOrder(orderId),
+      );
+    }
+
+    // Default: View Details
+    return ElevatedButton(
+      onPressed: () {
+        Navigator.pushNamed(context, '/job-details', arguments: job);
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primaryOrangeStart,
+        minimumSize: const Size(double.infinity, 38),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      child: Text(
+        AppLocalizations.of(context)!.viewDetails,
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: fontSize,
+        ),
+      ),
+    );
+  }
+
+  // Order Action Handlers
+  Future<void> _handleMarkOnWay(String orderId) async {
+    final success = await _orderRepository.markOnWay(orderId);
+    if (success) {
+      _showToast('Status updated: On Way');
+      _loadActiveJob(); // Refresh jobs
+    } else {
+      _showToast('Failed to update status', isError: true);
+    }
+  }
+
+  Future<void> _handleMarkArrived(String orderId) async {
+    final success = await _orderRepository.markArrived(orderId);
+    if (success) {
+      _showToast('Status updated: Arrived. Ask customer for OTP.');
+      _loadActiveJob();
+    } else {
+      _showToast('Failed to update status', isError: true);
+    }
+  }
+
+  Future<void> _handleVerifyArrival(String orderId) async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => OrderOtpDialog(
+        orderId: orderId,
+        purpose: 'ARRIVAL',
+        onVerify: _orderRepository.verifyArrival,
+      ),
+    );
+
+    if (result == true) {
+      _showToast('OTP Verified! Job Started.');
+      _loadActiveJob();
+    }
+  }
+
+  Future<void> _handlePauseOrder(String orderId) async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PauseOrderDialog(
+        orderId: orderId,
+        onPause: _orderRepository.pauseOrder,
+      ),
+    );
+
+    if (result == true) {
+      _showToast('Job Paused');
+      _loadActiveJob();
+    }
+  }
+
+  Future<void> _handleResumeOrder(String orderId) async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => OrderOtpDialog(
+        orderId: orderId,
+        purpose: 'RESUME',
+        onVerify: _orderRepository.verifyResume,
+      ),
+    );
+
+    if (result == true) {
+      _showToast('OTP Verified! Job Resumed.');
+      _loadActiveJob();
+    }
+  }
+
+  Future<void> _handleCompleteOrder(String orderId) async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => CompleteOrderDialog(
+        orderId: orderId,
+        onUploadProof: _orderRepository.uploadOrderProof,
+        onComplete: _orderRepository.completeOrder,
+      ),
+    );
+
+    if (result == true) {
+      _showToast('Job completed successfully!');
+      _loadActiveJob(); // Refresh to remove completed job
+    }
   }
 
   Widget _buildActiveJobInfo(
@@ -1487,188 +2044,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildChallengesAndReferralCard(
-    double borderRadius,
-    double bodyFontSize,
-    double smallFontSize,
-  ) {
-    return Card(
-      elevation: 0,
-      color: const Color(0xFF0A192F),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(borderRadius * 0.6),
-        side: BorderSide(color: Colors.white.withValues(alpha: 0.1), width: 1),
-      ),
-      child: Column(
-        children: [
-          // Weekly Bonus Challenge Section
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.emoji_events,
-                        color: Colors.orange,
-                        size: bodyFontSize,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        AppLocalizations.of(context)!.weeklyBonusChallenge,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: bodyFontSize,
-                          color: Colors.white,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.05),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              AppLocalizations.of(context)!.complete15Jobs,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w500,
-                                color: Colors.white,
-                                fontSize: smallFontSize,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            AppLocalizations.of(context)!.earnExtraReward,
-                            style: TextStyle(
-                              color: const Color(0xFF34D399),
-                              fontWeight: FontWeight.bold,
-                              fontSize: smallFontSize,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: LinearProgressIndicator(
-                          value: (_todayJobsDone / 15).clamp(0.0, 1.0),
-                          backgroundColor: Colors.white.withValues(alpha: 0.1),
-                          color: Colors.orange,
-                          minHeight: 8,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Text(
-                          AppLocalizations.of(
-                            context,
-                          )!.jobsDoneCount(_todayJobsDone.toString()),
-                          style: TextStyle(
-                            fontSize: smallFontSize * 0.9,
-                            color: Colors.white.withValues(alpha: 0.6),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Divider(height: 1, color: Colors.white.withValues(alpha: 0.05)),
-          // Share & Earn Section
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.card_giftcard_rounded,
-                      color: const Color(0xFF60A5FA),
-                      size: bodyFontSize * 1.5,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      AppLocalizations.of(context)!.shareAndEarn,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: bodyFontSize,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  AppLocalizations.of(context)!.inviteYourFriends,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: smallFontSize,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/referral');
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E293B),
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 44),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.1),
-                      ),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.share_outlined, size: smallFontSize * 1.5),
-                      const SizedBox(width: 8),
-                      Text(
-                        AppLocalizations.of(context)!.invite,
-                        style: TextStyle(fontSize: bodyFontSize),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildProTipsCard(
     double borderRadius,
     double bodyFontSize,
@@ -1904,6 +2279,152 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // Helper methods for order details
+
+  /// Get color for order status
+  Color _getStatusColor(String? status) {
+    switch (status) {
+      case 'ALLOCATED':
+        return Colors.blue;
+      case 'PARTNER_ON_WAY':
+        return Colors.orange;
+      case 'PARTNER_ARRIVED':
+        return Colors.purple;
+      case 'IN_PROGRESS':
+        return Colors.green;
+      case 'PAUSED':
+        return Colors.amber;
+      case 'COMPLETED':
+        return Colors.teal;
+      case 'CANCELLED':
+        return Colors.red;
+      default:
+        return AppColors.primaryOrangeStart;
+    }
+  }
+
+  /// Get user-friendly label for order status
+  String _getStatusLabel(String? status) {
+    switch (status) {
+      case 'ALLOCATED':
+        return 'Assigned';
+      case 'PARTNER_ON_WAY':
+        return 'On Way';
+      case 'PARTNER_ARRIVED':
+        return 'Arrived';
+      case 'IN_PROGRESS':
+        return 'In Progress';
+      case 'PAUSED':
+        return 'Paused';
+      case 'COMPLETED':
+        return 'Completed';
+      case 'CANCELLED':
+        return 'Cancelled';
+      default:
+        return status ?? 'Unknown';
+    }
+  }
+
+  /// Get user-friendly label for payment status
+  String _getPaymentStatusLabel(String? paymentStatus) {
+    switch (paymentStatus) {
+      case 'PENDING':
+        return 'Payment Pending';
+      case 'PAID':
+        return 'Paid Online';
+      case 'FAILED':
+        return 'Payment Failed';
+      case 'REFUNDED':
+        return 'Refunded';
+      default:
+        return 'Paid Online';
+    }
+  }
+
+  /// Format DateTime to readable string
+  String _formatDateTime(dynamic dateTime) {
+    if (dateTime == null) return 'N/A';
+
+    try {
+      DateTime dt;
+      if (dateTime is String) {
+        dt = DateTime.parse(dateTime);
+      } else if (dateTime is DateTime) {
+        dt = dateTime;
+      } else {
+        return 'N/A';
+      }
+
+      final now = DateTime.now();
+      final difference = now.difference(dt);
+
+      if (difference.inMinutes < 1) {
+        return 'Just now';
+      } else if (difference.inHours < 1) {
+        return '${difference.inMinutes}m ago';
+      } else if (difference.inHours < 24) {
+        return '${difference.inHours}h ago';
+      } else {
+        // Format as "Jan 5, 10:30 AM"
+        final months = [
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec',
+        ];
+        final hour = dt.hour > 12
+            ? dt.hour - 12
+            : (dt.hour == 0 ? 12 : dt.hour);
+        final amPm = dt.hour >= 12 ? 'PM' : 'AM';
+        return '${months[dt.month - 1]} ${dt.day}, $hour:${dt.minute.toString().padLeft(2, '0')} $amPm';
+      }
+    } catch (e) {
+      debugPrint('Error formatting datetime: $e');
+      return 'N/A';
+    }
+  }
+}
+
+/// Reusable action button widget for order actions
+class _ActionButton extends StatelessWidget {
+  final String label;
+  final Color color;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _ActionButton({
+    required this.label,
+    required this.color,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 18),
+      label: Text(
+        label,
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        foregroundColor: Colors.white,
+        minimumSize: const Size(double.infinity, 38),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }

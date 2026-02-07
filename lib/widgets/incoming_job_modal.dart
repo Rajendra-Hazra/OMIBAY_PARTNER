@@ -78,6 +78,9 @@ class _IncomingJobModalState extends State<IncomingJobModal> {
     await _playActionSound(accepted);
 
     if (mounted) {
+      // Close the dialog immediately
+      Navigator.of(context).pop();
+
       if (accepted) {
         widget.onAccept();
       } else {

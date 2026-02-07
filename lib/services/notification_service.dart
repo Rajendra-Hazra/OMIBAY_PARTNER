@@ -9,6 +9,9 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 // Conditional import for platform detection (Web-safe)
 import 'platform_stub.dart' if (dart.library.io) 'dart:io' as platform_io;
+import '../repositories/auth_repository.dart';
+import '../core/network/api_client.dart';
+import '../core/network/api_endpoints.dart';
 
 /// Background message handler - must be top-level function
 @pragma('vm:entry-point')
@@ -198,10 +201,31 @@ class NotificationService {
     final token = await _firebaseMessaging!.getToken();
     debugPrint('FCM Token: $token');
 
+    // Upload Initial Token
+    if (token != null) {
+      try {
+        final authRepository = AuthRepositoryImpl(
+          apiClient: ApiClient(baseUrl: ApiEndpoints.baseUrl),
+        );
+        await authRepository.updateFcmToken(token);
+        debugPrint('Initial FCM Token uploaded to server');
+      } catch (e) {
+        debugPrint('Failed to upload initial FCM token: $e');
+      }
+    }
+
     // Listen for token refresh
     _firebaseMessaging!.onTokenRefresh.listen((newToken) {
       debugPrint('FCM Token refreshed: $newToken');
-      // TODO: Send new token to your backend server
+      // Update token on server
+      try {
+        final authRepository = AuthRepositoryImpl(
+          apiClient: ApiClient(baseUrl: ApiEndpoints.baseUrl),
+        );
+        authRepository.updateFcmToken(newToken);
+      } catch (e) {
+        debugPrint('Failed to upload refreshed FCM token: $e');
+      }
     });
 
     // Handle foreground messages
