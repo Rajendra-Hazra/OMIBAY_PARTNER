@@ -1,7 +1,8 @@
 class ApiEndpoints {
   ApiEndpoints._();
 
-  static const String baseUrl = 'https://electric-mollusk-tops.ngrok-free.app';
+  // static const String baseUrl = 'https://electric-mollusk-tops.ngrok-free.app';
+  static const String baseUrl = 'https://omibay.api.sourav.fun';
   static const String baseApiUrl = baseUrl;
 
   // ============= Authentication =============
