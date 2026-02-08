@@ -3998,6 +3998,18 @@ abstract class AppLocalizations {
   /// **'Try again'**
   String get tryAgain;
 
+  /// No description provided for @noInternetConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection'**
+  String get noInternetConnection;
+
+  /// No description provided for @pleaseCheckYourNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Please check your network'**
+  String get pleaseCheckYourNetwork;
+
   /// No description provided for @somethingWentWrong.
   ///
   /// In en, this message translates to:

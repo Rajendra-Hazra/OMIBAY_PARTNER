@@ -846,6 +846,8 @@
   "seeAll": "See All",
   "noResults": "No results found",
   "tryAgain": "Try again",
+  "noInternetConnection": "No internet connection",
+  "pleaseCheckYourNetwork": "Please check your network",
   "somethingWentWrong": "Something went wrong",
   "pleaseWait": "Please wait...",
   

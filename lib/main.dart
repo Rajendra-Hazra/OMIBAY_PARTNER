@@ -40,6 +40,7 @@ import 'screens/earnings/referral_screen.dart';
 import 'screens/earnings/withdrawal_history_screen.dart';
 import 'screens/home/opportunity_map_screen.dart';
 import 'widgets/main_nav_wrapper.dart';
+import 'widgets/network_guard.dart';
 
 // Global navigator key for notification handling
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -138,61 +139,63 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'OmiBay Partner',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      // Global navigator key for notification handling
-      navigatorKey: navigatorKey,
-      // Localization configuration
-      locale: LocaleNotifier.instance.locale,
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('en'), // English
-        Locale('bn'), // Bengali
-      ],
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const SplashScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/verification': (context) => const DocumentVerificationScreen(),
-        '/location-selection': (context) => const LocationSelectionScreen(),
-        '/aadhar-verification': (context) => const AadharVerificationScreen(),
-        '/pan-verification': (context) => const PanVerificationScreen(),
-        '/dl-verification': (context) => const DlVerificationScreen(),
-        '/work-verification': (context) => const WorkVerificationScreen(),
-        '/home': (context) => const MainNavigationWrapper(initialIndex: 0),
-        '/jobs': (context) => const MainNavigationWrapper(initialIndex: 1),
-        '/earnings': (context) => const MainNavigationWrapper(initialIndex: 2),
-        '/account': (context) => const MainNavigationWrapper(initialIndex: 3),
-        '/job-details': (context) => const JobDetailsScreen(),
-        '/active-job': (context) => const ActiveJobScreen(),
-        '/notifications': (context) => const NotificationsScreen(),
-        '/support': (context) => const SupportScreen(),
-        '/payment-setup': (context) => const PaymentSetupScreen(),
-        '/edit-services': (context) => const EditServicesScreen(),
-        '/edit-profile': (context) => const EditProfileScreen(),
-        '/documents': (context) => const DocumentsListScreen(),
-        '/permissions': (context) => const PermissionsScreen(),
-        '/terms': (context) => const TermsOfServiceScreen(),
-        '/privacy': (context) => const PrivacyPolicyScreen(),
-        '/suspension-policy': (context) => const SuspensionPolicyScreen(),
-        '/language': (context) => const LanguageSelectionScreen(),
-        '/transaction-details': (context) => const TransactionDetailsScreen(),
-        '/referral': (context) => const ReferralScreen(),
-        '/withdrawal-history': (context) => const WithdrawalHistoryScreen(),
-        '/opportunity-map': (context) => const OpportunityMapScreen(),
-        '/account-faq': (context) => const AccountFaqScreen(),
-        '/live-chat': (context) => const LiveChatScreen(),
-        '/settings': (context) => const SettingsScreen(),
-        '/deactivate-account': (context) => const DeactivateAccountScreen(),
-        '/delete-account': (context) => const DeleteAccountScreen(),
-      },
+    return NetworkGuard(
+      child: MaterialApp(
+        title: 'OmiBay Partner',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        // Global navigator key for notification handling
+        navigatorKey: navigatorKey,
+        // Localization configuration
+        locale: LocaleNotifier.instance.locale,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('en'), // English
+          Locale('bn'), // Bengali
+        ],
+        initialRoute: '/',
+        routes: {
+          '/': (context) => const SplashScreen(),
+          '/login': (context) => const LoginScreen(),
+          '/verification': (context) => const DocumentVerificationScreen(),
+          '/location-selection': (context) => const LocationSelectionScreen(),
+          '/aadhar-verification': (context) => const AadharVerificationScreen(),
+          '/pan-verification': (context) => const PanVerificationScreen(),
+          '/dl-verification': (context) => const DlVerificationScreen(),
+          '/work-verification': (context) => const WorkVerificationScreen(),
+          '/home': (context) => const MainNavigationWrapper(initialIndex: 0),
+          '/jobs': (context) => const MainNavigationWrapper(initialIndex: 1),
+          '/earnings': (context) => const MainNavigationWrapper(initialIndex: 2),
+          '/account': (context) => const MainNavigationWrapper(initialIndex: 3),
+          '/job-details': (context) => const JobDetailsScreen(),
+          '/active-job': (context) => const ActiveJobScreen(),
+          '/notifications': (context) => const NotificationsScreen(),
+          '/support': (context) => const SupportScreen(),
+          '/payment-setup': (context) => const PaymentSetupScreen(),
+          '/edit-services': (context) => const EditServicesScreen(),
+          '/edit-profile': (context) => const EditProfileScreen(),
+          '/documents': (context) => const DocumentsListScreen(),
+          '/permissions': (context) => const PermissionsScreen(),
+          '/terms': (context) => const TermsOfServiceScreen(),
+          '/privacy': (context) => const PrivacyPolicyScreen(),
+          '/suspension-policy': (context) => const SuspensionPolicyScreen(),
+          '/language': (context) => const LanguageSelectionScreen(),
+          '/transaction-details': (context) => const TransactionDetailsScreen(),
+          '/referral': (context) => const ReferralScreen(),
+          '/withdrawal-history': (context) => const WithdrawalHistoryScreen(),
+          '/opportunity-map': (context) => const OpportunityMapScreen(),
+          '/account-faq': (context) => const AccountFaqScreen(),
+          '/live-chat': (context) => const LiveChatScreen(),
+          '/settings': (context) => const SettingsScreen(),
+          '/deactivate-account': (context) => const DeactivateAccountScreen(),
+          '/delete-account': (context) => const DeleteAccountScreen(),
+        },
+      ),
     );
   }
 }

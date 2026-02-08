@@ -2120,6 +2120,13 @@ class AppLocalizationsBn extends AppLocalizations {
   String get tryAgain => 'আবার চেষ্টা করুন';
 
   @override
+  String get noInternetConnection => 'ইন্টারনেট সংযোগ নেই';
+
+  @override
+  String get pleaseCheckYourNetwork =>
+      'অনুগ্রহ করে আপনার নেটওয়ার্ক পরীক্ষা করুন';
+
+  @override
   String get somethingWentWrong => 'কিছু ভুল হয়েছে';
 
   @override

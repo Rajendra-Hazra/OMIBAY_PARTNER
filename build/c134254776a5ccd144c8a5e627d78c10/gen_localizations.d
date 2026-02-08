@@ -1,0 +1,1 @@
+ C:\\OMIBAY_PARTNER\\lib\\l10n\\app_localizations_bn.dart C:\\OMIBAY_PARTNER\\lib\\l10n\\app_localizations_en.dart C:\\OMIBAY_PARTNER\\lib\\l10n\\app_localizations.dart:  C:\\OMIBAY_PARTNER\\l10n.yaml C:\\OMIBAY_PARTNER\\lib\\l10n\\app_bn.arb C:\\OMIBAY_PARTNER\\lib\\l10n\\app_en.arb

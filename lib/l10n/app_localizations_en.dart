@@ -2103,6 +2103,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tryAgain => 'Try again';
 
   @override
+  String get noInternetConnection => 'No internet connection';
+
+  @override
+  String get pleaseCheckYourNetwork => 'Please check your network';
+
+  @override
   String get somethingWentWrong => 'Something went wrong';
 
   @override

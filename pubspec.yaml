@@ -50,6 +50,7 @@ dependencies:
   json_serializable: ^6.7.1
 
   flutter_svg: ^2.0.9
+  connectivity_plus: ^5.0.2
   flutter_material_design_icons: ^1.1.7447
   palette_generator: ^0.3.2
   speech_to_text: ^7.3.0
@@ -78,5 +79,6 @@ flutter:
   generate: true
   uses-material-design: true
   assets:
+    - assets/
     - images/
     - audio/
