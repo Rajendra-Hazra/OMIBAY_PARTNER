@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -33,7 +32,7 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
   bool _isLoading = true;
 
   List<Map<String, dynamic>> _bankAccounts = [];
-  List<String> _upiIds = [];
+  List<Map<String, dynamic>> _upiIds = [];
   String _defaultBankId = ''; // Store the unique ID for bank
   String _defaultUpiId = ''; // Store the unique ID for upi
 
@@ -50,47 +49,53 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
     final prefs = await SharedPreferences.getInstance();
 
     try {
-      final bankAccounts = await _walletRepository.getBankAccounts();
-      final mappedBankAccounts = bankAccounts.map((e) {
-        return {
-          'id': e['id'],
-          'bank_account_number': e['accountNumber'],
-          'bank_name': e['bankName'],
-          'bank_ifsc': e['ifscCode'],
-          'bank_holder_name': e['accountHolderName'],
-          'isDefault': e['isDefault'] ?? false,
-        };
-      }).toList();
+      final allAccounts = await _walletRepository.getBankAccounts();
+      final mappedBankAccounts = <Map<String, dynamic>>[];
+      final mappedUpiAccounts = <Map<String, dynamic>>[];
+
+      for (var e in allAccounts) {
+        if (e['bankName'] == 'UPI' ||
+            (e['upiId'] != null && e['upiId'].toString().isNotEmpty)) {
+          mappedUpiAccounts.add({
+            'id': e['id'],
+            'upiId': e['upiId'] ?? e['bankName'], // Fallback
+            'name': e['accountHolderName'],
+            'isDefault': e['isDefault'] ?? false,
+          });
+        } else {
+          mappedBankAccounts.add({
+            'id': e['id'],
+            'bank_account_number': e['accountNumber'],
+            'bank_name': e['bankName'],
+            'bank_ifsc': e['ifscCode'],
+            'bank_holder_name': e['accountHolderName'],
+            'isDefault': e['isDefault'] ?? false,
+          });
+        }
+      }
 
       if (mounted) {
         setState(() {
           _bankAccounts = mappedBankAccounts;
-          final String upiJson = prefs.getString('saved_upi_ids') ?? '[]';
-          _upiIds = List<String>.from(jsonDecode(upiJson));
+          _upiIds = mappedUpiAccounts;
 
-          _defaultUpiId = prefs.getString('default_upi_id') ?? '';
-
-          // Set default bank if backend says so
+          // Set defaults
           final defaultBank = _bankAccounts.firstWhere(
             (element) => element['isDefault'] == true,
             orElse: () => {},
           );
-          if (defaultBank.isNotEmpty) {
-            _defaultBankId = defaultBank['bank_account_number'];
-            prefs.setString('default_bank_id', _defaultBankId);
-          } else {
-            _defaultBankId = prefs.getString('default_bank_id') ?? '';
-          }
+          _defaultBankId = defaultBank.isNotEmpty
+              ? defaultBank['bank_account_number']
+              : (prefs.getString('default_bank_id') ?? '');
 
-          // Auto-set defaults if only one exists and none is set
-          if (_defaultBankId.isEmpty && _bankAccounts.length == 1) {
-            _defaultBankId = _bankAccounts[0]['bank_account_number'];
-            prefs.setString('default_bank_id', _defaultBankId);
-          }
-          if (_defaultUpiId.isEmpty && _upiIds.length == 1) {
-            _defaultUpiId = _upiIds[0];
-            prefs.setString('default_upi_id', _defaultUpiId);
-          }
+          final defaultUpi = _upiIds.firstWhere(
+            (element) => element['isDefault'] == true,
+            orElse: () => {},
+          );
+          _defaultUpiId = defaultUpi.isNotEmpty
+              ? defaultUpi['upiId']
+              : (prefs.getString('default_upi_id') ?? '');
+
           _isLoading = false;
         });
       }
@@ -98,9 +103,6 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
       debugPrint('Error fetching bank accounts: $e');
       if (mounted) {
         setState(() {
-          final String upiJson = prefs.getString('saved_upi_ids') ?? '[]';
-          _upiIds = List<String>.from(jsonDecode(upiJson));
-          _defaultUpiId = prefs.getString('default_upi_id') ?? '';
           _isLoading = false;
         });
       }
@@ -167,41 +169,28 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
 
     if (!confirm) return;
 
-    final prefs = await SharedPreferences.getInstance();
-    if (type == 'bank') {
-      try {
-        // id passed here is actually the bankId for API
-        // But UI passes 'accNo' currently. We need to find the ID.
-        // Actually, let's look at how we call this.
-        // We will update the call site to pass the ID.
-        await _walletRepository.deleteBankAccount(id);
+    try {
+      await _walletRepository.deleteBankAccount(id);
 
-        if (_defaultBankId == id) {
-          // This check might be tricky if we use ID vs Account Number.
-          // Currently logic uses account number for default.
-          // Ideally we switch to ID for default too, but keeping minimal changes:
-          // If we delete, we just refresh properly.
-          await prefs.remove('default_bank_id');
-          _defaultBankId = '';
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Failed to delete: $e')));
-        }
-        return;
+      // Update usage of defaults if needed
+      if (type == 'bank') {
+        // id here is the database ID, but _defaultBankId stores account number.
+        // This mismatch might be an issue if we don't know the account number of the deleted ID.
+        // But we re-fetch details immediately after, so _defaultBankId will be updated in _fetchPaymentDetails.
+        // So we don't strictly need to update local state here if we await fetch.
+      } else {
+        // Same for UPI
       }
-    } else {
-      _upiIds.removeWhere((item) => item == id);
-      await prefs.setString('saved_upi_ids', jsonEncode(_upiIds));
-      if (_defaultUpiId == id) {
-        await prefs.remove('default_upi_id');
-        _defaultUpiId = '';
+
+      // Refresh list
+      await _fetchPaymentDetails();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to delete: $e')));
       }
     }
-
-    _fetchPaymentDetails();
   }
 
   @override
@@ -383,7 +372,9 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                               ),
                               ..._upiIds.asMap().entries.map((entry) {
                                 final int idx = entry.key;
-                                final upiId = entry.value;
+                                final item = entry.value;
+                                final upiId = item['upiId'];
+                                final dbId = item['id'];
                                 return Column(
                                   children: [
                                     _buildSavedItem(
@@ -395,7 +386,7 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                                           ),
                                       isDefault: _defaultUpiId == upiId,
                                       onDelete: () =>
-                                          _deletePaymentMethod(upiId, 'upi'),
+                                          _deletePaymentMethod(dbId, 'upi'),
                                       onSetDefault: () =>
                                           _setDefaultMethod(upiId, 'upi'),
                                       bodyFontSize: bodyFontSize,
@@ -970,6 +961,13 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
       barrierDismissible: false,
       builder: (context) {
         final l10n = AppLocalizations.of(context)!;
+
+        bool _isVerifying = false;
+        bool _isVerified = false;
+        String? _verifiedName;
+        String? _errorMessage;
+        bool _isSaving = false;
+
         return StatefulBuilder(
           builder: (context, setDialogState) {
             bool isMatching =
@@ -1022,10 +1020,17 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                       l10n.upiId,
                       _upiIdController,
                       hint: l10n.upiIdHint,
-                      inputFormatters: [EnglishDigitFormatter()],
+                      inputFormatters: [],
                       icon: Icons.alternate_email_outlined,
-                      obscureText: true,
-                      onChanged: (val) => setDialogState(() {}),
+                      obscureText: false,
+                      onChanged: (val) {
+                        if (_isVerified) {
+                          setDialogState(() {
+                            _isVerified = false;
+                            _verifiedName = null;
+                          });
+                        }
+                      },
                       bodyFontSize: bodyFontSize,
                       smallFontSize: smallFontSize,
                     ),
@@ -1034,7 +1039,7 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                       l10n.reEnterUpiId,
                       _confirmUpiIdController,
                       hint: l10n.confirmUpiId,
-                      inputFormatters: [EnglishDigitFormatter()],
+                      inputFormatters: [],
                       icon: Icons.verified_user_outlined,
                       errorText: isDirty && !isMatching
                           ? l10n.upiIdsDoNotMatch
@@ -1043,6 +1048,93 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                       bodyFontSize: bodyFontSize,
                       smallFontSize: smallFontSize,
                     ),
+                    const SizedBox(height: 16),
+                    if (_isVerifying)
+                      const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: CircularProgressIndicator(),
+                      )
+                    else if (_errorMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          _errorMessage!,
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontSize: smallFontSize,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      )
+                    else if (_isVerified && _verifiedName != null)
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.green.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.check_circle,
+                              color: Colors.green,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Verified: $_verifiedName',
+                                style: TextStyle(
+                                  color: Colors.green.shade900,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: isMatching
+                              ? () async {
+                                  setDialogState(() {
+                                    _isVerifying = true;
+                                    _errorMessage = null;
+                                  });
+                                  try {
+                                    final res = await _walletRepository
+                                        .verifyUpi(
+                                          _upiIdController.text.trim(),
+                                        );
+                                    setDialogState(() {
+                                      _isVerifying = false;
+                                      _isVerified = true;
+                                      _verifiedName =
+                                          res['validatedAccountName'] ??
+                                          'Verified User';
+                                    });
+                                  } catch (e) {
+                                    setDialogState(() {
+                                      _isVerifying = false;
+                                      _errorMessage =
+                                          'Verification failed. Please check the UPI ID.';
+                                    });
+                                  }
+                                }
+                              : null,
+                          icon: const Icon(Icons.verified),
+                          label: const Text('Verify UPI'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor: Colors.grey.shade300,
+                          ),
+                        ),
+                      ),
+
                     const SizedBox(height: 16),
                     Text(
                       l10n.upiInstantCreditNote,
@@ -1074,40 +1166,50 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
+                      backgroundColor: _isVerified
+                          ? AppColors.primaryOrangeStart
+                          : Colors.grey,
                     ),
-                    onPressed: () async {
-                      if (_upiIdController.text.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(l10n.pleaseEnterUpiId)),
-                        );
-                        return;
-                      }
-                      if (!isMatching) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(l10n.upiIdsDoNotMatch)),
-                        );
-                        return;
-                      }
-                      final prefs = await SharedPreferences.getInstance();
+                    onPressed: _isVerified && !_isSaving
+                        ? () async {
+                            setDialogState(() => _isSaving = true);
+                            try {
+                              await _walletRepository.addBankAccount({
+                                'upiId': _upiIdController.text.trim(),
+                                'bankName': 'UPI',
+                                'accountHolderName': _verifiedName,
+                                'accountNumber':
+                                    '', // Mandatory field in backend or db? Usually empty string works if ignored.
+                                'ifscCode': '',
+                              });
 
-                      // Add to list
-                      _upiIds.add(_upiIdController.text);
-                      await prefs.setString(
-                        'saved_upi_ids',
-                        jsonEncode(_upiIds),
-                      );
+                              // Clear fields
+                              _upiIdController.clear();
+                              _confirmUpiIdController.clear();
 
-                      // Clear fields
-                      _upiIdController.clear();
-                      _confirmUpiIdController.clear();
-
-                      if (context.mounted) Navigator.pop(context);
-                      _fetchPaymentDetails();
-                    },
-                    child: Text(
-                      l10n.saveUpi,
-                      style: TextStyle(fontSize: bodyFontSize),
-                    ),
+                              if (context.mounted) Navigator.pop(context);
+                              _fetchPaymentDetails();
+                            } catch (e) {
+                              setDialogState(() {
+                                _isSaving = false;
+                                _errorMessage = 'Failed to save: $e';
+                              });
+                            }
+                          }
+                        : null,
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            l10n.saveUpi,
+                            style: TextStyle(fontSize: bodyFontSize),
+                          ),
                   ),
                 ),
               ],

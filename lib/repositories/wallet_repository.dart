@@ -16,6 +16,7 @@ abstract class WalletRepository {
   Future<List<Map<String, dynamic>>> getBankAccounts();
   Future<void> deleteBankAccount(String id);
   Future<Map<String, dynamic>> verifyIfsc(String code);
+  Future<Map<String, dynamic>> verifyUpi(String upiId);
 }
 
 class WalletRepositoryImpl implements WalletRepository {
@@ -85,5 +86,11 @@ class WalletRepositoryImpl implements WalletRepository {
     } catch (e) {
       throw Exception('Invalid IFSC Code');
     }
+  }
+
+  @override
+  Future<Map<String, dynamic>> verifyUpi(String upiId) async {
+    final response = await apiClient.get('${ApiEndpoints.verifyUpi}/$upiId');
+    return response.data as Map<String, dynamic>;
   }
 }

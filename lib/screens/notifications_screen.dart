@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import '../l10n/app_localizations.dart';
+import '../models/notification.dart';
+import '../repositories/notification_repository.dart';
+import '../core/network/api_client.dart';
+import '../core/network/api_endpoints.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -10,93 +14,106 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  List<Map<String, dynamic>> _notifications = [];
+  List<NotificationModel> _notifications = [];
   bool _isLoaded = false;
+  late NotificationRepository _notificationRepository;
+
+  @override
+  void initState() {
+    super.initState();
+    final apiClient = ApiClient(baseUrl: ApiEndpoints.baseUrl);
+    _notificationRepository = NotificationRepository(apiClient);
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_isLoaded) {
-      _initNotifications();
+      _fetchNotifications();
       _isLoaded = true;
     }
   }
 
-  void _initNotifications() {
-    final l10n = AppLocalizations.of(context)!;
-
-    _notifications = [
-      {
-        'type': 'job',
-        'title': l10n.notificationJobTitle,
-        'body': l10n
-            .notificationJobBody, // This is a bit tricky as the ARB contains the full text
-        'time': l10n.time2MinsAgo,
-        'isRead': false,
-      },
-      {
-        'type': 'payment',
-        'title': l10n.notificationPaymentTitle,
-        'body': l10n.notificationPaymentBody,
-        'time': l10n.time1HourAgo,
-        'isRead': false,
-      },
-      {
-        'type': 'system',
-        'title': l10n.notificationSystemTitle,
-        'body': l10n.notificationSystemBody,
-        'time': l10n.timeYesterday,
-        'isRead': true,
-      },
-      {
-        'type': 'promo',
-        'title': l10n.notificationPromoTitle,
-        'body': l10n.notificationPromoBody,
-        'time': l10n.time2DaysAgo,
-        'isRead': true,
-      },
-      {
-        'type': 'job',
-        'title': l10n.notificationCancelledTitle,
-        'body': l10n.notificationCancelledBody,
-        'time': l10n.time3DaysAgo,
-        'isRead': true,
-      },
-    ];
-    _updateUnreadCount();
-  }
-
-  @override
-  void initState() {
-    super.initState();
+  Future<void> _fetchNotifications() async {
+    try {
+      final data = await _notificationRepository.getNotifications();
+      setState(() {
+        _notifications = data;
+      });
+      _updateUnreadCount();
+    } catch (e) {
+      // Handle error
+    }
   }
 
   void _updateUnreadCount() {
-    final unreadCount = _notifications.where((n) => !n['isRead']).length;
+    final unreadCount = _notifications.where((n) => !n.isRead).length;
     AppColors.unreadNotificationsNotifier.value = unreadCount;
   }
 
-  void _markAsRead(int index) {
+  Future<void> _markAsRead(int index) async {
+    final notification = _notifications[index];
+    await _notificationRepository.markAsRead(notification.id);
+
     setState(() {
-      _notifications[index]['isRead'] = true;
+      _notifications[index] = NotificationModel(
+        id: notification.id,
+        title: notification.title,
+        message: notification.message,
+        type: notification.type,
+        data: notification.data,
+        isRead: true,
+        createdAt: notification.createdAt,
+      );
     });
     _updateUnreadCount();
   }
 
-  void _deleteNotification(int index) {
+  Future<void> _deleteNotification(int index) async {
+    final notification = _notifications[index];
+    await _notificationRepository.deleteNotification(notification.id);
+
     setState(() {
       _notifications.removeAt(index);
     });
     _updateUnreadCount();
   }
 
-  void _markAllAsRead() {
+  Future<void> _markAllAsRead() async {
+    await _notificationRepository.markAllAsRead();
+
     setState(() {
-      for (var notification in _notifications) {
-        notification['isRead'] = true;
-      }
+      _notifications = _notifications
+          .map(
+            (n) => NotificationModel(
+              id: n.id,
+              title: n.title,
+              message: n.message,
+              type: n.type,
+              data: n.data,
+              isRead: true,
+              createdAt: n.createdAt,
+            ),
+          )
+          .toList();
     });
     _updateUnreadCount();
+  }
+
+  String _formatTime(DateTime timestamp) {
+    final l10n = AppLocalizations.of(context)!;
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+
+    if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} min ago'; // Needs localization ideally
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours} hours ago';
+    } else if (difference.inDays == 1) {
+      return 'Yesterday';
+    } else {
+      return '${timestamp.day}/${timestamp.month}/${timestamp.year}';
+    }
   }
 
   @override
@@ -219,7 +236,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          if (_notifications.any((n) => !n['isRead']))
+          if (_notifications.any((n) => !n.isRead))
             TextButton(
               onPressed: _markAllAsRead,
               style: TextButton.styleFrom(
@@ -242,32 +259,42 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     double smallFontSize,
   ) {
     final notification = _notifications[index];
-    final type = notification['type'];
-    final isRead = notification['isRead'];
+    final type = notification.type;
+    final isRead = notification.isRead;
 
     IconData icon;
     Color iconColor;
 
+    // Mapping backend types to UI
     switch (type) {
-      case 'job':
+      case 'SERVICE_REQUEST':
+      case 'INCOMING_JOB': // Assuming this might be used
         icon = Icons.work_outline;
         iconColor = AppColors.primaryOrangeStart;
         break;
-      case 'payment':
+      case 'PAYMENT_SUCCESS':
+      case 'PAYMENT_FAILED':
         icon = Icons.account_balance_wallet_outlined;
         iconColor = AppColors.successGreen;
         break;
-      case 'system':
+      case 'SYSTEM':
         icon = Icons.info_outline;
         iconColor = Colors.blue;
         break;
-      default:
+      case 'PROMOTION':
+      case 'OFFER':
         icon = Icons.local_offer_outlined;
         iconColor = Colors.purple;
+        break;
+      default:
+        icon = Icons.notifications_none;
+        iconColor = AppColors.textSecondary;
     }
 
     return InkWell(
-      onTap: () => _markAsRead(index),
+      onTap: () {
+        if (!isRead) _markAsRead(index);
+      },
       child: Container(
         padding: EdgeInsets.all(16 * paddingScale),
         color: isRead
@@ -298,7 +325,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          notification['title'],
+                          notification.title,
                           style: TextStyle(
                             fontWeight: isRead
                                 ? FontWeight.normal
@@ -311,7 +338,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         ),
                       ),
                       Text(
-                        notification['time'],
+                        _formatTime(notification.createdAt),
                         style: TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: smallFontSize - 1,
@@ -377,7 +404,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ),
                   SizedBox(height: 4 * paddingScale),
                   Text(
-                    notification['body'],
+                    notification.message,
                     style: TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: bodyFontSize - 1,

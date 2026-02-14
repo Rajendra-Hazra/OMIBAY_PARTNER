@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 import '../../core/app_colors.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/localization_helper.dart';
@@ -132,21 +131,11 @@ class _EarningsScreenState extends State<EarningsScreen> {
     if (!mounted) return;
     setState(() => _isLoading = true);
 
-    final prefs = await SharedPreferences.getInstance();
-
-    // Check local pref for bank/upi existence (keeping this local for now as it wasn't part of the API plan explicitly)
-    final String bankJson = prefs.getString('saved_bank_accounts') ?? '[]';
-    final String upiJson = prefs.getString('saved_upi_ids') ?? '[]';
-    final bool bankAdded = (jsonDecode(bankJson) as List).isNotEmpty;
-    final bool upiAdded = (jsonDecode(upiJson) as List).isNotEmpty;
-
     try {
       // 1. Fetch Stats
       final stats = await _earningsRepository.getEarningsStats();
 
-      // 2. Fetch Graph Data (for current month/year or selected)
-      // For simplicity, we fetch current month's graph data initially or based on selected
-      // We'll just fetch current month for now to populate the chart
+      // 2. Fetch Graph Data
       final now = DateTime.now();
       final graphData = await _earningsRepository.getEarningsGraph(
         month: now.month,
@@ -155,6 +144,19 @@ class _EarningsScreenState extends State<EarningsScreen> {
 
       // 3. Fetch History
       final transactions = await _walletRepository.getTransactions();
+
+      // 4. Fetch Payment Methods
+      final paymentMethods = await _walletRepository.getBankAccounts();
+      bool bankAdded = false;
+      bool upiAdded = false;
+      for (var pm in paymentMethods) {
+        if (pm['bankName'] == 'UPI' ||
+            (pm['upiId'] != null && pm['upiId'].toString().isNotEmpty)) {
+          upiAdded = true;
+        } else {
+          bankAdded = true;
+        }
+      }
 
       if (!mounted) return;
 

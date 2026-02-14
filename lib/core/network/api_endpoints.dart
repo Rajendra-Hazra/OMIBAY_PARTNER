@@ -1,8 +1,7 @@
 class ApiEndpoints {
   ApiEndpoints._();
 
-  // static const String baseUrl = 'https://electric-mollusk-tops.ngrok-free.app';
-  static const String baseUrl = 'https://omibay.api.sourav.fun';
+  static const String baseUrl = 'https://electric-mollusk-tops.ngrok-free.app';
   static const String baseApiUrl = baseUrl;
 
   // ============= Authentication =============
@@ -48,4 +47,5 @@ class ApiEndpoints {
   // ============= Bank Details =============
   static const String bankDetails = '$baseApiUrl/api/user/bank-details';
   static const String verifyIfsc = '$bankDetails/ifsc';
+  static const String verifyUpi = '$bankDetails/upi';
 }
