@@ -35,6 +35,10 @@ import 'screens/account/live_chat_screen.dart';
 import 'screens/account/deactivate_account_screen.dart';
 import 'screens/account/delete_account_screen.dart';
 import 'screens/account/settings_screen.dart';
+import 'screens/account/health_checkup_screen.dart';
+import 'screens/account/health_insurance_screen.dart';
+import 'screens/account/equipment_loan_screen.dart';
+import 'screens/account/emergency_loan_screen.dart';
 import 'screens/earnings/transaction_details_screen.dart';
 import 'screens/earnings/referral_screen.dart';
 import 'screens/earnings/withdrawal_history_screen.dart';
@@ -170,7 +174,8 @@ class _MyAppState extends State<MyApp> {
           '/work-verification': (context) => const WorkVerificationScreen(),
           '/home': (context) => const MainNavigationWrapper(initialIndex: 0),
           '/jobs': (context) => const MainNavigationWrapper(initialIndex: 1),
-          '/earnings': (context) => const MainNavigationWrapper(initialIndex: 2),
+          '/earnings': (context) =>
+              const MainNavigationWrapper(initialIndex: 2),
           '/account': (context) => const MainNavigationWrapper(initialIndex: 3),
           '/job-details': (context) => const JobDetailsScreen(),
           '/active-job': (context) => const ActiveJobScreen(),
@@ -194,6 +199,10 @@ class _MyAppState extends State<MyApp> {
           '/settings': (context) => const SettingsScreen(),
           '/deactivate-account': (context) => const DeactivateAccountScreen(),
           '/delete-account': (context) => const DeleteAccountScreen(),
+          '/health-checkup': (context) => const HealthCheckupScreen(),
+          '/health-insurance': (context) => const HealthInsuranceScreen(),
+          '/equipment-loan': (context) => const EquipmentLoanScreen(),
+          '/emergency-loan': (context) => const EmergencyLoanScreen(),
         },
       ),
     );

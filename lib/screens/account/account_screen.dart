@@ -7,6 +7,8 @@ import 'dart:io';
 import '../../core/app_colors.dart';
 import '../../core/localization_helper.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/partner_stats.dart';
+import '../../widgets/omibay_care_widgets.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -177,6 +179,8 @@ class _AccountScreenState extends State<AccountScreen> {
                       _buildQuickActionGrid(context),
                       const SizedBox(height: 24),
                       _buildAccountSettingsSection(context),
+                      const SizedBox(height: 24),
+                      _buildOmiBayCareSection(context),
                       const SizedBox(height: 24),
                       Text(
                         '${AppLocalizations.of(context)!.version} ${AppLocalizations.of(context)!.appVersionValue}',
@@ -654,6 +658,44 @@ class _AccountScreenState extends State<AccountScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  /// Builds the OmiBay Care section with partner welfare benefits
+  Widget _buildOmiBayCareSection(BuildContext context) {
+    // Using dummy data for now - will be replaced with actual partner data
+    final stats = PartnerStats.dummy();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 12),
+          child: Text(
+            AppLocalizations.of(context)!.partnerWelfare,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
+        OmiBayCareContainer(
+          stats: stats,
+          onHealthCheckupTap: () {
+            Navigator.pushNamed(context, '/health-checkup');
+          },
+          onHealthInsuranceTap: () {
+            Navigator.pushNamed(context, '/health-insurance');
+          },
+          onEquipmentLoanTap: () {
+            Navigator.pushNamed(context, '/equipment-loan');
+          },
+          onEmergencyLoanTap: () {
+            Navigator.pushNamed(context, '/emergency-loan');
+          },
+        ),
+      ],
     );
   }
 

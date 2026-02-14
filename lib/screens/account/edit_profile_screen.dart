@@ -41,6 +41,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String _loginMethod = 'phone';
   bool _isPhoneVerified = false;
   bool _hideHelp = false;
+  String? _selectedBloodGroup;
+
+  static const List<String> _bloodGroups = [
+    'A+',
+    'A-',
+    'B+',
+    'B-',
+    'AB+',
+    'AB-',
+    'O+',
+    'O-',
+  ];
 
   @override
   void initState() {
@@ -129,6 +141,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             prefs.getString('profile_photo_url') ??
             l10n.placeholderPhotoUrl;
         _localPhotoPath = prefs.getString('profile_photo_path');
+        _selectedBloodGroup = prefs.getString('profile_blood_group');
         _isLoading = false;
       });
     } catch (e) {
@@ -1012,6 +1025,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       // Also save to Prefs for offline access/speed
       await prefs.setString('profile_name', _nameController.text.trim());
       await prefs.setString('profile_dob', _dobController.text.trim());
+      if (_selectedBloodGroup != null) {
+        await prefs.setString('profile_blood_group', _selectedBloodGroup!);
+      }
 
       if (_localPhotoPath != null) {
         await prefs.setString('profile_photo_path', _localPhotoPath!);
@@ -1326,6 +1342,84 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
+  Widget _buildBloodGroupDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              AppLocalizations.of(context)!.bloodGroup,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                AppLocalizations.of(context)!.recommended,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.blue[700],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.border),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: DropdownButtonFormField<String>(
+            value: _selectedBloodGroup,
+            decoration: InputDecoration(
+              prefixIcon: Icon(
+                MdiIcons.water,
+                color: Colors.red[400],
+                size: 22,
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+            ),
+            hint: Text(
+              AppLocalizations.of(context)!.selectBloodGroup,
+              style: TextStyle(color: Colors.grey[500]),
+            ),
+            items: _bloodGroups.map((String group) {
+              return DropdownMenuItem<String>(
+                value: group,
+                child: Text(
+                  group,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+              );
+            }).toList(),
+            onChanged: (String? newValue) {
+              setState(() {
+                _selectedBloodGroup = newValue;
+              });
+            },
+            icon: const Icon(Icons.keyboard_arrow_down),
+            isExpanded: true,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildTextField(
     String label,
     TextEditingController controller, {
@@ -1542,6 +1636,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             prefixIcon: Icons.calendar_today_outlined,
             hintText: 'YYYY-MM-DD',
           ),
+          const SizedBox(height: 16),
+          _buildBloodGroupDropdown(),
           const SizedBox(height: 16),
           // Mobile Number field with verify option for Google login
           _buildMobileNumberField(
@@ -1778,11 +1874,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void _showOtpVerificationSheet(String phone) {
     final TextEditingController otpController = TextEditingController();
     bool isVerifying = false;
+    bool isSendingOtp = true;
     String? statusMessage;
     bool isErrorStatus = false;
-
-    // Simulate OTP sent initially
-    statusMessage = AppLocalizations.of(context)!.otpSentToWithDemo(phone);
+    String? verificationId;
 
     showModalBottomSheet(
       context: context,
@@ -1790,6 +1885,39 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       isScrollControlled: true,
       builder: (context) => StatefulBuilder(
         builder: (context, setSheetState) {
+          // Send OTP on first build
+          if (isSendingOtp) {
+            isSendingOtp = false;
+            _authRepository.sendOtp(
+              phoneNumber: phone,
+              onCodeSent: (vid, token) {
+                if (context.mounted) {
+                  setSheetState(() {
+                    verificationId = vid;
+                    statusMessage = AppLocalizations.of(
+                      context,
+                    )!.otpSentSuccessfully;
+                    isErrorStatus = false;
+                  });
+                }
+              },
+              onVerificationFailed: (e) {
+                if (context.mounted) {
+                  setSheetState(() {
+                    statusMessage = e.message ?? 'Verification failed';
+                    isErrorStatus = true;
+                  });
+                }
+              },
+              onVerificationCompleted: (credential) {
+                // Auto-verification handled if needed
+              },
+              onCodeAutoRetrievalTimeout: (vid) {
+                verificationId = vid;
+              },
+            );
+          }
+
           return Container(
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -1894,28 +2022,36 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Center(
-                    child: Text(
-                      AppLocalizations.of(context)!.demoOtp,
-                      style: TextStyle(color: Colors.blue[600], fontSize: 12),
-                    ),
-                  ),
                   const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: isVerifying
+                      onPressed: isVerifying || otpController.text.length != 6
                           ? null
                           : () async {
-                              if (otpController.text == '123456') {
+                              if (verificationId == null) {
                                 setSheetState(() {
-                                  isVerifying = true;
-                                  statusMessage = null;
+                                  statusMessage =
+                                      'Verification ID missing. Please try again.';
+                                  isErrorStatus = true;
                                 });
-                                await Future.delayed(
-                                  const Duration(seconds: 1),
+                                return;
+                              }
+
+                              setSheetState(() {
+                                isVerifying = true;
+                                statusMessage = null;
+                              });
+
+                              try {
+                                final credential = PhoneAuthProvider.credential(
+                                  verificationId: verificationId!,
+                                  smsCode: otpController.text,
                                 );
+
+                                // Verify by signing in with credential
+                                await FirebaseAuth.instance
+                                    .signInWithCredential(credential);
 
                                 // Save verification status
                                 final prefs =
@@ -1940,13 +2076,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     ),
                                   );
                                 }
-                              } else {
-                                setSheetState(() {
-                                  statusMessage = AppLocalizations.of(
-                                    context,
-                                  )!.invalidOtpDemo;
-                                  isErrorStatus = true;
-                                });
+                              } catch (e) {
+                                if (context.mounted) {
+                                  setSheetState(() {
+                                    isVerifying = false;
+                                    statusMessage = AppLocalizations.of(
+                                      context,
+                                    )!.invalidOtpTryAgain;
+                                    isErrorStatus = true;
+                                  });
+                                }
                               }
                             },
                       child: isVerifying

@@ -43,11 +43,20 @@ class PrivacyPolicyScreen extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 16 * paddingScale),
-                    Text(
-                      l10n.lastUpdated('January 2024'),
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: bodyFontSize,
+                    Container(
+                      padding: EdgeInsets.all(16 * paddingScale),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.blue[100]!),
+                      ),
+                      child: Text(
+                        l10n.privacyContact,
+                        style: TextStyle(
+                          color: Colors.blue[800],
+                          fontSize: bodyFontSize,
+                          height: 1.5,
+                        ),
                       ),
                     ),
                     SizedBox(height: 32 * paddingScale),
@@ -93,16 +102,12 @@ class PrivacyPolicyScreen extends StatelessWidget {
                       bodyFontSize,
                       paddingScale,
                     ),
-                    SizedBox(height: 40 * paddingScale),
-                    Center(
-                      child: Text(
-                        l10n.privacyContact,
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: smallFontSize,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+                    _buildSection(
+                      l10n.privacySection7Title,
+                      l10n.privacySection7Content,
+                      sectionTitleFontSize,
+                      bodyFontSize,
+                      paddingScale,
                     ),
                     SizedBox(height: 24 * paddingScale),
                   ],

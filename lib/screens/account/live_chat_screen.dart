@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/app_colors.dart';
 
@@ -10,72 +11,96 @@ class LiveChatScreen extends StatefulWidget {
 }
 
 class _LiveChatScreenState extends State<LiveChatScreen> {
-  final TextEditingController _messageController = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
-  List<Map<String, dynamic>> get _initialMessages => [
-    {
-      'isMe': false,
-      'text': AppLocalizations.of(context)!.chatWelcome,
-      'time': '10:00 AM',
-    },
-  ];
+  late final WebViewController _controller;
+  bool _isLoading = true;
 
-  late List<Map<String, dynamic>> _messages;
+  // TODO: Replace with your Tawk.to Property ID and Widget ID
+  static const String _tawkPropertyId = 'YOUR_PROPERTY_ID';
+  static const String _tawkWidgetId = 'YOUR_WIDGET_ID';
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _messages = _initialMessages;
+  void initState() {
+    super.initState();
+    _initWebView();
   }
 
-  void _sendMessage() {
-    if (_messageController.text.trim().isEmpty) return;
+  void _initWebView() {
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(Colors.white)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageStarted: (String url) {
+            setState(() => _isLoading = true);
+          },
+          onPageFinished: (String url) {
+            setState(() => _isLoading = false);
+          },
+          onWebResourceError: (WebResourceError error) {
+            debugPrint('WebView error: ${error.description}');
+          },
+        ),
+      )
+      ..loadHtmlString(_getTawkToHtml());
+  }
 
-    setState(() {
-      _messages.add({
-        'isMe': true,
-        'text': _messageController.text.trim(),
-        'time': '10:05 AM', // In a real app, this would be dynamic
-      });
-      _messageController.clear();
-    });
-
-    // Auto-scroll to bottom
-    Future.delayed(const Duration(milliseconds: 100), () {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    });
-
-    // Simulate bot response
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        setState(() {
-          _messages.add({
-            'isMe': false,
-            'text': AppLocalizations.of(context)!.chatResponse,
-            'time': '10:06 AM',
-          });
-        });
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
+  String _getTawkToHtml() {
+    return '''
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      background-color: #f8fafc; 
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .loading {
+      text-align: center;
+      color: #64748b;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .loading p { margin-top: 12px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="loading">
+    <p>Connecting to support...</p>
+  </div>
+  
+  <!--Start of Tawk.to Script-->
+  <script type="text/javascript">
+    var Tawk_API = Tawk_API || {};
+    var Tawk_LoadStart = new Date();
+    
+    // Auto-maximize chat widget
+    Tawk_API.onLoad = function() {
+      Tawk_API.maximize();
+    };
+    
+    (function() {
+      var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
+      s1.async = true;
+      s1.src = 'https://embed.tawk.to/$_tawkPropertyId/$_tawkWidgetId';
+      s1.charset = 'UTF-8';
+      s1.setAttribute('crossorigin', '*');
+      s0.parentNode.insertBefore(s1, s0);
+    })();
+  </script>
+  <!--End of Tawk.to Script-->
+</body>
+</html>
+''';
   }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-
-    // Responsive values
-    final horizontalPadding = (screenWidth * 0.04).clamp(16.0, 24.0);
     final headingFontSize = (screenWidth * 0.05).clamp(18.0, 22.0);
-    final bodyFontSize = (screenWidth * 0.038).clamp(14.0, 16.0);
     final smallFontSize = (screenWidth * 0.032).clamp(11.0, 13.0);
     final iconSize = (screenWidth * 0.06).clamp(24.0, 32.0);
 
@@ -87,21 +112,21 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
           children: [
             _buildHeader(context, headingFontSize, smallFontSize, iconSize),
             Expanded(
-              child: ListView.builder(
-                controller: _scrollController,
-                padding: EdgeInsets.all(horizontalPadding),
-                itemCount: _messages.length,
-                itemBuilder: (context, index) {
-                  final message = _messages[index];
-                  return _buildMessageBubble(
-                    message,
-                    bodyFontSize,
-                    smallFontSize,
-                  );
-                },
+              child: Stack(
+                children: [
+                  WebViewWidget(controller: _controller),
+                  if (_isLoading)
+                    Container(
+                      color: Colors.white,
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primaryOrangeStart,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
-            _buildMessageInput(bodyFontSize, iconSize),
           ],
         ),
       ),
@@ -189,113 +214,6 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                   ],
                 ),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMessageBubble(
-    Map<String, dynamic> message,
-    double bodyFontSize,
-    double smallFontSize,
-  ) {
-    final bool isMe = message['isMe'];
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: isMe
-            ? CrossAxisAlignment.end
-            : CrossAxisAlignment.start,
-        children: [
-          Container(
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.75,
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: isMe
-                  ? AppColors.primaryOrangeStart
-                  : const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(16),
-                topRight: const Radius.circular(16),
-                bottomLeft: Radius.circular(isMe ? 16 : 0),
-                bottomRight: Radius.circular(isMe ? 0 : 16),
-              ),
-            ),
-            child: Text(
-              message['text'],
-              style: TextStyle(
-                color: isMe ? Colors.white : AppColors.textPrimary,
-                fontSize: bodyFontSize,
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            message['time'],
-            style: TextStyle(
-              fontSize: smallFontSize - 2,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMessageInput(double bodyFontSize, double iconSize) {
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        16,
-        8,
-        16,
-        MediaQuery.of(context).viewInsets.bottom > 0 ? 8 : 16,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: TextField(
-                controller: _messageController,
-                style: TextStyle(fontSize: bodyFontSize),
-                decoration: InputDecoration(
-                  hintText: AppLocalizations.of(context)!.typeYourMessage,
-                  border: InputBorder.none,
-                  hintStyle: TextStyle(
-                    fontSize: bodyFontSize,
-                    color: Colors.grey,
-                  ),
-                ),
-                onSubmitted: (_) => _sendMessage(),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          CircleAvatar(
-            backgroundColor: AppColors.primaryOrangeStart,
-            radius: (iconSize * 0.8).clamp(20.0, 24.0),
-            child: IconButton(
-              icon: Icon(Icons.send, color: Colors.white, size: iconSize * 0.7),
-              onPressed: _sendMessage,
             ),
           ),
         ],

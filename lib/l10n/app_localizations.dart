@@ -185,7 +185,7 @@ abstract class AppLocalizations {
   /// No description provided for @otpSentSuccessfully.
   ///
   /// In en, this message translates to:
-  /// **'OTP sent successfully (Demo: 123456)'**
+  /// **'OTP sent successfully'**
   String get otpSentSuccessfully;
 
   /// No description provided for @phoneUpdatedSuccessfully.
@@ -203,7 +203,7 @@ abstract class AppLocalizations {
   /// No description provided for @invalidOtpDemo.
   ///
   /// In en, this message translates to:
-  /// **'Invalid OTP. Use 123456 for demo.'**
+  /// **'Invalid OTP. Please try again.'**
   String get invalidOtpDemo;
 
   /// No description provided for @confirmChange.
@@ -341,7 +341,7 @@ abstract class AppLocalizations {
   /// No description provided for @otpSentToWithDemo.
   ///
   /// In en, this message translates to:
-  /// **'OTP sent to +91 {phone} (Demo: 123456)'**
+  /// **'OTP sent to +91 {phone}'**
   String otpSentToWithDemo(Object phone);
 
   /// No description provided for @verifyMobileNumber.
@@ -359,7 +359,7 @@ abstract class AppLocalizations {
   /// No description provided for @demoOtp.
   ///
   /// In en, this message translates to:
-  /// **'Demo OTP: 123456'**
+  /// **'OTP has been sent'**
   String get demoOtp;
 
   /// No description provided for @mobileNumberVerifiedSuccessfully.
@@ -373,6 +373,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save Profile'**
   String get saveProfile;
+
+  /// No description provided for @bloodGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Blood Group'**
+  String get bloodGroup;
+
+  /// No description provided for @selectBloodGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Blood Group'**
+  String get selectBloodGroup;
+
+  /// No description provided for @recommended.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended'**
+  String get recommended;
 
   /// No description provided for @pressBackAgainToExit.
   ///
@@ -2540,6 +2558,408 @@ abstract class AppLocalizations {
   /// **'Account & Settings'**
   String get accountAndSettings;
 
+  /// No description provided for @partnerWelfare.
+  ///
+  /// In en, this message translates to:
+  /// **'Partner Welfare'**
+  String get partnerWelfare;
+
+  /// No description provided for @omiBayCare.
+  ///
+  /// In en, this message translates to:
+  /// **'OmiBay Care'**
+  String get omiBayCare;
+
+  /// No description provided for @healthAndFinancialSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Health and financial support for partners'**
+  String get healthAndFinancialSupport;
+
+  /// No description provided for @freeHealthCheckup.
+  ///
+  /// In en, this message translates to:
+  /// **'Free Health Checkup'**
+  String get freeHealthCheckup;
+
+  /// No description provided for @annualHealthCheckupVoucher.
+  ///
+  /// In en, this message translates to:
+  /// **'Annual health checkup voucher'**
+  String get annualHealthCheckupVoucher;
+
+  /// No description provided for @healthInsurance.
+  ///
+  /// In en, this message translates to:
+  /// **'Health Insurance'**
+  String get healthInsurance;
+
+  /// No description provided for @comprehensiveHealthCoverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Comprehensive health coverage'**
+  String get comprehensiveHealthCoverage;
+
+  /// No description provided for @equipmentLoan.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipment Loan'**
+  String get equipmentLoan;
+
+  /// No description provided for @toolsAndEquipmentFinancing.
+  ///
+  /// In en, this message translates to:
+  /// **'Tools and equipment financing'**
+  String get toolsAndEquipmentFinancing;
+
+  /// No description provided for @emergencyLoan.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency Loan'**
+  String get emergencyLoan;
+
+  /// No description provided for @instantFinancialAssistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Instant financial assistance'**
+  String get instantFinancialAssistance;
+
+  /// No description provided for @activeDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Active Days'**
+  String get activeDays;
+
+  /// No description provided for @monthlyJobs.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly Jobs'**
+  String get monthlyJobs;
+
+  /// No description provided for @eligible.
+  ///
+  /// In en, this message translates to:
+  /// **'Eligible'**
+  String get eligible;
+
+  /// No description provided for @locked.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked'**
+  String get locked;
+
+  /// No description provided for @soon.
+  ///
+  /// In en, this message translates to:
+  /// **'Soon'**
+  String get soon;
+
+  /// No description provided for @launchingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Launching Soon'**
+  String get launchingSoon;
+
+  /// No description provided for @weArePreparingThisBenefit.
+  ///
+  /// In en, this message translates to:
+  /// **'We are preparing this benefit for you.\nStay active to unlock full access.'**
+  String get weArePreparingThisBenefit;
+
+  /// No description provided for @youAreEligible.
+  ///
+  /// In en, this message translates to:
+  /// **'You are eligible. Service will be available soon.'**
+  String get youAreEligible;
+
+  /// No description provided for @completeMoreJobsToUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete more jobs to unlock'**
+  String get completeMoreJobsToUnlock;
+
+  /// No description provided for @annualHealthCheckup.
+  ///
+  /// In en, this message translates to:
+  /// **'Annual Health Checkup'**
+  String get annualHealthCheckup;
+
+  /// No description provided for @comprehensiveHealthScreening.
+  ///
+  /// In en, this message translates to:
+  /// **'Comprehensive health screening\nfor OmiBay partners'**
+  String get comprehensiveHealthScreening;
+
+  /// No description provided for @aboutThisBenefit.
+  ///
+  /// In en, this message translates to:
+  /// **'About This Benefit'**
+  String get aboutThisBenefit;
+
+  /// No description provided for @healthCheckupBenefitDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'OmiBay provides free annual health checkups to eligible partners as part of our commitment to your wellbeing. Once launched, you will receive a QR voucher that can be redeemed at partner healthcare facilities.'**
+  String get healthCheckupBenefitDescription;
+
+  /// No description provided for @eligibilityRequirements.
+  ///
+  /// In en, this message translates to:
+  /// **'Eligibility Requirements'**
+  String get eligibilityRequirements;
+
+  /// No description provided for @completeAtLeastActiveDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete at least {days} active days'**
+  String completeAtLeastActiveDays(Object days);
+
+  /// No description provided for @partnerRating.
+  ///
+  /// In en, this message translates to:
+  /// **'Partner Rating'**
+  String get partnerRating;
+
+  /// No description provided for @maintainRatingOrHigher.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintain a rating of 4.0 or higher'**
+  String get maintainRatingOrHigher;
+
+  /// No description provided for @whatYouGet.
+  ///
+  /// In en, this message translates to:
+  /// **'What You\'ll Get'**
+  String get whatYouGet;
+
+  /// No description provided for @qrHealthVoucher.
+  ///
+  /// In en, this message translates to:
+  /// **'QR Health Voucher'**
+  String get qrHealthVoucher;
+
+  /// No description provided for @partnerHospitalAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Partner Hospital Access'**
+  String get partnerHospitalAccess;
+
+  /// No description provided for @completeBloodTests.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Blood Tests'**
+  String get completeBloodTests;
+
+  /// No description provided for @vitalHealthScreening.
+  ///
+  /// In en, this message translates to:
+  /// **'Vital Health Screening'**
+  String get vitalHealthScreening;
+
+  /// No description provided for @healthInsuranceCoverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Comprehensive health coverage\nfor OmiBay partners'**
+  String get healthInsuranceCoverage;
+
+  /// No description provided for @healthInsuranceBenefitDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'OmiBay provides comprehensive health insurance coverage to eligible partners as part of our commitment to your wellbeing. Once launched, you will receive health insurance coverage that protects you and your family.'**
+  String get healthInsuranceBenefitDescription;
+
+  /// No description provided for @coverageHighlights.
+  ///
+  /// In en, this message translates to:
+  /// **'Coverage Highlights'**
+  String get coverageHighlights;
+
+  /// No description provided for @hospitalizationCoverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Hospitalization Coverage'**
+  String get hospitalizationCoverage;
+
+  /// No description provided for @outpatientCare.
+  ///
+  /// In en, this message translates to:
+  /// **'Outpatient Care'**
+  String get outpatientCare;
+
+  /// No description provided for @prescriptionMedicines.
+  ///
+  /// In en, this message translates to:
+  /// **'Prescription Medicines'**
+  String get prescriptionMedicines;
+
+  /// No description provided for @emergencyServices.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency Services'**
+  String get emergencyServices;
+
+  /// No description provided for @familyCoverageOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Family Coverage Option'**
+  String get familyCoverageOption;
+
+  /// No description provided for @equipmentLoanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipment Loan'**
+  String get equipmentLoanTitle;
+
+  /// No description provided for @toolsAndEquipmentSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Professional tools and equipment\nfinancing for partners'**
+  String get toolsAndEquipmentSupport;
+
+  /// No description provided for @equipmentLoanBenefitDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'OmiBay provides equipment loan facilities to eligible partners for purchasing professional tools and equipment. Once launched, you can apply for loans to upgrade your service capabilities.'**
+  String get equipmentLoanBenefitDescription;
+
+  /// No description provided for @loanBenefits.
+  ///
+  /// In en, this message translates to:
+  /// **'Loan Benefits'**
+  String get loanBenefits;
+
+  /// No description provided for @lowInterestRates.
+  ///
+  /// In en, this message translates to:
+  /// **'Low Interest Rates'**
+  String get lowInterestRates;
+
+  /// No description provided for @flexibleRepayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Flexible Repayment'**
+  String get flexibleRepayment;
+
+  /// No description provided for @quickApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Approval'**
+  String get quickApproval;
+
+  /// No description provided for @noCollateral.
+  ///
+  /// In en, this message translates to:
+  /// **'No Collateral Required'**
+  String get noCollateral;
+
+  /// No description provided for @directDisbursement.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct Disbursement'**
+  String get directDisbursement;
+
+  /// No description provided for @weeklyEarningsStable.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Earnings Stable'**
+  String get weeklyEarningsStable;
+
+  /// No description provided for @maintainStableWeeklyEarnings.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintain stable weekly earnings for 4+ weeks'**
+  String get maintainStableWeeklyEarnings;
+
+  /// No description provided for @emergencyLoanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency Loan'**
+  String get emergencyLoanTitle;
+
+  /// No description provided for @instantFinancialSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Instant financial assistance\nfor emergency needs'**
+  String get instantFinancialSupport;
+
+  /// No description provided for @emergencyLoanBenefitDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'OmiBay provides emergency loan facilities to eligible partners for urgent financial needs. Once launched, you can access instant financial support during emergencies.'**
+  String get emergencyLoanBenefitDescription;
+
+  /// No description provided for @emergencyLoanFeatures.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency Loan Features'**
+  String get emergencyLoanFeatures;
+
+  /// No description provided for @instantApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Instant Approval'**
+  String get instantApproval;
+
+  /// No description provided for @sameDayDisbursement.
+  ///
+  /// In en, this message translates to:
+  /// **'Same Day Disbursement'**
+  String get sameDayDisbursement;
+
+  /// No description provided for @minimalDocumentation.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimal Documentation'**
+  String get minimalDocumentation;
+
+  /// No description provided for @competitiveInterest.
+  ///
+  /// In en, this message translates to:
+  /// **'Competitive Interest'**
+  String get competitiveInterest;
+
+  /// No description provided for @easyRepayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy Repayment'**
+  String get easyRepayment;
+
+  /// No description provided for @jobCompletionRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Job Completion Rate'**
+  String get jobCompletionRate;
+
+  /// No description provided for @maintainHighJobCompletion.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintain high job completion rate (>90%)'**
+  String get maintainHighJobCompletion;
+
+  /// No description provided for @youAreEligibleForHealthCheckup.
+  ///
+  /// In en, this message translates to:
+  /// **'You are eligible for free health checkup!'**
+  String get youAreEligibleForHealthCheckup;
+
+  /// No description provided for @youAreEligibleForHealthInsurance.
+  ///
+  /// In en, this message translates to:
+  /// **'You are eligible for health insurance!'**
+  String get youAreEligibleForHealthInsurance;
+
+  /// No description provided for @youAreEligibleForEquipmentLoan.
+  ///
+  /// In en, this message translates to:
+  /// **'You are eligible for equipment loan!'**
+  String get youAreEligibleForEquipmentLoan;
+
+  /// No description provided for @youAreEligibleForEmergencyLoan.
+  ///
+  /// In en, this message translates to:
+  /// **'You are eligible for emergency loan!'**
+  String get youAreEligibleForEmergencyLoan;
+
   /// No description provided for @editProfile.
   ///
   /// In en, this message translates to:
@@ -3437,13 +3857,13 @@ abstract class AppLocalizations {
   /// No description provided for @debugOtpSent.
   ///
   /// In en, this message translates to:
-  /// **'DEBUG: OTP sent (Mock: 123456)'**
+  /// **'OTP sent successfully'**
   String get debugOtpSent;
 
   /// No description provided for @invalidOtp.
   ///
   /// In en, this message translates to:
-  /// **'Invalid OTP (Mock uses 123456)'**
+  /// **'Invalid OTP. Please try again.'**
   String get invalidOtp;
 
   /// No description provided for @failedToSignIn.
@@ -4583,7 +5003,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacyPolicyTitle.
   ///
   /// In en, this message translates to:
-  /// **'Privacy Policy'**
+  /// **'Privacy Policy – Omibay Partner App'**
   String get privacyPolicyTitle;
 
   /// No description provided for @privacySection1Title.
@@ -4595,7 +5015,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacySection1Content.
   ///
   /// In en, this message translates to:
-  /// **'We collect personal information such as your name, phone number, email address, government-issued identification, and location data to provide our services effectively.'**
+  /// **'We collect:\n\n• Personal Information: Name, phone number, email, address, Aadhaar/PAN (for verification), bank details (for payouts).\n• Professional Information: Qualifications, licenses, experience, service categories, profile photos.\n• Location Data: Real-time GPS location during active jobs (with your consent) for job allocation and tracking.\n• Usage Data: Device information, IP address, job history, earnings data.\n• Background Data: Verification documents and results (police verification if applicable).'**
   String get privacySection1Content;
 
   /// No description provided for @privacySection2Title.
@@ -4607,19 +5027,19 @@ abstract class AppLocalizations {
   /// No description provided for @privacySection2Content.
   ///
   /// In en, this message translates to:
-  /// **'Your information is used to verify your identity, process payments, connect you with customers, and improve our application experience. We also use location data to send you job requests nearby.'**
+  /// **'We use information to:\n\n• Verify and onboard Partners.\n• Allocate and manage jobs.\n• Process payouts and generate invoices/statements.\n• Improve platform safety, performance, and fraud prevention.\n• Send notifications, updates, and promotional offers (with consent).\n• Comply with legal and tax obligations.'**
   String get privacySection2Content;
 
   /// No description provided for @privacySection3Title.
   ///
   /// In en, this message translates to:
-  /// **'3. Data Sharing'**
+  /// **'3. Sharing of Information'**
   String get privacySection3Title;
 
   /// No description provided for @privacySection3Content.
   ///
   /// In en, this message translates to:
-  /// **'We share necessary information (like your name and location) with customers when you accept their job requests. We do not sell your personal data to third-party marketing companies.'**
+  /// **'We share information with:\n\n• Customers (only necessary details like name, photo, ratings, and live location during jobs).\n• Third-party service providers (payment processors, verification agencies, analytics, cloud storage) under strict confidentiality.\n• Tax authorities or law enforcement when required by law.\n\nWe do not sell your personal data.'**
   String get privacySection3Content;
 
   /// No description provided for @privacySection4Title.
@@ -4631,44 +5051,62 @@ abstract class AppLocalizations {
   /// No description provided for @privacySection4Content.
   ///
   /// In en, this message translates to:
-  /// **'We implement industry-standard security measures to protect your data from unauthorized access, alteration, or disclosure. However, no method of transmission over the internet is 100% secure.'**
+  /// **'We implement reasonable technical and organizational measures (encryption, access controls) to protect your data.'**
   String get privacySection4Content;
 
   /// No description provided for @privacySection5Title.
   ///
   /// In en, this message translates to:
-  /// **'5. Cookies'**
+  /// **'5. Your Rights'**
   String get privacySection5Title;
 
   /// No description provided for @privacySection5Content.
   ///
   /// In en, this message translates to:
-  /// **'Our application may use cookies and similar technologies to enhance user experience and analyze app performance.'**
+  /// **'Under applicable laws, you may:\n\n• Access, correct, or delete your personal data.\n• Withdraw consent (where processing is consent-based; note this may affect App usage).\n• File a complaint with the relevant data protection authority.\n\nContact us at rights@omibay.com to exercise your rights.'**
   String get privacySection5Content;
 
   /// No description provided for @privacySection6Title.
   ///
   /// In en, this message translates to:
-  /// **'6. Changes to Policy'**
+  /// **'6. Location Tracking'**
   String get privacySection6Title;
 
   /// No description provided for @privacySection6Content.
   ///
   /// In en, this message translates to:
-  /// **'We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new policy on this page.'**
+  /// **'Precise location is collected only when the App is in use for job purposes and can be disabled (but may limit job availability).'**
   String get privacySection6Content;
+
+  /// No description provided for @privacySection7Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Us'**
+  String get privacySection7Title;
+
+  /// No description provided for @privacySection7Content.
+  ///
+  /// In en, this message translates to:
+  /// **'For privacy concerns related to the Omibay Partner App, contact:\n\nEmail: partnerprivacy@omibay.com'**
+  String get privacySection7Content;
 
   /// No description provided for @privacyContact.
   ///
   /// In en, this message translates to:
-  /// **'For privacy concerns, contact: privacy@apnakaam.com'**
+  /// **'Effective Date: January 21, 2026\n\nOmibay respects your privacy and is committed to protecting your personal and professional information in compliance with applicable laws, including India\'s Digital Personal Data Protection Act, 2023 (DPDP Act).'**
   String get privacyContact;
 
   /// No description provided for @termsOfServiceTitle.
   ///
   /// In en, this message translates to:
-  /// **'Terms of Service'**
+  /// **'Terms of Service – Omibay Partner App'**
   String get termsOfServiceTitle;
+
+  /// No description provided for @termsIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to the \"Omibay\" Partner App, a platform designed exclusively for verified professional service providers to receive bookings, manage jobs, and provide on-demand home services to Customers.'**
+  String get termsIntro;
 
   /// No description provided for @termsSection1Title.
   ///
@@ -4679,68 +5117,104 @@ abstract class AppLocalizations {
   /// No description provided for @termsSection1Content.
   ///
   /// In en, this message translates to:
-  /// **'By accessing and using the OmiBay Partner app, you agree to be bound by these Terms of Service. If you do not agree with any part of these terms, you must not use the application.'**
+  /// **'These Terms form a legally binding agreement between you and Omibay Technologies Private Limited. We reserve the right to update these Terms at any time. Continued use constitutes acceptance of updated Terms.'**
   String get termsSection1Content;
 
   /// No description provided for @termsSection2Title.
   ///
   /// In en, this message translates to:
-  /// **'2. Partner Eligibility'**
+  /// **'2. Eligibility'**
   String get termsSection2Title;
 
   /// No description provided for @termsSection2Content.
   ///
   /// In en, this message translates to:
-  /// **'To be a Partner on OmiBay, you must be at least 18 years of age and possess the legal authority to enter into a binding agreement. You must provide accurate and complete documentation for verification.'**
+  /// **'• You must be at least 18 years old and legally capable of entering into contracts.\n• You must possess necessary qualifications, licenses, and certifications.\n• You must pass Omibay\'s verification and background check process.'**
   String get termsSection2Content;
 
   /// No description provided for @termsSection3Title.
   ///
   /// In en, this message translates to:
-  /// **'3. Service Standards'**
+  /// **'3. Services and Obligations'**
   String get termsSection3Title;
 
   /// No description provided for @termsSection3Content.
   ///
   /// In en, this message translates to:
-  /// **'Partners are expected to maintain high-quality service standards. This includes punctuality, professional conduct, and adherence to safety guidelines during job execution.'**
+  /// **'Omibay acts solely as a technology platform connecting Partners with Customers. You agree to:\n\n• Provide services professionally, punctually, and in accordance with agreed standards.\n• Maintain required tools, equipment, and insurance (where applicable).\n• Comply with all applicable laws, safety standards, and customer instructions.\n• Treat Customers respectfully and maintain confidentiality.'**
   String get termsSection3Content;
 
   /// No description provided for @termsSection4Title.
   ///
   /// In en, this message translates to:
-  /// **'4. Payment & Fees'**
+  /// **'4. Earnings and Payouts'**
   String get termsSection4Title;
 
   /// No description provided for @termsSection4Content.
   ///
   /// In en, this message translates to:
-  /// **'Payments are processed after job completion and verification. OmiBay reserves the right to deduct a service commission from the total job value as per the agreed commission structure.'**
+  /// **'• Your payout is the fee shown in the App, once Omibay\'s platform commission, taxes, and applicable charges are deducted.\n• Partners are eligible to request payout at any time to their registered bank account.\n• You are responsible for all applicable taxes (including GST registration and filing if required).'**
   String get termsSection4Content;
 
   /// No description provided for @termsSection5Title.
   ///
   /// In en, this message translates to:
-  /// **'5. Account Security'**
+  /// **'5. Cancellations, No-Shows, and Penalties'**
   String get termsSection5Title;
 
   /// No description provided for @termsSection5Content.
   ///
   /// In en, this message translates to:
-  /// **'You are responsible for maintaining the confidentiality of your account credentials. Any activity occurring under your account is your sole responsibility.'**
+  /// **'Repeated cancellations, no-shows, or poor performance may lead to penalties, lower priority in job allocation, or account suspension.'**
   String get termsSection5Content;
 
   /// No description provided for @termsSection6Title.
   ///
   /// In en, this message translates to:
-  /// **'6. Termination'**
+  /// **'6. Prohibited Conduct'**
   String get termsSection6Title;
 
   /// No description provided for @termsSection6Content.
   ///
   /// In en, this message translates to:
-  /// **'OmiBay reserves the right to suspend or terminate your account for violations of these terms, poor service ratings, or fraudulent activities.'**
+  /// **'You agree not to:\n\n• Solicit Customers outside the platform.\n• Provide false information or impersonate others.\n• Engage in fraudulent, unsafe, or illegal activities.\n• Tamper with the App or interfere with its operation.'**
   String get termsSection6Content;
+
+  /// No description provided for @termsSection7Title.
+  ///
+  /// In en, this message translates to:
+  /// **'7. Limitation of Liability'**
+  String get termsSection7Title;
+
+  /// No description provided for @termsSection7Content.
+  ///
+  /// In en, this message translates to:
+  /// **'If any loss, damage, or dispute arises due to the Partner\'s actions or negligence during service delivery, Omibay may levy a penalty. Omibay may offer damage protection to the Customer up to ₹5,000, subject to investigation and policy conditions.'**
+  String get termsSection7Content;
+
+  /// No description provided for @termsSection8Title.
+  ///
+  /// In en, this message translates to:
+  /// **'8. Dispute Resolution'**
+  String get termsSection8Title;
+
+  /// No description provided for @termsSection8Content.
+  ///
+  /// In en, this message translates to:
+  /// **'Any disputes arising from these Terms shall be resolved through arbitration in accordance with Indian law. The arbitration shall be conducted in Kolkata, India.'**
+  String get termsSection8Content;
+
+  /// No description provided for @termsContactTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Us'**
+  String get termsContactTitle;
+
+  /// No description provided for @termsContactContent.
+  ///
+  /// In en, this message translates to:
+  /// **'For questions, contact us at:\n\npartnerlegal@omibay.com'**
+  String get termsContactContent;
 
   /// No description provided for @termsCopyright.
   ///
@@ -4775,7 +5249,7 @@ abstract class AppLocalizations {
   /// No description provided for @suspensionTypesContent.
   ///
   /// In en, this message translates to:
-  /// **'1. Temporary Suspension: A partner may be suspended for a limited period (3 days, 7 days, 15 days, or 30 days) depending on the severity of the issue.\n\n2. Permanent Suspension: A partner may be permanently removed from the platform with no option to rejoin.'**
+  /// **'1. Temporary Suspension\nA partner may be suspended for a limited period (e.g., 3 days, 7 days, 15 days, or 30 days) depending on the severity of the issue.\n\n2. Permanent Suspension\nA partner may be permanently removed from the platform with no option to rejoin.'**
   String get suspensionTypesContent;
 
   /// No description provided for @suspensionTempReasonsTitle.
@@ -4787,7 +5261,7 @@ abstract class AppLocalizations {
   /// No description provided for @suspensionTempReasonsContent.
   ///
   /// In en, this message translates to:
-  /// **'A partner may face temporary suspension if they:\n• Frequently cancel accepted bookings without valid reasons.\n• Arrive late repeatedly or fail to complete assigned jobs.\n• Receive multiple customer complaints about behavior, hygiene, or professionalism.\n• Overcharge customers or demand extra payment outside the app.\n• Use abusive, rude, or inappropriate language with customers.\n• Share incorrect service information or misrepresent skills.\n• Maintain consistently low ratings below platform standards.\n• Violate platform guidelines for the first time.'**
+  /// **'A partner may face temporary suspension if they:\n\n• Frequently cancel accepted bookings without valid reasons.\n• Arrive late repeatedly or fail to complete assigned jobs.\n• Receive multiple customer complaints about behavior, hygiene, or professionalism.\n• Overcharge customers or demand extra payment outside the app.\n• Use abusive, rude, or inappropriate language with customers.\n• Share incorrect service information or misrepresent skills.\n• Have low ratings consistently below the platform threshold.\n• Violate platform guidelines unintentionally or for the first time.'**
   String get suspensionTempReasonsContent;
 
   /// No description provided for @suspensionTempActionTitle.
@@ -4799,7 +5273,7 @@ abstract class AppLocalizations {
   /// No description provided for @suspensionTempActionContent.
   ///
   /// In en, this message translates to:
-  /// **'The partner account will be suspended for a defined period. Training or re-verification may be required before reactivation.'**
+  /// **'• Partner account will be suspended for a defined period.\n• Training, warning, or re-verification may be required before reactivation.'**
   String get suspensionTempActionContent;
 
   /// No description provided for @suspensionPermReasonsTitle.
@@ -4811,7 +5285,7 @@ abstract class AppLocalizations {
   /// No description provided for @suspensionPermReasonsContent.
   ///
   /// In en, this message translates to:
-  /// **'A partner will be permanently suspended if they:\n• Commit fraud such as fake bookings or reviews.\n• Harass, threaten, or physically harm customers or staff.\n• Engage in illegal activities while using the platform.\n• Share customer personal data without consent.\n• Use fake documents or false verification details.\n• Bypass platform payments or redirect customers off-platform.\n• Repeatedly violate policies after multiple warnings.\n• Cause intentional damage to customer property.'**
+  /// **'A partner will be permanently suspended if they:\n\n• Commit fraud, including fake bookings, fake reviews, or identity misuse.\n• Harass, threaten, or physically harm customers or staff.\n• Engage in illegal activities while using the platform.\n• Share customer personal data without consent.\n• Use fake documents or provide false verification details.\n• Attempt to bypass platform payments or redirect customers off-platform.\n• Repeatedly violate policies after multiple warnings or suspensions.\n• Damage customer property intentionally or show severe misconduct.'**
   String get suspensionPermReasonsContent;
 
   /// No description provided for @suspensionPermActionTitle.
@@ -4823,7 +5297,7 @@ abstract class AppLocalizations {
   /// No description provided for @suspensionPermActionContent.
   ///
   /// In en, this message translates to:
-  /// **'Immediate account termination. Outstanding payments may be withheld as per policy. Re-registration is not allowed.'**
+  /// **'• Immediate and permanent account termination.\n• Outstanding payments may be withheld as per legal guidelines.\n• Partner will not be allowed to re-register.'**
   String get suspensionPermActionContent;
 
   /// No description provided for @suspensionNotifyTitle.
@@ -4835,7 +5309,7 @@ abstract class AppLocalizations {
   /// No description provided for @suspensionNotifyContent.
   ///
   /// In en, this message translates to:
-  /// **'Partners will be notified via app notification, email, or SMS with reason and duration.'**
+  /// **'• Partners will be notified via app notification, email, or SMS.\n• The notification will include the reason and suspension duration.'**
   String get suspensionNotifyContent;
 
   /// No description provided for @suspensionAppealTitle.
@@ -4847,19 +5321,19 @@ abstract class AppLocalizations {
   /// No description provided for @suspensionAppealContent.
   ///
   /// In en, this message translates to:
-  /// **'Partners may appeal within 7 days with valid proof. Final decision rests with the platform.'**
+  /// **'• Partners can appeal a suspension within 7 days of notification.\n• Appeals must include valid explanations and supporting evidence.\n• The platform\'s decision after review will be final.'**
   String get suspensionAppealContent;
 
   /// No description provided for @suspensionReactivateTitle.
   ///
   /// In en, this message translates to:
-  /// **'Reactivation Policy'**
+  /// **'Reactivation Policy (Temporary Suspension)'**
   String get suspensionReactivateTitle;
 
   /// No description provided for @suspensionReactivateContent.
   ///
   /// In en, this message translates to:
-  /// **'Temporary suspensions require review, training, or probation before reactivation.'**
+  /// **'• Account reactivation is subject to successful review.\n• Mandatory training, document re-verification, or probation may apply.'**
   String get suspensionReactivateContent;
 
   /// No description provided for @suspensionFinalNoteTitle.
@@ -4871,13 +5345,13 @@ abstract class AppLocalizations {
   /// No description provided for @suspensionFinalNoteContent.
   ///
   /// In en, this message translates to:
-  /// **'The platform reserves the right to suspend or terminate accounts to protect customers and platform integrity.'**
+  /// **'The platform reserves the right to suspend or terminate any partner account to protect customers, partners, and platform integrity.\n\nDecisions are made fairly and based on verified evidence.'**
   String get suspensionFinalNoteContent;
 
   /// No description provided for @suspensionContact.
   ///
   /// In en, this message translates to:
-  /// **'For any queries, contact: support@omibay.com'**
+  /// **'For questions or support regarding suspension decisions, contact us at suspension@omibay.com'**
   String get suspensionContact;
 
   /// No description provided for @pauseWorkTitle.

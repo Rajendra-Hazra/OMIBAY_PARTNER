@@ -43,11 +43,23 @@ class TermsOfServiceScreen extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 16 * paddingScale),
-                    Text(
-                      l10n.lastUpdated('January 2024'),
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: bodyFontSize,
+                    // Introduction section with highlighted box
+                    Container(
+                      padding: EdgeInsets.all(16 * paddingScale),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryOrangeStart.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.primaryOrangeStart.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Text(
+                        l10n.termsIntro,
+                        style: TextStyle(
+                          fontSize: bodyFontSize,
+                          color: AppColors.textPrimary,
+                          height: 1.6,
+                        ),
                       ),
                     ),
                     SizedBox(height: 32 * paddingScale),
@@ -89,6 +101,28 @@ class TermsOfServiceScreen extends StatelessWidget {
                     _buildSection(
                       l10n.termsSection6Title,
                       l10n.termsSection6Content,
+                      sectionTitleFontSize,
+                      bodyFontSize,
+                      paddingScale,
+                    ),
+                    _buildSection(
+                      l10n.termsSection7Title,
+                      l10n.termsSection7Content,
+                      sectionTitleFontSize,
+                      bodyFontSize,
+                      paddingScale,
+                    ),
+                    _buildSection(
+                      l10n.termsSection8Title,
+                      l10n.termsSection8Content,
+                      sectionTitleFontSize,
+                      bodyFontSize,
+                      paddingScale,
+                    ),
+                    // Contact Us section
+                    _buildSection(
+                      l10n.termsContactTitle,
+                      l10n.termsContactContent,
                       sectionTitleFontSize,
                       bodyFontSize,
                       paddingScale,

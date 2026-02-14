@@ -52,7 +52,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get pleaseEnterValidEmail => 'দয়া করে একটি সঠিক ইমেইল দিন';
 
   @override
-  String get otpSentSuccessfully => 'OTP সফলভাবে পাঠানো হয়েছে (ডেমো: 123456)';
+  String get otpSentSuccessfully => 'OTP সফলভাবে পাঠানো হয়েছে';
 
   @override
   String get phoneUpdatedSuccessfully => 'ফোন নম্বর সফলভাবে আপডেট হয়েছে!';
@@ -61,7 +61,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get emailUpdatedSuccessfully => 'ইমেইল সফলভাবে আপডেট হয়েছে!';
 
   @override
-  String get invalidOtpDemo => 'অবৈধ OTP। ডেমোর জন্য 123456 ব্যবহার করুন।';
+  String get invalidOtpDemo => 'অবৈধ OTP। আবার চেষ্টা করুন।';
 
   @override
   String get confirmChange => 'পরিবর্তন নিশ্চিত করুন';
@@ -140,7 +140,7 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String otpSentToWithDemo(Object phone) {
-    return '+91 $phone-এ OTP পাঠানো হয়েছে (ডেমো: 123456)';
+    return '+91 $phone-এ OTP পাঠানো হয়েছে';
   }
 
   @override
@@ -152,7 +152,7 @@ class AppLocalizationsBn extends AppLocalizations {
   }
 
   @override
-  String get demoOtp => 'ডেমো OTP: 123456';
+  String get demoOtp => 'OTP পাঠানো হয়েছে';
 
   @override
   String get mobileNumberVerifiedSuccessfully =>
@@ -160,6 +160,15 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get saveProfile => 'প্রোফাইল সংরক্ষণ করুন';
+
+  @override
+  String get bloodGroup => 'রক্তের গ্রুপ';
+
+  @override
+  String get selectBloodGroup => 'রক্তের গ্রুপ নির্বাচন করুন';
+
+  @override
+  String get recommended => 'প্রস্তাবিত';
 
   @override
   String get pressBackAgainToExit => 'প্রস্থান করতে আবার পেছনে টিপুন';
@@ -1327,6 +1336,223 @@ class AppLocalizationsBn extends AppLocalizations {
   String get accountAndSettings => 'অ্যাকাউন্ট ও সেটিংস';
 
   @override
+  String get partnerWelfare => 'পার্টনার কল্যাণ';
+
+  @override
+  String get omiBayCare => 'ওমিবে কেয়ার';
+
+  @override
+  String get healthAndFinancialSupport =>
+      'পার্টনারদের জন্য স্বাস্থ্য এবং আর্থিক সহায়তা';
+
+  @override
+  String get freeHealthCheckup => 'বিনামূল্যে স্বাস্থ্য পরীক্ষা';
+
+  @override
+  String get annualHealthCheckupVoucher => 'বার্ষিক স্বাস্থ্য পরীক্ষা ভাউচার';
+
+  @override
+  String get healthInsurance => 'স্বাস্থ্য বীমা';
+
+  @override
+  String get comprehensiveHealthCoverage => 'সম্পূর্ণ স্বাস্থ্য কভারেজ';
+
+  @override
+  String get equipmentLoan => 'সরঞ্জাম ঋণ';
+
+  @override
+  String get toolsAndEquipmentFinancing => 'সরঞ্জাম এবং যন্ত্রপাতি অর্থায়ন';
+
+  @override
+  String get emergencyLoan => 'জরুরি ঋণ';
+
+  @override
+  String get instantFinancialAssistance => 'তাৎক্ষণিক আর্থিক সহায়তা';
+
+  @override
+  String get activeDays => 'সক্রিয় দিন';
+
+  @override
+  String get monthlyJobs => 'মাসিক কাজ';
+
+  @override
+  String get eligible => 'যোগ্য';
+
+  @override
+  String get locked => 'লক করা';
+
+  @override
+  String get soon => 'শীঘ্রই';
+
+  @override
+  String get launchingSoon => 'শীঘ্রই চালু হচ্ছে';
+
+  @override
+  String get weArePreparingThisBenefit =>
+      'আমরা আপনার জন্য এই সুবিধা প্রস্তুত করছি।\nসম্পূর্ণ অ্যাক্সেস আনলক করতে সক্রিয় থাকুন।';
+
+  @override
+  String get youAreEligible => 'আপনি যোগ্য। শীঘ্রই সেবা পাওয়া যাবে।';
+
+  @override
+  String get completeMoreJobsToUnlock => 'আনলক করতে আরও কাজ সম্পন্ন করুন';
+
+  @override
+  String get annualHealthCheckup => 'বার্ষিক স্বাস্থ্য পরীক্ষা';
+
+  @override
+  String get comprehensiveHealthScreening =>
+      'ওমিবে পার্টনারদের জন্য\nসম্পূর্ণ স্বাস্থ্য পরীক্ষা';
+
+  @override
+  String get aboutThisBenefit => 'এই সুবিধা সম্পর্কে';
+
+  @override
+  String get healthCheckupBenefitDescription =>
+      'ওমিবে আপনার সুস্থতার প্রতি আমাদের প্রতিশ্রুতির অংশ হিসেবে যোগ্য পার্টনারদের বিনামূল্যে বার্ষিক স্বাস্থ্য পরীক্ষা প্রদান করে। একবার চালু হলে, আপনি একটি QR ভাউচার পাবেন যা পার্টনার স্বাস্থ্যসেবা কেন্দ্রে ব্যবহার করা যাবে।';
+
+  @override
+  String get eligibilityRequirements => 'যোগ্যতার প্রয়োজনীয়তা';
+
+  @override
+  String completeAtLeastActiveDays(Object days) {
+    return 'কমপক্ষে $days সক্রিয় দিন সম্পূর্ণ করুন';
+  }
+
+  @override
+  String get partnerRating => 'পার্টনার রেটিং';
+
+  @override
+  String get maintainRatingOrHigher => '4.0 বা তার বেশি রেটিং বজায় রাখুন';
+
+  @override
+  String get whatYouGet => 'আপনি যা পাবেন';
+
+  @override
+  String get qrHealthVoucher => 'QR স্বাস্থ্য ভাউচার';
+
+  @override
+  String get partnerHospitalAccess => 'পার্টনার হাসপাতাল অ্যাক্সেস';
+
+  @override
+  String get completeBloodTests => 'সম্পূর্ণ রক্ত পরীক্ষা';
+
+  @override
+  String get vitalHealthScreening => 'প্রাথমিক স্বাস্থ্য পরীক্ষা';
+
+  @override
+  String get healthInsuranceCoverage =>
+      'ওমিবে পার্টনারদের জন্য\nসম্পূর্ণ স্বাস্থ্য কভারেজ';
+
+  @override
+  String get healthInsuranceBenefitDescription =>
+      'ওমিবে আপনার সুস্থতার প্রতি আমাদের প্রতিশ্রুতির অংশ হিসেবে যোগ্য পার্টনারদের সম্পূর্ণ স্বাস্থ্য বীমা কভারেজ প্রদান করে। একবার চালু হলে, আপনি এবং আপনার পরিবারকে সুরক্ষিত করে এমন স্বাস্থ্য বীমা কভারেজ পাবেন।';
+
+  @override
+  String get coverageHighlights => 'কভারেজ হাইলাইট';
+
+  @override
+  String get hospitalizationCoverage => 'হাসপাতালে ভর্তি কভারেজ';
+
+  @override
+  String get outpatientCare => 'বহির্বিভাগ চিকিৎসা';
+
+  @override
+  String get prescriptionMedicines => 'প্রেসক্রিপশন ওষুধ';
+
+  @override
+  String get emergencyServices => 'জরুরি সেবা';
+
+  @override
+  String get familyCoverageOption => 'পরিবার কভারেজ বিকল্প';
+
+  @override
+  String get equipmentLoanTitle => 'সরঞ্জাম ঋণ';
+
+  @override
+  String get toolsAndEquipmentSupport =>
+      'পার্টনারদের জন্য পেশাদার\nসরঞ্জাম এবং যন্ত্রপাতি অর্থায়ন';
+
+  @override
+  String get equipmentLoanBenefitDescription =>
+      'ওমিবে পেশাদার সরঞ্জাম এবং যন্ত্রপাতি কেনার জন্য যোগ্য পার্টনারদের সরঞ্জাম ঋণ সুবিধা প্রদান করে। একবার চালু হলে, আপনি আপনার সেবা ক্ষমতা উন্নত করতে ঋণের জন্য আবেদন করতে পারবেন।';
+
+  @override
+  String get loanBenefits => 'ঋণ সুবিধা';
+
+  @override
+  String get lowInterestRates => 'কম সুদের হার';
+
+  @override
+  String get flexibleRepayment => 'নমনীয় পরিশোধ';
+
+  @override
+  String get quickApproval => 'দ্রুত অনুমোদন';
+
+  @override
+  String get noCollateral => 'কোনো জামানত প্রয়োজন নেই';
+
+  @override
+  String get directDisbursement => 'সরাসরি বিতরণ';
+
+  @override
+  String get weeklyEarningsStable => 'সাপ্তাহিক আয় স্থিতিশীল';
+
+  @override
+  String get maintainStableWeeklyEarnings =>
+      '4+ সপ্তাহের জন্য স্থিতিশীল সাপ্তাহিক আয় বজায় রাখুন';
+
+  @override
+  String get emergencyLoanTitle => 'জরুরি ঋণ';
+
+  @override
+  String get instantFinancialSupport =>
+      'জরুরি প্রয়োজনের জন্য\nতাৎক্ষণিক আর্থিক সহায়তা';
+
+  @override
+  String get emergencyLoanBenefitDescription =>
+      'ওমিবে জরুরি আর্থিক প্রয়োজনের জন্য যোগ্য পার্টনারদের জরুরি ঋণ সুবিধা প্রদান করে। একবার চালু হলে, আপনি জরুরি অবস্থায় তাৎক্ষণিক আর্থিক সহায়তা অ্যাক্সেস করতে পারবেন।';
+
+  @override
+  String get emergencyLoanFeatures => 'জরুরি ঋণ বৈশিষ্ট্য';
+
+  @override
+  String get instantApproval => 'তাৎক্ষণিক অনুমোদন';
+
+  @override
+  String get sameDayDisbursement => 'একই দিন বিতরণ';
+
+  @override
+  String get minimalDocumentation => 'ন্যূনতম ডকুমেন্টেশন';
+
+  @override
+  String get competitiveInterest => 'প্রতিযোগিতামূলক সুদ';
+
+  @override
+  String get easyRepayment => 'সহজ পরিশোধ';
+
+  @override
+  String get jobCompletionRate => 'কাজ সম্পন্নের হার';
+
+  @override
+  String get maintainHighJobCompletion =>
+      'উচ্চ কাজ সম্পন্নের হার বজায় রাখুন (>90%)';
+
+  @override
+  String get youAreEligibleForHealthCheckup =>
+      'আপনি বিনামূল্যে স্বাস্থ্য পরীক্ষার জন্য যোগ্য!';
+
+  @override
+  String get youAreEligibleForHealthInsurance =>
+      'আপনি স্বাস্থ্য বীমার জন্য যোগ্য!';
+
+  @override
+  String get youAreEligibleForEquipmentLoan => 'আপনি সরঞ্জাম ঋণের জন্য যোগ্য!';
+
+  @override
+  String get youAreEligibleForEmergencyLoan => 'আপনি জরুরি ঋণের জন্য যোগ্য!';
+
+  @override
   String get editProfile => 'প্রোফাইল সম্পাদনা';
 
   @override
@@ -1836,10 +2062,10 @@ class AppLocalizationsBn extends AppLocalizations {
   String get welcomeBack => 'স্বাগতম ফিরে, পার্টনার!';
 
   @override
-  String get debugOtpSent => 'ডিবাগ: OTP পাঠানো হয়েছে (মক: 123456)';
+  String get debugOtpSent => 'OTP সফলভাবে পাঠানো হয়েছে';
 
   @override
-  String get invalidOtp => 'অবৈধ OTP (মক 123456 ব্যবহার করে)';
+  String get invalidOtp => 'অবৈধ OTP। আবার চেষ্টা করুন।';
 
   @override
   String get failedToSignIn => 'সাইন ইন ব্যর্থ:';
@@ -2444,101 +2670,133 @@ class AppLocalizationsBn extends AppLocalizations {
   }
 
   @override
-  String get privacyPolicyTitle => 'গোপনীয়তা নীতি';
+  String get privacyPolicyTitle => 'গোপনীয়তা নীতি – Omibay Partner App';
 
   @override
   String get privacySection1Title => '1. আমরা যে তথ্য সংগ্রহ করি';
 
   @override
   String get privacySection1Content =>
-      'আমাদের সেবাগুলো কার্যকরভাবে প্রদান করতে আমরা আপনার নাম, ফোন নম্বর, ইমেল ঠিকানা, সরকারি পরিচয়পত্র এবং অবস্থানের ডেটার মতো ব্যক্তিগত তথ্য সংগ্রহ করি।';
+      'আমরা সংগ্রহ করি:\n\n• ব্যক্তিগত তথ্য: নাম, ফোন নম্বর, ইমেল, ঠিকানা, আধার/প্যান (যাচাইয়ের জন্য), ব্যাংক তথ্য (পেআউটের জন্য)।\n• পেশাগত তথ্য: যোগ্যতা, লাইসেন্স, অভিজ্ঞতা, সেবা বিভাগ, প্রোফাইল ছবি।\n• অবস্থানের তথ্য: সক্রিয় কাজের সময় রিয়েল-টাইম GPS অবস্থান (আপনার সম্মতিতে) কাজ বরাদ্দ এবং ট্র্যাকিংয়ের জন্য।\n• ব্যবহারের তথ্য: ডিভাইস তথ্য, IP ঠিকানা, কাজের ইতিহাস, আয়ের তথ্য।\n• পটভূমির তথ্য: যাচাইয়ের নথিপত্র এবং ফলাফল (প্রযোজ্য হলে পুলিশ যাচাই)।';
 
   @override
   String get privacySection2Title => '2. আমরা কীভাবে আপনার তথ্য ব্যবহার করি';
 
   @override
   String get privacySection2Content =>
-      'আপনার পরিচয় যাচাই করতে, পেমেন্ট প্রক্রিয়া করতে, গ্রাহকদের সাথে আপনাকে সংযোগ করতে এবং আমাদের অ্যাপ্লিকেশন অভিজ্ঞতা উন্নত করতে আপনার তথ্য ব্যবহার করা হয়। আপনার কাছাকাছি কাজের রিকোয়েস্ট পাঠাতে আমরা অবস্থানের ডেটাও ব্যবহার করি।';
+      'আমরা তথ্য ব্যবহার করি:\n\n• পার্টনারদের যাচাই এবং অনবোর্ড করতে।\n• কাজ বরাদ্দ এবং পরিচালনা করতে।\n• পেআউট প্রক্রিয়া এবং ইনভয়েস/স্টেটমেন্ট তৈরি করতে।\n• প্ল্যাটফর্মের নিরাপত্তা, কর্মক্ষমতা এবং জালিয়াতি প্রতিরোধ উন্নত করতে।\n• নোটিফিকেশন, আপডেট এবং প্রচারমূলক অফার পাঠাতে (সম্মতিতে)।\n• আইনি এবং কর বাধ্যবাধকতা মেনে চলতে।';
 
   @override
   String get privacySection3Title => '3. তথ্য শেয়ারিং';
 
   @override
   String get privacySection3Content =>
-      'আপনি যখন কোনো কাজের রিকোয়েস্ট গ্রহণ করেন, তখন আমরা গ্রাহকদের সাথে প্রয়োজনীয় তথ্য (যেমন আপনার নাম এবং অবস্থান) শেয়ার করি। আমরা তৃতীয় পক্ষের মার্কেটিং কোম্পানিগুলোর কাছে আপনার ব্যক্তিগত তথ্য বিক্রি করি না।';
+      'আমরা তথ্য শেয়ার করি:\n\n• গ্রাহকদের সাথে (শুধুমাত্র প্রয়োজনীয় তথ্য যেমন নাম, ছবি, রেটিং এবং কাজের সময় লাইভ অবস্থান)।\n• তৃতীয় পক্ষের সেবা প্রদানকারী (পেমেন্ট প্রসেসর, যাচাই এজেন্সি, এনালিটিক্স, ক্লাউড স্টোরেজ) কঠোর গোপনীয়তার অধীনে।\n• কর কর্তৃপক্ষ বা আইন প্রয়োগ সংস্থার সাথে যখন আইনত প্রয়োজন।\n\nআমরা আপনার ব্যক্তিগত তথ্য বিক্রি করি না।';
 
   @override
   String get privacySection4Title => '4. তথ্য নিরাপত্তা';
 
   @override
   String get privacySection4Content =>
-      'আপনার ডেটাকে অননুমোদিত অ্যাক্সেস, পরিবর্তন বা প্রকাশ থেকে রক্ষা করতে আমরা ইন্ডাস্ট্রি-স্ট্যান্ডার্ড নিরাপত্তা ব্যবস্থা বাস্তবায়ন করি। তবে ইন্টারনেটের মাধ্যমে ট্রান্সমিশনের কোনো পদ্ধতি 100% নিরাপদ নয়।';
+      'আপনার তথ্য সুরক্ষিত করতে আমরা যুক্তিসঙ্গত প্রযুক্তিগত এবং সাংগঠনিক ব্যবস্থা (এনক্রিপশন, অ্যাক্সেস কন্ট্রোল) বাস্তবায়ন করি।';
 
   @override
-  String get privacySection5Title => '5. কুকিজ';
+  String get privacySection5Title => '5. আপনার অধিকার';
 
   @override
   String get privacySection5Content =>
-      'ব্যবহারকারীর অভিজ্ঞতা উন্নত করতে এবং অ্যাপের পারফরম্যান্স বিশ্লেষণ করতে আমাদের অ্যাপ্লিকেশন কুকিজ এবং অনুরূপ প্রযুক্তি ব্যবহার করতে পারে।';
+      'প্রযোজ্য আইনের অধীনে, আপনি পারেন:\n\n• আপনার ব্যক্তিগত তথ্য অ্যাক্সেস, সংশোধন বা মুছে ফেলতে।\n• সম্মতি প্রত্যাহার করতে (যেখানে প্রক্রিয়াকরণ সম্মতি-ভিত্তিক; মনে রাখুন এটি অ্যাপ ব্যবহারে প্রভাব ফেলতে পারে)।\n• সংশ্লিষ্ট ডেটা সুরক্ষা কর্তৃপক্ষের কাছে অভিযোগ দায়ের করতে।\n\nআপনার অধিকার প্রয়োগ করতে rights@omibay.com-এ যোগাযোগ করুন।';
 
   @override
-  String get privacySection6Title => '6. নীতি পরিবর্তন';
+  String get privacySection6Title => '6. অবস্থান ট্র্যাকিং';
 
   @override
   String get privacySection6Content =>
-      'আমরা সময়ে সময়ে আমাদের গোপনীয়তা নীতি আপডেট করতে পারি। আমরা এই পৃষ্ঠায় নতুন নীতি পোস্ট করে আপনাকে যেকোনো পরিবর্তনের কথা জানাব।';
+      'কাজের উদ্দেশ্যে অ্যাপ ব্যবহারের সময়ই সঠিক অবস্থান সংগ্রহ করা হয় এবং নিষ্ক্রিয় করা যায় (তবে এটি কাজের প্রাপ্যতা সীমিত করতে পারে)।';
+
+  @override
+  String get privacySection7Title => 'যোগাযোগ করুন';
+
+  @override
+  String get privacySection7Content =>
+      'Omibay Partner App সম্পর্কিত গোপনীয়তা উদ্বেগের জন্য যোগাযোগ করুন:\n\nইমেল: partnerprivacy@omibay.com';
 
   @override
   String get privacyContact =>
-      'গোপনীয়তা সংক্রান্ত উদ্বেগের জন্য যোগাযোগ করুন: privacy@apnakaam.com';
+      'কার্যকর তারিখ: জানুয়ারি ২১, ২০২৬\n\nOmibay আপনার গোপনীয়তাকে সম্মান করে এবং ভারতের Digital Personal Data Protection Act, 2023 (DPDP Act) সহ প্রযোজ্য আইন অনুসারে আপনার ব্যক্তিগত এবং পেশাগত তথ্য সুরক্ষিত করতে প্রতিশ্রুতিবদ্ধ।';
 
   @override
-  String get termsOfServiceTitle => 'সেবার শর্তাবলী';
+  String get termsOfServiceTitle => 'সেবার শর্তাবলী – Omibay Partner App';
 
   @override
-  String get termsSection1Title => '1. শর্তাবলী গ্রহণ';
+  String get termsIntro =>
+      '\"Omibay\" পার্টনার অ্যাপে স্বাগতম, একটি প্ল্যাটফর্ম যা বিশেষভাবে যাচাইকৃত পেশাদার সেবা প্রদানকারীদের জন্য ডিজাইন করা হয়েছে বুকিং গ্রহণ করতে, কাজ পরিচালনা করতে এবং গ্রাহকদের অন-ডিমান্ড হোম সার্ভিস প্রদান করতে।';
+
+  @override
+  String get termsSection1Title => '১. শর্তাবলী গ্রহণ';
 
   @override
   String get termsSection1Content =>
-      'ওমিবে পার্টনার অ্যাপ অ্যাক্সেস এবং ব্যবহার করার মাধ্যমে, আপনি এই সেবার শর্তাবলী দ্বারা আবদ্ধ হতে সম্মত হন। আপনি যদি এই শর্তাবলীর কোনো অংশের সাথে সম্মত না হন, তবে আপনাকে অবশ্যই অ্যাপ্লিকেশনটি ব্যবহার করা বন্ধ করতে হবে।';
+      'এই শর্তাবলী আপনার এবং Omibay Technologies Private Limited-এর মধ্যে একটি আইনত বাধ্যতামূলক চুক্তি গঠন করে। আমরা যেকোনো সময় এই শর্তাবলী আপডেট করার অধিকার সংরক্ষণ করি। ক্রমাগত ব্যবহার আপডেট করা শর্তাবলী গ্রহণের সমতুল্য।';
 
   @override
-  String get termsSection2Title => '2. পার্টনার যোগ্যতা';
+  String get termsSection2Title => '২. যোগ্যতা';
 
   @override
   String get termsSection2Content =>
-      'ওমিবে-তে পার্টনার হওয়ার জন্য আপনার বয়স অন্তত 18 বছর হতে হবে এবং একটি আইনি চুক্তিতে আবদ্ধ হওয়ার ক্ষমতা থাকতে হবে। আপনাকে যাচাইকরণের জন্য সঠিক এবং সম্পূর্ণ ডকুমেন্ট প্রদান করতে হবে।';
+      '• আপনার বয়স কমপক্ষে ১৮ বছর এবং চুক্তিতে প্রবেশ করতে আইনত সক্ষম হতে হবে।\n• আপনার প্রয়োজনীয় যোগ্যতা, লাইসেন্স এবং সার্টিফিকেশন থাকতে হবে।\n• আপনাকে Omibay-এর যাচাইকরণ এবং ব্যাকগ্রাউন্ড চেক প্রক্রিয়া পাস করতে হবে।';
 
   @override
-  String get termsSection3Title => '3. সেবার মান';
+  String get termsSection3Title => '৩. সেবা এবং দায়িত্ব';
 
   @override
   String get termsSection3Content =>
-      'পার্টনারদের উচ্চ-মানের সেবার মান বজায় রাখার আশা করা হয়। এর মধ্যে সময়ানুবর্তিতা, পেশাদার আচরণ এবং কাজ চলাকালীন নিরাপত্তা নির্দেশিকা মেনে চলা অন্তর্ভুক্ত।';
+      'Omibay শুধুমাত্র একটি প্রযুক্তি প্ল্যাটফর্ম হিসাবে কাজ করে যা পার্টনারদের গ্রাহকদের সাথে সংযুক্ত করে। আপনি সম্মত হচ্ছেন:\n\n• পেশাদারভাবে, সময়মতো এবং সম্মত মানদণ্ড অনুযায়ী সেবা প্রদান করতে।\n• প্রয়োজনীয় সরঞ্জাম, সরঞ্জাম এবং বীমা (যেখানে প্রযোজ্য) বজায় রাখতে।\n• সমস্ত প্রযোজ্য আইন, নিরাপত্তা মান এবং গ্রাহকের নির্দেশাবলী মেনে চলতে।\n• গ্রাহকদের সাথে সম্মানজনক আচরণ করতে এবং গোপনীয়তা বজায় রাখতে।';
 
   @override
-  String get termsSection4Title => '4. পেমেন্ট ও ফি';
+  String get termsSection4Title => '৪. উপার্জন এবং পেআউট';
 
   @override
   String get termsSection4Content =>
-      'কাজ সম্পন্ন এবং যাচাইকরণের পরে পেমেন্ট প্রক্রিয়া করা হয়। ওমিবে সম্মত কমিশন কাঠামো অনুযায়ী মোট কাজের মূল্য থেকে একটি সার্ভিস কমিশন কেটে নেওয়ার অধিকার সংরক্ষণ করে।';
+      '• আপনার পেআউট হল অ্যাপে দেখানো ফি, Omibay-এর প্ল্যাটফর্ম কমিশন, ট্যাক্স এবং প্রযোজ্য চার্জ কেটে নেওয়ার পরে।\n• পার্টনাররা যেকোনো সময় তাদের নিবন্ধিত ব্যাংক অ্যাকাউন্টে পেআউট অনুরোধ করতে পারেন।\n• সমস্ত প্রযোজ্য ট্যাক্স (প্রয়োজনে GST নিবন্ধন এবং ফাইলিং সহ) এর জন্য আপনি দায়ী।';
 
   @override
-  String get termsSection5Title => '5. অ্যাকাউন্ট নিরাপত্তা';
+  String get termsSection5Title => '৫. বাতিলকরণ, নো-শো এবং জরিমানা';
 
   @override
   String get termsSection5Content =>
-      'আপনার অ্যাকাউন্টের তথ্যের গোপনীয়তা বজায় রাখার জন্য আপনি দায়ী। আপনার অ্যাকাউন্টের অধীনে সংঘটিত যেকোনো কার্যকলাপের জন্য আপনিই একমাত্র দায়ী।';
+      'বারবার বাতিলকরণ, নো-শো বা খারাপ পারফরম্যান্সের ফলে জরিমানা, চাকরি বরাদ্দে কম অগ্রাধিকার বা অ্যাকাউন্ট স্থগিতাদেশ হতে পারে।';
 
   @override
-  String get termsSection6Title => '6. সমাপ্তি';
+  String get termsSection6Title => '৬. নিষিদ্ধ আচরণ';
 
   @override
   String get termsSection6Content =>
-      'এই শর্তাবলী লঙ্ঘন, নিম্নমানের সার্ভিস রেটিং বা প্রতারণামূলক কার্যকলাপের জন্য ওমিবে আপনার অ্যাকাউন্ট স্থগিত বা বন্ধ করার অধিকার সংরক্ষণ করে।';
+      'আপনি সম্মত হচ্ছেন যে আপনি করবেন না:\n\n• প্ল্যাটফর্মের বাইরে গ্রাহকদের প্রলুব্ধ করা।\n• মিথ্যা তথ্য প্রদান করা বা অন্যদের ছদ্মবেশ ধারণ করা।\n• প্রতারণামূলক, অনিরাপদ বা অবৈধ কার্যকলাপে জড়িত হওয়া।\n• অ্যাপের সাথে টেম্পার করা বা এর অপারেশনে হস্তক্ষেপ করা।';
 
   @override
-  String get termsCopyright => '© 2026 ওমিবে টেকনোলজিস প্রাঃ লিঃ';
+  String get termsSection7Title => '৭. দায়বদ্ধতার সীমাবদ্ধতা';
+
+  @override
+  String get termsSection7Content =>
+      'সেবা সরবরাহের সময় পার্টনারের ক্রিয়াকলাপ বা অবহেলার কারণে কোনো ক্ষতি, ক্ষয়ক্ষতি বা বিরোধ দেখা দিলে, Omibay জরিমানা আরোপ করতে পারে। Omibay তদন্ত এবং পলিসি শর্তাবলী সাপেক্ষে গ্রাহককে ₹৫,০০০ পর্যন্ত ক্ষতি সুরক্ষা প্রদান করতে পারে।';
+
+  @override
+  String get termsSection8Title => '৮. বিরোধ নিষ্পত্তি';
+
+  @override
+  String get termsSection8Content =>
+      'এই শর্তাবলী থেকে উদ্ভূত যেকোনো বিরোধ ভারতীয় আইন অনুযায়ী সালিশের মাধ্যমে সমাধান করা হবে। সালিশ কলকাতা, ভারতে পরিচালিত হবে।';
+
+  @override
+  String get termsContactTitle => 'যোগাযোগ করুন';
+
+  @override
+  String get termsContactContent =>
+      'প্রশ্নের জন্য, আমাদের সাথে যোগাযোগ করুন:\n\npartnerlegal@omibay.com';
+
+  @override
+  String get termsCopyright => '© ২০২৬ OmiBay Technologies Pvt Ltd.';
 
   @override
   String get suspensionPolicyTitle => 'পার্টনার স্থগিতাদেশ নীতি';
@@ -2555,67 +2813,68 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get suspensionTypesContent =>
-      '1. সাময়িক স্থগিতাদেশ: সমস্যার গুরুত্বের ওপর ভিত্তি করে একজন পার্টনারকে একটি নির্দিষ্ট সময়ের জন্য (3 দিন, 7 দিন, 15 দিন বা 30 দিন) স্থগিত করা যেতে পারে।\n\n2. স্থায়ী স্থগিতাদেশ: একজন পার্টনারকে স্থায়ীভাবে প্ল্যাটফর্ম থেকে সরিয়ে দেওয়া হতে পারে এবং পুনরায় যোগদানের কোনো সুযোগ থাকবে না।';
+      '১. সাময়িক স্থগিতাদেশ\nসমস্যার গুরুত্বের ওপর ভিত্তি করে একজন পার্টনারকে একটি নির্দিষ্ট সময়ের জন্য (যেমন, ৩ দিন, ৭ দিন, ১৫ দিন বা ৩০ দিন) স্থগিত করা যেতে পারে।\n\n২. স্থায়ী স্থগিতাদেশ\nএকজন পার্টনারকে স্থায়ীভাবে প্ল্যাটফর্ম থেকে সরিয়ে দেওয়া হতে পারে এবং পুনরায় যোগদানের কোনো সুযোগ থাকবে না।';
 
   @override
   String get suspensionTempReasonsTitle => 'সাময়িক স্থগিতাদেশের কারণসমূহ';
 
   @override
   String get suspensionTempReasonsContent =>
-      'একজন পার্টনার সাময়িক স্থগিতাদেশের সম্মুখীন হতে পারেন যদি তারা:\n• বারবার কোনো বৈধ কারণ ছাড়াই গ্রহণ করা বুকিং বাতিল করেন।\n• বারবার দেরিতে পৌঁছান বা বরাদ্দকৃত কাজ সম্পন্ন করতে ব্যর্থ হন।\n• আচরণ, পরিচ্ছন্নতা বা পেশাদারিত্ব সম্পর্কে গ্রাহকদের কাছ থেকে একাধিক অভিযোগ পান।\n• গ্রাহকদের কাছ থেকে অতিরিক্ত চার্জ আদায় করেন বা অ্যাপের বাইরে পেমেন্ট চান।\n• গ্রাহকদের সাথে গালিগালাজ, রূঢ় বা অনুপযুক্ত ভাষা ব্যবহার করেন।\n• ভুল সেবার তথ্য শেয়ার করেন বা দক্ষতার ভুল উপস্থাপন করেন।\n• প্ল্যাটফর্ম স্ট্যান্ডার্ডের নিচে ধারাবাহিকভাবে কম রেটিং বজায় রাখেন।\n• প্রথমবারের মতো প্ল্যাটফর্মের নির্দেশিকা লঙ্ঘন করেন।';
+      'একজন পার্টনার সাময়িক স্থগিতাদেশের সম্মুখীন হতে পারেন যদি তারা:\n\n• বারবার কোনো বৈধ কারণ ছাড়াই গৃহীত বুকিং বাতিল করেন।\n• বারবার দেরিতে পৌঁছান বা বরাদ্দকৃত কাজ সম্পন্ন করতে ব্যর্থ হন।\n• আচরণ, পরিচ্ছন্নতা বা পেশাদারিত্ব সম্পর্কে গ্রাহকদের কাছ থেকে একাধিক অভিযোগ পান।\n• গ্রাহকদের কাছ থেকে অতিরিক্ত চার্জ আদায় করেন বা অ্যাপের বাইরে পেমেন্ট দাবি করেন।\n• গ্রাহকদের সাথে গালিগালাজ, রূঢ় বা অনুপযুক্ত ভাষা ব্যবহার করেন।\n• ভুল সেবার তথ্য শেয়ার করেন বা দক্ষতার ভুল উপস্থাপন করেন।\n• প্ল্যাটফর্ম থ্রেশহোল্ডের নিচে ধারাবাহিকভাবে কম রেটিং থাকে।\n• অনিচ্ছাকৃতভাবে বা প্রথমবারের মতো প্ল্যাটফর্মের নির্দেশিকা লঙ্ঘন করেন।';
 
   @override
   String get suspensionTempActionTitle => 'পদক্ষেপ (সাময়িক)';
 
   @override
   String get suspensionTempActionContent =>
-      'পার্টনার অ্যাকাউন্টটি একটি নির্দিষ্ট সময়ের জন্য স্থগিত করা হবে। পুনরায় সক্রিয় করার আগে প্রশিক্ষণ বা পুনরায় যাচাইকরণের প্রয়োজন হতে পারে।';
+      '• পার্টনার অ্যাকাউন্ট একটি নির্ধারিত সময়ের জন্য স্থগিত করা হবে।\n• পুনরায় সক্রিয় করার আগে প্রশিক্ষণ, সতর্কতা বা পুনরায় যাচাইকরণের প্রয়োজন হতে পারে।';
 
   @override
   String get suspensionPermReasonsTitle => 'স্থায়ী স্থগিতাদেশের কারণসমূহ';
 
   @override
   String get suspensionPermReasonsContent =>
-      'একজন পার্টনার স্থায়ীভাবে স্থগিত হবেন যদি তারা:\n• জাল বুকিং বা রিভিউ-এর মতো প্রতারণা করেন।\n• গ্রাহক বা কর্মীদের হয়রানি, হুমকি বা শারীরিক ক্ষতি করেন।\n• প্ল্যাটফর্ম ব্যবহারের সময় কোনো অবৈধ কার্যকলাপে লিপ্ত হন।\n• সম্মতি ছাড়াই গ্রাহকের ব্যক্তিগত তথ্য শেয়ার করেন।\n• জাল ডকুমেন্ট বা মিথ্যা যাচাইকরণ তথ্য ব্যবহার করেন।\n• প্ল্যাটফর্ম পেমেন্ট এড়িয়ে যান বা গ্রাহককে প্ল্যাটফর্মের বাইরে নিয়ে যান।\n• একাধিক সতর্কতার পরেও বারবার নীতি লঙ্ঘন করেন।\n• গ্রাহকের সম্পত্তির ইচ্ছাকৃত ক্ষতি করেন।';
+      'একজন পার্টনার স্থায়ীভাবে স্থগিত হবেন যদি তারা:\n\n• জাল বুকিং, জাল রিভিউ বা পরিচয়ের অপব্যবহার সহ প্রতারণা করেন।\n• গ্রাহক বা কর্মীদের হয়রানি, হুমকি বা শারীরিক ক্ষতি করেন।\n• প্ল্যাটফর্ম ব্যবহারের সময় অবৈধ কার্যকলাপে জড়িত হন।\n• সম্মতি ছাড়াই গ্রাহকের ব্যক্তিগত তথ্য শেয়ার করেন।\n• জাল ডকুমেন্ট ব্যবহার করেন বা মিথ্যা যাচাইকরণ তথ্য প্রদান করেন।\n• প্ল্যাটফর্ম পেমেন্ট এড়িয়ে যাওয়ার চেষ্টা করেন বা গ্রাহকদের প্ল্যাটফর্মের বাইরে নিয়ে যান।\n• একাধিক সতর্কতা বা স্থগিতাদেশের পরেও বারবার নীতি লঙ্ঘন করেন।\n• ইচ্ছাকৃতভাবে গ্রাহকের সম্পত্তির ক্ষতি করেন বা গুরুতর অসদাচরণ দেখান।';
 
   @override
   String get suspensionPermActionTitle => 'পদক্ষেপ (স্থায়ী)';
 
   @override
   String get suspensionPermActionContent =>
-      'অবিলম্বে অ্যাকাউন্ট বন্ধ করা হবে। নীতি অনুযায়ী বকেয়া পেমেন্ট আটকে রাখা হতে পারে। পুনরায় রেজিস্ট্রেশন করার অনুমতি নেই।';
+      '• তাৎক্ষণিক এবং স্থায়ী অ্যাকাউন্ট বন্ধ।\n• আইনি নির্দেশিকা অনুযায়ী বকেয়া পেমেন্ট আটকে রাখা হতে পারে।\n• পার্টনারকে পুনরায় নিবন্ধন করতে দেওয়া হবে না।';
 
   @override
   String get suspensionNotifyTitle => 'স্থগিতাদেশের বিজ্ঞপ্তি';
 
   @override
   String get suspensionNotifyContent =>
-      'পার্টনারদের অ্যাপ নোটিফিকেশন, ইমেল বা SMS-এর মাধ্যমে কারণ ও সময়কালসহ জানানো হবে।';
+      '• পার্টনারদের অ্যাপ নোটিফিকেশন, ইমেল বা SMS-এর মাধ্যমে জানানো হবে।\n• বিজ্ঞপ্তিতে কারণ এবং স্থগিতাদেশের মেয়াদ অন্তর্ভুক্ত থাকবে।';
 
   @override
   String get suspensionAppealTitle => 'আপিল প্রক্রিয়া';
 
   @override
   String get suspensionAppealContent =>
-      'পার্টনাররা বৈধ প্রমাণসহ 7 দিনের মধ্যে আপিল করতে পারেন। চূড়ান্ত সিদ্ধান্ত প্ল্যাটফর্মের হাতে থাকবে।';
+      '• পার্টনাররা বিজ্ঞপ্তির ৭ দিনের মধ্যে স্থগিতাদেশের বিরুদ্ধে আপিল করতে পারেন।\n• আপিলে বৈধ ব্যাখ্যা এবং সমর্থনকারী প্রমাণ অন্তর্ভুক্ত থাকতে হবে।\n• পর্যালোচনার পরে প্ল্যাটফর্মের সিদ্ধান্ত চূড়ান্ত হবে।';
 
   @override
-  String get suspensionReactivateTitle => 'পুনরায় সক্রিয়করণ নীতি';
+  String get suspensionReactivateTitle =>
+      'পুনরায় সক্রিয়করণ নীতি (সাময়িক স্থগিতাদেশ)';
 
   @override
   String get suspensionReactivateContent =>
-      'সাময়িক স্থগিতাদেশের ক্ষেত্রে পুনরায় সক্রিয় করার আগে পর্যালোচনা, প্রশিক্ষণ বা প্রবেশন পিরিয়ডের প্রয়োজন হয়।';
+      '• অ্যাকাউন্ট পুনরায় সক্রিয়করণ সফল পর্যালোচনার উপর নির্ভরশীল।\n• বাধ্যতামূলক প্রশিক্ষণ, ডকুমেন্ট পুনরায় যাচাইকরণ বা প্রবেশন প্রযোজ্য হতে পারে।';
 
   @override
   String get suspensionFinalNoteTitle => 'চূড়ান্ত নোট';
 
   @override
   String get suspensionFinalNoteContent =>
-      'গ্রাহকদের এবং প্ল্যাটফর্মের অখণ্ডতা রক্ষা করতে প্ল্যাটফর্ম যেকোনো অ্যাকাউন্ট স্থগিত বা বন্ধ করার অধিকার সংরক্ষণ করে।';
+      'গ্রাহক, পার্টনার এবং প্ল্যাটফর্মের অখণ্ডতা রক্ষা করতে প্ল্যাটফর্ম যেকোনো পার্টনার অ্যাকাউন্ট স্থগিত বা বন্ধ করার অধিকার সংরক্ষণ করে।\n\nসিদ্ধান্তগুলি ন্যায্যভাবে এবং যাচাইকৃত প্রমাণের ভিত্তিতে নেওয়া হয়।';
 
   @override
   String get suspensionContact =>
-      'যেকোনো জিজ্ঞাসার জন্য যোগাযোগ করুন: support@omibay.com';
+      'স্থগিতাদেশ সংক্রান্ত প্রশ্ন বা সহায়তার জন্য, আমাদের সাথে যোগাযোগ করুন suspension@omibay.com';
 
   @override
   String get pauseWorkTitle => 'কাজে বিরতি দিন';

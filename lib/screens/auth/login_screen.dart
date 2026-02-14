@@ -107,14 +107,11 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
-  /// Request permissions sequentially: SMS first, then Notification
+  /// Request notification permission
   Future<void> _handlePermissions() async {
     // Request permissions on Mobile only
     if (!kIsWeb) {
-      // First, request SMS permission
-      await Permission.sms.request();
-
-      // Then, request Notification permission
+      // Request Notification permission
       await Permission.notification.request();
     }
   }
@@ -309,7 +306,9 @@ class _LoginScreenState extends State<LoginScreen> {
             _startResendTimer();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(AppLocalizations.of(context)!.debugOtpSent),
+                content: Text(
+                  AppLocalizations.of(context)!.otpSentSuccessfully,
+                ),
                 backgroundColor: AppColors.successGreen,
               ),
             );

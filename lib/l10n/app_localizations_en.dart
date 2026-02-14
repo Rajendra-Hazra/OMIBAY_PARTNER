@@ -52,7 +52,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pleaseEnterValidEmail => 'Please enter a valid email';
 
   @override
-  String get otpSentSuccessfully => 'OTP sent successfully (Demo: 123456)';
+  String get otpSentSuccessfully => 'OTP sent successfully';
 
   @override
   String get phoneUpdatedSuccessfully => 'Phone updated successfully!';
@@ -61,7 +61,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get emailUpdatedSuccessfully => 'Email updated successfully!';
 
   @override
-  String get invalidOtpDemo => 'Invalid OTP. Use 123456 for demo.';
+  String get invalidOtpDemo => 'Invalid OTP. Please try again.';
 
   @override
   String get confirmChange => 'Confirm Change';
@@ -140,7 +140,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String otpSentToWithDemo(Object phone) {
-    return 'OTP sent to +91 $phone (Demo: 123456)';
+    return 'OTP sent to +91 $phone';
   }
 
   @override
@@ -152,7 +152,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get demoOtp => 'Demo OTP: 123456';
+  String get demoOtp => 'OTP has been sent';
 
   @override
   String get mobileNumberVerifiedSuccessfully =>
@@ -160,6 +160,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saveProfile => 'Save Profile';
+
+  @override
+  String get bloodGroup => 'Blood Group';
+
+  @override
+  String get selectBloodGroup => 'Select Blood Group';
+
+  @override
+  String get recommended => 'Recommended';
 
   @override
   String get pressBackAgainToExit => 'Press back again to exit';
@@ -1313,6 +1322,226 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountAndSettings => 'Account & Settings';
 
   @override
+  String get partnerWelfare => 'Partner Welfare';
+
+  @override
+  String get omiBayCare => 'OmiBay Care';
+
+  @override
+  String get healthAndFinancialSupport =>
+      'Health and financial support for partners';
+
+  @override
+  String get freeHealthCheckup => 'Free Health Checkup';
+
+  @override
+  String get annualHealthCheckupVoucher => 'Annual health checkup voucher';
+
+  @override
+  String get healthInsurance => 'Health Insurance';
+
+  @override
+  String get comprehensiveHealthCoverage => 'Comprehensive health coverage';
+
+  @override
+  String get equipmentLoan => 'Equipment Loan';
+
+  @override
+  String get toolsAndEquipmentFinancing => 'Tools and equipment financing';
+
+  @override
+  String get emergencyLoan => 'Emergency Loan';
+
+  @override
+  String get instantFinancialAssistance => 'Instant financial assistance';
+
+  @override
+  String get activeDays => 'Active Days';
+
+  @override
+  String get monthlyJobs => 'Monthly Jobs';
+
+  @override
+  String get eligible => 'Eligible';
+
+  @override
+  String get locked => 'Locked';
+
+  @override
+  String get soon => 'Soon';
+
+  @override
+  String get launchingSoon => 'Launching Soon';
+
+  @override
+  String get weArePreparingThisBenefit =>
+      'We are preparing this benefit for you.\nStay active to unlock full access.';
+
+  @override
+  String get youAreEligible =>
+      'You are eligible. Service will be available soon.';
+
+  @override
+  String get completeMoreJobsToUnlock => 'Complete more jobs to unlock';
+
+  @override
+  String get annualHealthCheckup => 'Annual Health Checkup';
+
+  @override
+  String get comprehensiveHealthScreening =>
+      'Comprehensive health screening\nfor OmiBay partners';
+
+  @override
+  String get aboutThisBenefit => 'About This Benefit';
+
+  @override
+  String get healthCheckupBenefitDescription =>
+      'OmiBay provides free annual health checkups to eligible partners as part of our commitment to your wellbeing. Once launched, you will receive a QR voucher that can be redeemed at partner healthcare facilities.';
+
+  @override
+  String get eligibilityRequirements => 'Eligibility Requirements';
+
+  @override
+  String completeAtLeastActiveDays(Object days) {
+    return 'Complete at least $days active days';
+  }
+
+  @override
+  String get partnerRating => 'Partner Rating';
+
+  @override
+  String get maintainRatingOrHigher => 'Maintain a rating of 4.0 or higher';
+
+  @override
+  String get whatYouGet => 'What You\'ll Get';
+
+  @override
+  String get qrHealthVoucher => 'QR Health Voucher';
+
+  @override
+  String get partnerHospitalAccess => 'Partner Hospital Access';
+
+  @override
+  String get completeBloodTests => 'Complete Blood Tests';
+
+  @override
+  String get vitalHealthScreening => 'Vital Health Screening';
+
+  @override
+  String get healthInsuranceCoverage =>
+      'Comprehensive health coverage\nfor OmiBay partners';
+
+  @override
+  String get healthInsuranceBenefitDescription =>
+      'OmiBay provides comprehensive health insurance coverage to eligible partners as part of our commitment to your wellbeing. Once launched, you will receive health insurance coverage that protects you and your family.';
+
+  @override
+  String get coverageHighlights => 'Coverage Highlights';
+
+  @override
+  String get hospitalizationCoverage => 'Hospitalization Coverage';
+
+  @override
+  String get outpatientCare => 'Outpatient Care';
+
+  @override
+  String get prescriptionMedicines => 'Prescription Medicines';
+
+  @override
+  String get emergencyServices => 'Emergency Services';
+
+  @override
+  String get familyCoverageOption => 'Family Coverage Option';
+
+  @override
+  String get equipmentLoanTitle => 'Equipment Loan';
+
+  @override
+  String get toolsAndEquipmentSupport =>
+      'Professional tools and equipment\nfinancing for partners';
+
+  @override
+  String get equipmentLoanBenefitDescription =>
+      'OmiBay provides equipment loan facilities to eligible partners for purchasing professional tools and equipment. Once launched, you can apply for loans to upgrade your service capabilities.';
+
+  @override
+  String get loanBenefits => 'Loan Benefits';
+
+  @override
+  String get lowInterestRates => 'Low Interest Rates';
+
+  @override
+  String get flexibleRepayment => 'Flexible Repayment';
+
+  @override
+  String get quickApproval => 'Quick Approval';
+
+  @override
+  String get noCollateral => 'No Collateral Required';
+
+  @override
+  String get directDisbursement => 'Direct Disbursement';
+
+  @override
+  String get weeklyEarningsStable => 'Weekly Earnings Stable';
+
+  @override
+  String get maintainStableWeeklyEarnings =>
+      'Maintain stable weekly earnings for 4+ weeks';
+
+  @override
+  String get emergencyLoanTitle => 'Emergency Loan';
+
+  @override
+  String get instantFinancialSupport =>
+      'Instant financial assistance\nfor emergency needs';
+
+  @override
+  String get emergencyLoanBenefitDescription =>
+      'OmiBay provides emergency loan facilities to eligible partners for urgent financial needs. Once launched, you can access instant financial support during emergencies.';
+
+  @override
+  String get emergencyLoanFeatures => 'Emergency Loan Features';
+
+  @override
+  String get instantApproval => 'Instant Approval';
+
+  @override
+  String get sameDayDisbursement => 'Same Day Disbursement';
+
+  @override
+  String get minimalDocumentation => 'Minimal Documentation';
+
+  @override
+  String get competitiveInterest => 'Competitive Interest';
+
+  @override
+  String get easyRepayment => 'Easy Repayment';
+
+  @override
+  String get jobCompletionRate => 'Job Completion Rate';
+
+  @override
+  String get maintainHighJobCompletion =>
+      'Maintain high job completion rate (>90%)';
+
+  @override
+  String get youAreEligibleForHealthCheckup =>
+      'You are eligible for free health checkup!';
+
+  @override
+  String get youAreEligibleForHealthInsurance =>
+      'You are eligible for health insurance!';
+
+  @override
+  String get youAreEligibleForEquipmentLoan =>
+      'You are eligible for equipment loan!';
+
+  @override
+  String get youAreEligibleForEmergencyLoan =>
+      'You are eligible for emergency loan!';
+
+  @override
   String get editProfile => 'Edit Profile';
 
   @override
@@ -1819,10 +2048,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeBack => 'Welcome back, Partner!';
 
   @override
-  String get debugOtpSent => 'DEBUG: OTP sent (Mock: 123456)';
+  String get debugOtpSent => 'OTP sent successfully';
 
   @override
-  String get invalidOtp => 'Invalid OTP (Mock uses 123456)';
+  String get invalidOtp => 'Invalid OTP. Please try again.';
 
   @override
   String get failedToSignIn => 'Failed to sign in:';
@@ -2425,98 +2654,130 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get privacyPolicyTitle => 'Privacy Policy';
+  String get privacyPolicyTitle => 'Privacy Policy – Omibay Partner App';
 
   @override
   String get privacySection1Title => '1. Information We Collect';
 
   @override
   String get privacySection1Content =>
-      'We collect personal information such as your name, phone number, email address, government-issued identification, and location data to provide our services effectively.';
+      'We collect:\n\n• Personal Information: Name, phone number, email, address, Aadhaar/PAN (for verification), bank details (for payouts).\n• Professional Information: Qualifications, licenses, experience, service categories, profile photos.\n• Location Data: Real-time GPS location during active jobs (with your consent) for job allocation and tracking.\n• Usage Data: Device information, IP address, job history, earnings data.\n• Background Data: Verification documents and results (police verification if applicable).';
 
   @override
   String get privacySection2Title => '2. How We Use Your Information';
 
   @override
   String get privacySection2Content =>
-      'Your information is used to verify your identity, process payments, connect you with customers, and improve our application experience. We also use location data to send you job requests nearby.';
+      'We use information to:\n\n• Verify and onboard Partners.\n• Allocate and manage jobs.\n• Process payouts and generate invoices/statements.\n• Improve platform safety, performance, and fraud prevention.\n• Send notifications, updates, and promotional offers (with consent).\n• Comply with legal and tax obligations.';
 
   @override
-  String get privacySection3Title => '3. Data Sharing';
+  String get privacySection3Title => '3. Sharing of Information';
 
   @override
   String get privacySection3Content =>
-      'We share necessary information (like your name and location) with customers when you accept their job requests. We do not sell your personal data to third-party marketing companies.';
+      'We share information with:\n\n• Customers (only necessary details like name, photo, ratings, and live location during jobs).\n• Third-party service providers (payment processors, verification agencies, analytics, cloud storage) under strict confidentiality.\n• Tax authorities or law enforcement when required by law.\n\nWe do not sell your personal data.';
 
   @override
   String get privacySection4Title => '4. Data Security';
 
   @override
   String get privacySection4Content =>
-      'We implement industry-standard security measures to protect your data from unauthorized access, alteration, or disclosure. However, no method of transmission over the internet is 100% secure.';
+      'We implement reasonable technical and organizational measures (encryption, access controls) to protect your data.';
 
   @override
-  String get privacySection5Title => '5. Cookies';
+  String get privacySection5Title => '5. Your Rights';
 
   @override
   String get privacySection5Content =>
-      'Our application may use cookies and similar technologies to enhance user experience and analyze app performance.';
+      'Under applicable laws, you may:\n\n• Access, correct, or delete your personal data.\n• Withdraw consent (where processing is consent-based; note this may affect App usage).\n• File a complaint with the relevant data protection authority.\n\nContact us at rights@omibay.com to exercise your rights.';
 
   @override
-  String get privacySection6Title => '6. Changes to Policy';
+  String get privacySection6Title => '6. Location Tracking';
 
   @override
   String get privacySection6Content =>
-      'We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new policy on this page.';
+      'Precise location is collected only when the App is in use for job purposes and can be disabled (but may limit job availability).';
+
+  @override
+  String get privacySection7Title => 'Contact Us';
+
+  @override
+  String get privacySection7Content =>
+      'For privacy concerns related to the Omibay Partner App, contact:\n\nEmail: partnerprivacy@omibay.com';
 
   @override
   String get privacyContact =>
-      'For privacy concerns, contact: privacy@apnakaam.com';
+      'Effective Date: January 21, 2026\n\nOmibay respects your privacy and is committed to protecting your personal and professional information in compliance with applicable laws, including India\'s Digital Personal Data Protection Act, 2023 (DPDP Act).';
 
   @override
-  String get termsOfServiceTitle => 'Terms of Service';
+  String get termsOfServiceTitle => 'Terms of Service – Omibay Partner App';
+
+  @override
+  String get termsIntro =>
+      'Welcome to the \"Omibay\" Partner App, a platform designed exclusively for verified professional service providers to receive bookings, manage jobs, and provide on-demand home services to Customers.';
 
   @override
   String get termsSection1Title => '1. Acceptance of Terms';
 
   @override
   String get termsSection1Content =>
-      'By accessing and using the OmiBay Partner app, you agree to be bound by these Terms of Service. If you do not agree with any part of these terms, you must not use the application.';
+      'These Terms form a legally binding agreement between you and Omibay Technologies Private Limited. We reserve the right to update these Terms at any time. Continued use constitutes acceptance of updated Terms.';
 
   @override
-  String get termsSection2Title => '2. Partner Eligibility';
+  String get termsSection2Title => '2. Eligibility';
 
   @override
   String get termsSection2Content =>
-      'To be a Partner on OmiBay, you must be at least 18 years of age and possess the legal authority to enter into a binding agreement. You must provide accurate and complete documentation for verification.';
+      '• You must be at least 18 years old and legally capable of entering into contracts.\n• You must possess necessary qualifications, licenses, and certifications.\n• You must pass Omibay\'s verification and background check process.';
 
   @override
-  String get termsSection3Title => '3. Service Standards';
+  String get termsSection3Title => '3. Services and Obligations';
 
   @override
   String get termsSection3Content =>
-      'Partners are expected to maintain high-quality service standards. This includes punctuality, professional conduct, and adherence to safety guidelines during job execution.';
+      'Omibay acts solely as a technology platform connecting Partners with Customers. You agree to:\n\n• Provide services professionally, punctually, and in accordance with agreed standards.\n• Maintain required tools, equipment, and insurance (where applicable).\n• Comply with all applicable laws, safety standards, and customer instructions.\n• Treat Customers respectfully and maintain confidentiality.';
 
   @override
-  String get termsSection4Title => '4. Payment & Fees';
+  String get termsSection4Title => '4. Earnings and Payouts';
 
   @override
   String get termsSection4Content =>
-      'Payments are processed after job completion and verification. OmiBay reserves the right to deduct a service commission from the total job value as per the agreed commission structure.';
+      '• Your payout is the fee shown in the App, once Omibay\'s platform commission, taxes, and applicable charges are deducted.\n• Partners are eligible to request payout at any time to their registered bank account.\n• You are responsible for all applicable taxes (including GST registration and filing if required).';
 
   @override
-  String get termsSection5Title => '5. Account Security';
+  String get termsSection5Title => '5. Cancellations, No-Shows, and Penalties';
 
   @override
   String get termsSection5Content =>
-      'You are responsible for maintaining the confidentiality of your account credentials. Any activity occurring under your account is your sole responsibility.';
+      'Repeated cancellations, no-shows, or poor performance may lead to penalties, lower priority in job allocation, or account suspension.';
 
   @override
-  String get termsSection6Title => '6. Termination';
+  String get termsSection6Title => '6. Prohibited Conduct';
 
   @override
   String get termsSection6Content =>
-      'OmiBay reserves the right to suspend or terminate your account for violations of these terms, poor service ratings, or fraudulent activities.';
+      'You agree not to:\n\n• Solicit Customers outside the platform.\n• Provide false information or impersonate others.\n• Engage in fraudulent, unsafe, or illegal activities.\n• Tamper with the App or interfere with its operation.';
+
+  @override
+  String get termsSection7Title => '7. Limitation of Liability';
+
+  @override
+  String get termsSection7Content =>
+      'If any loss, damage, or dispute arises due to the Partner\'s actions or negligence during service delivery, Omibay may levy a penalty. Omibay may offer damage protection to the Customer up to ₹5,000, subject to investigation and policy conditions.';
+
+  @override
+  String get termsSection8Title => '8. Dispute Resolution';
+
+  @override
+  String get termsSection8Content =>
+      'Any disputes arising from these Terms shall be resolved through arbitration in accordance with Indian law. The arbitration shall be conducted in Kolkata, India.';
+
+  @override
+  String get termsContactTitle => 'Contact Us';
+
+  @override
+  String get termsContactContent =>
+      'For questions, contact us at:\n\npartnerlegal@omibay.com';
 
   @override
   String get termsCopyright => '© 2026 OmiBay Technologies Pvt Ltd.';
@@ -2536,67 +2797,68 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get suspensionTypesContent =>
-      '1. Temporary Suspension: A partner may be suspended for a limited period (3 days, 7 days, 15 days, or 30 days) depending on the severity of the issue.\n\n2. Permanent Suspension: A partner may be permanently removed from the platform with no option to rejoin.';
+      '1. Temporary Suspension\nA partner may be suspended for a limited period (e.g., 3 days, 7 days, 15 days, or 30 days) depending on the severity of the issue.\n\n2. Permanent Suspension\nA partner may be permanently removed from the platform with no option to rejoin.';
 
   @override
   String get suspensionTempReasonsTitle => 'Reasons for Temporary Suspension';
 
   @override
   String get suspensionTempReasonsContent =>
-      'A partner may face temporary suspension if they:\n• Frequently cancel accepted bookings without valid reasons.\n• Arrive late repeatedly or fail to complete assigned jobs.\n• Receive multiple customer complaints about behavior, hygiene, or professionalism.\n• Overcharge customers or demand extra payment outside the app.\n• Use abusive, rude, or inappropriate language with customers.\n• Share incorrect service information or misrepresent skills.\n• Maintain consistently low ratings below platform standards.\n• Violate platform guidelines for the first time.';
+      'A partner may face temporary suspension if they:\n\n• Frequently cancel accepted bookings without valid reasons.\n• Arrive late repeatedly or fail to complete assigned jobs.\n• Receive multiple customer complaints about behavior, hygiene, or professionalism.\n• Overcharge customers or demand extra payment outside the app.\n• Use abusive, rude, or inappropriate language with customers.\n• Share incorrect service information or misrepresent skills.\n• Have low ratings consistently below the platform threshold.\n• Violate platform guidelines unintentionally or for the first time.';
 
   @override
   String get suspensionTempActionTitle => 'Action (Temporary)';
 
   @override
   String get suspensionTempActionContent =>
-      'The partner account will be suspended for a defined period. Training or re-verification may be required before reactivation.';
+      '• Partner account will be suspended for a defined period.\n• Training, warning, or re-verification may be required before reactivation.';
 
   @override
   String get suspensionPermReasonsTitle => 'Reasons for Permanent Suspension';
 
   @override
   String get suspensionPermReasonsContent =>
-      'A partner will be permanently suspended if they:\n• Commit fraud such as fake bookings or reviews.\n• Harass, threaten, or physically harm customers or staff.\n• Engage in illegal activities while using the platform.\n• Share customer personal data without consent.\n• Use fake documents or false verification details.\n• Bypass platform payments or redirect customers off-platform.\n• Repeatedly violate policies after multiple warnings.\n• Cause intentional damage to customer property.';
+      'A partner will be permanently suspended if they:\n\n• Commit fraud, including fake bookings, fake reviews, or identity misuse.\n• Harass, threaten, or physically harm customers or staff.\n• Engage in illegal activities while using the platform.\n• Share customer personal data without consent.\n• Use fake documents or provide false verification details.\n• Attempt to bypass platform payments or redirect customers off-platform.\n• Repeatedly violate policies after multiple warnings or suspensions.\n• Damage customer property intentionally or show severe misconduct.';
 
   @override
   String get suspensionPermActionTitle => 'Action (Permanent)';
 
   @override
   String get suspensionPermActionContent =>
-      'Immediate account termination. Outstanding payments may be withheld as per policy. Re-registration is not allowed.';
+      '• Immediate and permanent account termination.\n• Outstanding payments may be withheld as per legal guidelines.\n• Partner will not be allowed to re-register.';
 
   @override
   String get suspensionNotifyTitle => 'Suspension Notification';
 
   @override
   String get suspensionNotifyContent =>
-      'Partners will be notified via app notification, email, or SMS with reason and duration.';
+      '• Partners will be notified via app notification, email, or SMS.\n• The notification will include the reason and suspension duration.';
 
   @override
   String get suspensionAppealTitle => 'Appeal Process';
 
   @override
   String get suspensionAppealContent =>
-      'Partners may appeal within 7 days with valid proof. Final decision rests with the platform.';
+      '• Partners can appeal a suspension within 7 days of notification.\n• Appeals must include valid explanations and supporting evidence.\n• The platform\'s decision after review will be final.';
 
   @override
-  String get suspensionReactivateTitle => 'Reactivation Policy';
+  String get suspensionReactivateTitle =>
+      'Reactivation Policy (Temporary Suspension)';
 
   @override
   String get suspensionReactivateContent =>
-      'Temporary suspensions require review, training, or probation before reactivation.';
+      '• Account reactivation is subject to successful review.\n• Mandatory training, document re-verification, or probation may apply.';
 
   @override
   String get suspensionFinalNoteTitle => 'Final Note';
 
   @override
   String get suspensionFinalNoteContent =>
-      'The platform reserves the right to suspend or terminate accounts to protect customers and platform integrity.';
+      'The platform reserves the right to suspend or terminate any partner account to protect customers, partners, and platform integrity.\n\nDecisions are made fairly and based on verified evidence.';
 
   @override
   String get suspensionContact =>
-      'For any queries, contact: support@omibay.com';
+      'For questions or support regarding suspension decisions, contact us at suspension@omibay.com';
 
   @override
   String get pauseWorkTitle => 'Pause Work';
