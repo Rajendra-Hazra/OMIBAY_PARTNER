@@ -2960,6 +2960,48 @@ abstract class AppLocalizations {
   /// **'You are eligible for emergency loan!'**
   String get youAreEligibleForEmergencyLoan;
 
+  /// No description provided for @eligibilityStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Eligibility Status'**
+  String get eligibilityStatus;
+
+  /// No description provided for @highJobCompletion.
+  ///
+  /// In en, this message translates to:
+  /// **'High Job Completion'**
+  String get highJobCompletion;
+
+  /// No description provided for @qualityToolsEquipment.
+  ///
+  /// In en, this message translates to:
+  /// **'Quality Tools & Equipment'**
+  String get qualityToolsEquipment;
+
+  /// No description provided for @easyEmiDeduction.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy EMI Deduction'**
+  String get easyEmiDeduction;
+
+  /// No description provided for @fastApprovalProcess.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast Approval Process'**
+  String get fastApprovalProcess;
+
+  /// No description provided for @instantDisbursement.
+  ///
+  /// In en, this message translates to:
+  /// **'Instant Disbursement'**
+  String get instantDisbursement;
+
+  /// No description provided for @noCollateralRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'No Collateral Required'**
+  String get noCollateralRequired;
+
   /// No description provided for @editProfile.
   ///
   /// In en, this message translates to:

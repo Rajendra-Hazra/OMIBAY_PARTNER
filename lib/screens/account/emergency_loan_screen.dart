@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/app_colors.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/partner_stats.dart';
 import '../../widgets/omibay_care_widgets.dart';
 
@@ -10,8 +11,15 @@ class EmergencyLoanScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Using dummy data for now - will be replaced with actual partner data
-    final stats = PartnerStats.dummy();
+    // Using empty stats since features are coming soon
+    final stats = const PartnerStats(
+      activeDays: 0,
+      monthlyJobs: 0,
+      weeklyEarningsStable: false,
+      jobCompletionRateHigh: false,
+      totalJobsCompleted: 0,
+      rating: 0.0,
+    );
     final isEligible = stats.isEmergencyLoanEligible();
 
     return Scaffold(
@@ -29,24 +37,26 @@ class EmergencyLoanScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Hero Illustration Section
-                      _buildHeroSection(),
+                      _buildHeroSection(context),
                       const SizedBox(height: 24),
                       // Description Section
-                      _buildDescriptionSection(),
+                      _buildDescriptionSection(context),
                       const SizedBox(height: 24),
                       // Eligibility Status Section
-                      _buildEligibilitySection(stats, isEligible),
+                      _buildEligibilitySection(context, stats, isEligible),
                       const SizedBox(height: 24),
                       // Coming Soon Card
                       ComingSoonCard(
                         isEligible: isEligible,
                         eligibilityMessage: isEligible
-                            ? 'You are eligible for emergency loan!'
+                            ? AppLocalizations.of(
+                                context,
+                              )!.youAreEligibleForEmergencyLoan
                             : '',
                       ),
                       const SizedBox(height: 24),
                       // What You'll Get Section
-                      _buildBenefitsPreview(),
+                      _buildBenefitsPreview(context),
                       const SizedBox(height: 40),
                     ],
                   ),
@@ -73,10 +83,10 @@ class EmergencyLoanScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Emergency Loan',
-              style: TextStyle(
+              AppLocalizations.of(context)!.emergencyLoan,
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
@@ -88,7 +98,8 @@ class EmergencyLoanScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeroSection() {
+  Widget _buildHeroSection(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(32),
@@ -122,9 +133,9 @@ class EmergencyLoanScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
-            'Emergency Financial Aid',
-            style: TextStyle(
+          Text(
+            l10n.emergencyLoanTitle,
+            style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
               color: Colors.white,
@@ -132,7 +143,7 @@ class EmergencyLoanScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Instant funds for urgent needs\nwhen you need it most',
+            l10n.instantFinancialSupport,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
@@ -145,7 +156,8 @@ class EmergencyLoanScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDescriptionSection() {
+  Widget _buildDescriptionSection(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -177,9 +189,9 @@ class EmergencyLoanScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
-                'About This Benefit',
-                style: TextStyle(
+              Text(
+                l10n.aboutThisBenefit,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
@@ -189,7 +201,7 @@ class EmergencyLoanScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Life can be unpredictable. OmiBay\'s Emergency Loan program provides instant financial assistance to eligible partners during urgent situations - medical emergencies, family needs, or unexpected expenses.',
+            l10n.emergencyLoanBenefitDescription,
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey.shade700,
@@ -201,7 +213,12 @@ class EmergencyLoanScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEligibilitySection(PartnerStats stats, bool isEligible) {
+  Widget _buildEligibilitySection(
+    BuildContext context,
+    PartnerStats stats,
+    bool isEligible,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
     final daysMet = stats.activeDays >= OmiBayCareConfig.emergencyLoanDays;
 
     return Container(
@@ -235,9 +252,9 @@ class EmergencyLoanScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
-                'Eligibility Status',
-                style: TextStyle(
+              Text(
+                l10n.eligibilityRequirements,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
@@ -248,7 +265,7 @@ class EmergencyLoanScreen extends StatelessWidget {
           const SizedBox(height: 16),
           EligibilityRequirementRow(
             icon: Icons.calendar_today_rounded,
-            title: 'Active Days',
+            title: l10n.activeDays,
             requirement:
                 '${stats.activeDays} / ${OmiBayCareConfig.emergencyLoanDays} days completed',
             isMet: daysMet,
@@ -256,10 +273,8 @@ class EmergencyLoanScreen extends StatelessWidget {
           const SizedBox(height: 10),
           EligibilityRequirementRow(
             icon: Icons.star_rounded,
-            title: 'High Job Completion',
-            requirement: stats.jobCompletionRateHigh
-                ? 'Excellent completion rate maintained'
-                : 'Maintain >90% job completion rate',
+            title: l10n.jobCompletionRate,
+            requirement: l10n.maintainHighJobCompletion,
             isMet: stats.jobCompletionRateHigh,
           ),
         ],
@@ -267,7 +282,8 @@ class EmergencyLoanScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBenefitsPreview() {
+  Widget _buildBenefitsPreview(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -299,9 +315,9 @@ class EmergencyLoanScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
-                'What You\'ll Get',
-                style: TextStyle(
+              Text(
+                l10n.whatYouGet,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
@@ -310,13 +326,16 @@ class EmergencyLoanScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          _buildBenefitItem(Icons.flash_on_rounded, 'Instant Disbursement'),
+          _buildBenefitItem(Icons.flash_on_rounded, l10n.instantDisbursement),
           const SizedBox(height: 10),
-          _buildBenefitItem(Icons.money_off_rounded, 'No Collateral Required'),
+          _buildBenefitItem(Icons.money_off_rounded, l10n.noCollateralRequired),
           const SizedBox(height: 10),
-          _buildBenefitItem(Icons.calendar_month_rounded, 'Flexible Repayment'),
+          _buildBenefitItem(
+            Icons.calendar_month_rounded,
+            l10n.flexibleRepayment,
+          ),
           const SizedBox(height: 10),
-          _buildBenefitItem(Icons.support_agent_rounded, '24/7 Support'),
+          _buildBenefitItem(Icons.support_agent_rounded, l10n.support247),
         ],
       ),
     );

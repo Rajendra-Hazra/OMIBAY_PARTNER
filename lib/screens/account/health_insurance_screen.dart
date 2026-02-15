@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/app_colors.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/partner_stats.dart';
 import '../../widgets/omibay_care_widgets.dart';
 
@@ -8,8 +9,15 @@ class HealthInsuranceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Using dummy data for now - will be replaced with actual partner data
-    final stats = PartnerStats.dummy();
+    // Using empty stats since features are coming soon
+    final stats = const PartnerStats(
+      activeDays: 0,
+      monthlyJobs: 0,
+      weeklyEarningsStable: false,
+      jobCompletionRateHigh: false,
+      totalJobsCompleted: 0,
+      rating: 0.0,
+    );
     final isEligible = stats.isHealthInsuranceEligible();
 
     return Scaffold(
@@ -31,22 +39,24 @@ class HealthInsuranceScreen extends StatelessWidget {
                           ComingSoonCard(
                             isEligible: isEligible,
                             eligibilityMessage: isEligible
-                                ? 'You are eligible for health insurance!'
+                                ? AppLocalizations.of(
+                                    context,
+                                  )!.youAreEligibleForHealthInsurance
                                 : '',
                           ),
                           const SizedBox(height: 24),
                         ],
                         // Hero Card
-                        _buildHeroCard(isEligible),
+                        _buildHeroCard(context, isEligible),
                         const SizedBox(height: 24),
                         // About Section
-                        _buildAboutSection(),
+                        _buildAboutSection(context),
                         const SizedBox(height: 20),
                         // Eligibility Requirements
-                        _buildEligibilitySection(stats),
+                        _buildEligibilitySection(context, stats),
                         const SizedBox(height: 20),
                         // Benefits Preview
-                        _buildBenefitsPreview(),
+                        _buildBenefitsPreview(context),
                         const SizedBox(height: 40),
                       ],
                     ),
@@ -74,10 +84,10 @@ class HealthInsuranceScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Health Insurance',
-              style: TextStyle(
+              AppLocalizations.of(context)!.healthInsurance,
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
@@ -89,7 +99,8 @@ class HealthInsuranceScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeroCard(bool isEligible) {
+  Widget _buildHeroCard(BuildContext context, bool isEligible) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(32),
@@ -123,9 +134,9 @@ class HealthInsuranceScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
-            'Health Insurance',
-            style: TextStyle(
+          Text(
+            l10n.healthInsurance,
+            style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
               color: Colors.white,
@@ -133,7 +144,7 @@ class HealthInsuranceScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Comprehensive health coverage\nfor OmiBay partners',
+            l10n.healthInsuranceCoverage,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
@@ -146,7 +157,8 @@ class HealthInsuranceScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAboutSection() {
+  Widget _buildAboutSection(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -178,9 +190,9 @@ class HealthInsuranceScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
-                'About This Benefit',
-                style: TextStyle(
+              Text(
+                l10n.aboutThisBenefit,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
@@ -190,7 +202,7 @@ class HealthInsuranceScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'OmiBay provides comprehensive health insurance coverage to eligible partners as part of our commitment to your wellbeing. Once launched, you will receive health insurance coverage that protects you and your family.',
+            l10n.healthInsuranceBenefitDescription,
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey.shade700,
@@ -202,7 +214,8 @@ class HealthInsuranceScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEligibilitySection(PartnerStats stats) {
+  Widget _buildEligibilitySection(BuildContext context, PartnerStats stats) {
+    final l10n = AppLocalizations.of(context)!;
     final activeDaysMet =
         stats.activeDays >= OmiBayCareConfig.healthInsuranceDays;
     final ratingMet = stats.rating >= 4.0;
@@ -238,9 +251,9 @@ class HealthInsuranceScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
-                'Eligibility Requirements',
-                style: TextStyle(
+              Text(
+                l10n.eligibilityRequirements,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
@@ -251,7 +264,7 @@ class HealthInsuranceScreen extends StatelessWidget {
           const SizedBox(height: 16),
           EligibilityRequirementRow(
             icon: Icons.calendar_today_rounded,
-            title: 'Active Days',
+            title: l10n.activeDays,
             requirement:
                 'Complete at least ${OmiBayCareConfig.healthInsuranceDays} active days',
             isMet: activeDaysMet,
@@ -259,8 +272,8 @@ class HealthInsuranceScreen extends StatelessWidget {
           const SizedBox(height: 12),
           EligibilityRequirementRow(
             icon: Icons.star_rounded,
-            title: 'Partner Rating',
-            requirement: 'Maintain a rating of 4.0 or higher',
+            title: l10n.partnerRating,
+            requirement: l10n.maintainRatingOrHigher,
             isMet: ratingMet,
           ),
         ],
@@ -268,7 +281,8 @@ class HealthInsuranceScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBenefitsPreview() {
+  Widget _buildBenefitsPreview(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -300,9 +314,9 @@ class HealthInsuranceScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
-                'Coverage Highlights',
-                style: TextStyle(
+              Text(
+                l10n.coverageHighlights,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
@@ -313,18 +327,24 @@ class HealthInsuranceScreen extends StatelessWidget {
           const SizedBox(height: 16),
           _buildBenefitItem(
             Icons.local_hospital_rounded,
-            'Hospitalization Coverage',
+            l10n.hospitalizationCoverage,
           ),
           const SizedBox(height: 10),
-          _buildBenefitItem(Icons.medical_services_rounded, 'Outpatient Care'),
+          _buildBenefitItem(
+            Icons.medical_services_rounded,
+            l10n.outpatientCare,
+          ),
           const SizedBox(height: 10),
-          _buildBenefitItem(Icons.medication_rounded, 'Prescription Medicines'),
+          _buildBenefitItem(
+            Icons.medication_rounded,
+            l10n.prescriptionMedicines,
+          ),
           const SizedBox(height: 10),
-          _buildBenefitItem(Icons.emergency_rounded, 'Emergency Services'),
+          _buildBenefitItem(Icons.emergency_rounded, l10n.emergencyServices),
           const SizedBox(height: 10),
           _buildBenefitItem(
             Icons.family_restroom_rounded,
-            'Family Coverage Option',
+            l10n.familyCoverageOption,
           ),
         ],
       ),

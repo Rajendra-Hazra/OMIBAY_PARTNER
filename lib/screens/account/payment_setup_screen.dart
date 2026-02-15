@@ -22,6 +22,41 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
   final _confirmAccountNumberController = TextEditingController();
   final _ifscController = TextEditingController();
   final _bankNameController = TextEditingController();
+  String? _selectedBank;
+
+  static const List<String> _indianBanks = [
+    'State Bank of India',
+    'HDFC Bank',
+    'ICICI Bank',
+    'Axis Bank',
+    'Punjab National Bank',
+    'Bank of Baroda',
+    'Canara Bank',
+    'Union Bank of India',
+    'Bank of India',
+    'IndusInd Bank',
+    'Kotak Mahindra Bank',
+    'Yes Bank',
+    'IDBI Bank',
+    'Central Bank of India',
+    'Indian Bank',
+    'UCO Bank',
+    'Indian Overseas Bank',
+    'Punjab & Sind Bank',
+    'Bank of Maharashtra',
+    'IDFC First Bank',
+    'Federal Bank',
+    'South Indian Bank',
+    'Karur Vysya Bank',
+    'Tamilnad Mercantile Bank',
+    'City Union Bank',
+    'Dhanlaxmi Bank',
+    'Jammu & Kashmir Bank',
+    'Karnataka Bank',
+    'RBL Bank',
+    'Bandhan Bank',
+    'Other',
+  ];
 
   late final WalletRepository _walletRepository;
 
@@ -315,17 +350,19 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                                 final bank = entry.value;
                                 final String accNo =
                                     bank['bank_account_number'];
+                                final String bankName =
+                                    bank['bank_name'] ?? l10n.bankAccount;
+                                final String ifscCode = bank['bank_ifsc'] ?? '';
+                                final String holderName =
+                                    bank['bank_holder_name'] ?? '';
+
                                 return Column(
                                   children: [
                                     _buildSavedItem(
                                       icon: Icons.account_balance,
-                                      title:
-                                          bank['bank_name'] ?? l10n.bankAccount,
-                                      subtitle: l10n.accountNumberLabel(
-                                        LocalizationHelper.convertBengaliToEnglish(
-                                          _maskAccountNumber(context, accNo),
-                                        ),
-                                      ),
+                                      title: bankName,
+                                      subtitle:
+                                          '$holderName\nIFSC: $ifscCode\n${l10n.accountNumberLabel(LocalizationHelper.convertBengaliToEnglish(_maskAccountNumber(context, accNo)))}',
                                       isDefault: _defaultBankId == accNo,
                                       onDelete: () => _deletePaymentMethod(
                                         bank['id'],
@@ -534,115 +571,152 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
     required double smallFontSize,
     required double iconSize,
   }) {
-    return InkWell(
-      onTap: isDefault ? null : onSetDefault,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isDefault
-              ? AppColors.primaryOrangeStart.withValues(alpha: 0.04)
-              : Colors.transparent,
-        ),
-        child: Row(
-          children: [
-            // Left: Status Indicator (Radio style)
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: isDefault
+            ? AppColors.primaryOrangeStart.withValues(alpha: 0.04)
+            : Colors.transparent,
+      ),
+      child: Row(
+        children: [
+          // Left: Payment Icon
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: isDefault
+                  ? AppColors.primaryOrangeStart.withValues(alpha: 0.12)
+                  : Colors.grey[100],
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              color: isDefault
+                  ? AppColors.primaryOrangeStart
+                  : Colors.grey[600],
+              size: iconSize,
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Middle: Details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: isDefault ? FontWeight.bold : FontWeight.w600,
+                    fontSize: bodyFontSize,
+                    color: isDefault ? Colors.black : Colors.grey[800],
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: isDefault ? Colors.grey[700] : Colors.grey[500],
+                    fontSize: smallFontSize,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          // Right: Primary Badge (if default)
+          if (isDefault) ...[
             Container(
-              height: iconSize,
-              width: iconSize,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
+                color: AppColors.primaryOrangeStart.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isDefault
-                      ? AppColors.primaryOrangeStart
-                      : Colors.grey[300]!,
-                  width: 2,
+                  color: AppColors.primaryOrangeStart.withValues(alpha: 0.3),
+                  width: 1,
                 ),
               ),
-              child: isDefault
-                  ? Center(
-                      child: Container(
-                        height: iconSize * 0.5,
-                        width: iconSize * 0.5,
-                        decoration: const BoxDecoration(
-                          color: AppColors.primaryOrangeStart,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 16),
-            // Middle: Payment Icon
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isDefault
-                    ? AppColors.primaryOrangeStart.withValues(alpha: 0.12)
-                    : Colors.grey[100],
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                icon,
-                color: isDefault
-                    ? AppColors.primaryOrangeStart
-                    : Colors.grey[600],
-                size: iconSize,
-              ),
-            ),
-            const SizedBox(width: 16),
-            // Middle: Details
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: TextStyle(
-                            fontWeight: isDefault
-                                ? FontWeight.bold
-                                : FontWeight.w600,
-                            fontSize: bodyFontSize,
-                            color: isDefault ? Colors.black : Colors.grey[800],
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (isDefault) ...[
-                        const SizedBox(width: 6),
-                        Icon(
-                          Icons.verified,
-                          size: iconSize * 0.7,
-                          color: AppColors.primaryOrangeStart,
-                        ),
-                      ],
-                    ],
+                  Icon(
+                    Icons.check_circle,
+                    size: iconSize * 0.7,
+                    color: AppColors.primaryOrangeStart,
                   ),
+                  const SizedBox(width: 4),
                   Text(
-                    subtitle,
+                    'Primary',
                     style: TextStyle(
-                      color: isDefault ? Colors.grey[700] : Colors.grey[500],
                       fontSize: smallFontSize,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryOrangeStart,
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-            // Right: Delete Action
-            IconButton(
-              onPressed: onDelete,
-              icon: Icon(
-                Icons.delete_outline,
-                color: Colors.red[300],
-                size: iconSize * 0.9,
-              ),
-              splashRadius: 20,
-            ),
+            const SizedBox(width: 8),
           ],
-        ),
+          // Right: 3-dot Menu
+          PopupMenuButton<String>(
+            icon: Icon(
+              Icons.more_vert,
+              color: Colors.grey[600],
+              size: iconSize * 0.9,
+            ),
+            splashRadius: 20,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            onSelected: (value) {
+              if (value == 'set_primary') {
+                onSetDefault();
+              } else if (value == 'delete') {
+                onDelete();
+              }
+            },
+            itemBuilder: (context) => [
+              if (!isDefault)
+                PopupMenuItem<String>(
+                  value: 'set_primary',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle_outline,
+                        color: AppColors.primaryOrangeStart,
+                        size: iconSize * 0.8,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Set as Primary',
+                        style: TextStyle(fontSize: smallFontSize),
+                      ),
+                    ],
+                  ),
+                ),
+              PopupMenuItem<String>(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.delete_outline,
+                      color: Colors.red[400],
+                      size: iconSize * 0.8,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      AppLocalizations.of(context)!.delete,
+                      style: TextStyle(
+                        fontSize: smallFontSize,
+                        color: Colors.red[400],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -715,10 +789,13 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
     _confirmAccountNumberController.clear();
     _ifscController.clear();
     _bankNameController.clear();
+    _selectedBank = null;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: false,
+      isScrollControlled: true,
+      isDismissible: false,
+      backgroundColor: Colors.transparent,
       builder: (context) {
         final l10n = AppLocalizations.of(context)!;
         return StatefulBuilder(
@@ -729,214 +806,457 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                 _accountNumberController.text.isNotEmpty;
             bool isDirty = _confirmAccountNumberController.text.isNotEmpty;
 
-            return AlertDialog(
-              insetPadding: EdgeInsets.symmetric(
-                horizontal: 20 * paddingScale,
-                vertical: 24 * paddingScale,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-              ),
-              title: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryOrangeStart.withValues(
-                          alpha: 0.1,
-                        ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.account_balance,
-                        color: AppColors.primaryOrangeStart,
-                        size: iconSize * 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      l10n.bankAccountDetails,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: bodyFontSize + 4,
-                      ),
-                    ),
-                  ],
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
                 ),
               ),
-              content: SizedBox(
-                width: MediaQuery.of(context).size.width,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _buildDialogTextField(
-                        l10n.accountHolderName,
-                        _holderNameController,
-                        hint: l10n.holderNameHint,
-                        icon: Icons.person_outline,
-                        onChanged: (val) => setDialogState(() {}),
-                        bodyFontSize: bodyFontSize,
-                        smallFontSize: smallFontSize,
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.9,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryOrangeStart.withValues(
+                        alpha: 0.1,
                       ),
-                      const SizedBox(height: 16),
-                      _buildDialogTextField(
-                        l10n.bankName,
-                        _bankNameController,
-                        hint: l10n.bankNameHint,
-                        icon: Icons.business_outlined,
-                        onChanged: (val) => setDialogState(() {}),
-                        bodyFontSize: bodyFontSize,
-                        smallFontSize: smallFontSize,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(24),
+                        topRight: Radius.circular(24),
                       ),
-                      const SizedBox(height: 16),
-                      _buildDialogTextField(
-                        l10n.accountNumber,
-                        _accountNumberController,
-                        hint: l10n.enterAccountNumber,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [EnglishDigitFormatter()],
-                        icon: Icons.numbers_outlined,
-                        obscureText: true,
-                        onChanged: (val) => setDialogState(() {}),
-                        bodyFontSize: bodyFontSize,
-                        smallFontSize: smallFontSize,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildDialogTextField(
-                        l10n.reEnterAccountNumber,
-                        _confirmAccountNumberController,
-                        hint: l10n.confirmAccountNumber,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [EnglishDigitFormatter()],
-                        icon: Icons.verified_user_outlined,
-                        errorText: isDirty && !isMatching
-                            ? l10n.accountNumbersDoNotMatch
-                            : null,
-                        onChanged: (val) => setDialogState(() {}),
-                        bodyFontSize: bodyFontSize,
-                        smallFontSize: smallFontSize,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildDialogTextField(
-                        l10n.ifscCode,
-                        _ifscController,
-                        hint: l10n.ifscHint,
-                        textCapitalization: TextCapitalization.characters,
-                        inputFormatters: [EnglishDigitFormatter()],
-                        icon: Icons.code_outlined,
-                        onChanged: (val) => setDialogState(() {}),
-                        bodyFontSize: bodyFontSize,
-                        smallFontSize: smallFontSize,
-                      ),
-                      const SizedBox(height: 20),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.blue.withValues(alpha: 0.1),
-                          ),
-                        ),
-                        child: Row(
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Icon(
-                              Icons.info_outline,
-                              color: Colors.blue[700],
-                              size: 18,
-                            ),
-                            const SizedBox(width: 10),
+                            const SizedBox(width: 40),
                             Expanded(
                               child: Text(
-                                l10n.correctDetailsWarning,
+                                l10n.bankAccountDetails,
+                                textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: Colors.blue[800],
-                                  fontSize: smallFontSize,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: bodyFontSize + 4,
                                 ),
                               ),
                             ),
+                            IconButton(
+                              onPressed: () => Navigator.pop(context),
+                              icon: const Icon(Icons.close),
+                            ),
                           ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                  // Content
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.only(
+                        left: 20,
+                        right: 20,
+                        top: 20,
+                        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Bank Name Dropdown
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l10n.bankName,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: bodyFontSize,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              InkWell(
+                                onTap: () => _showBankSearchDialog(
+                                  context,
+                                  setDialogState,
+                                  bodyFontSize,
+                                ),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 16,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[50],
+                                    border: Border.all(
+                                      color: Colors.grey[300]!,
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.business_outlined,
+                                        color: Colors.grey,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          _selectedBank ?? l10n.bankNameHint,
+                                          style: TextStyle(
+                                            color: _selectedBank == null
+                                                ? Colors.grey
+                                                : Colors.black,
+                                            fontSize: bodyFontSize,
+                                          ),
+                                        ),
+                                      ),
+                                      const Icon(
+                                        Icons.arrow_drop_down,
+                                        color: Colors.grey,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              if (_selectedBank == 'Other') ...[
+                                const SizedBox(height: 12),
+                                TextField(
+                                  controller: _bankNameController,
+                                  decoration: InputDecoration(
+                                    hintText: 'Enter bank name',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    filled: true,
+                                    fillColor: Colors.grey[50],
+                                  ),
+                                  onChanged: (val) => setDialogState(() {}),
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          _buildDialogTextField(
+                            l10n.ifscCode,
+                            _ifscController,
+                            hint: l10n.ifscHint,
+                            textCapitalization: TextCapitalization.characters,
+                            inputFormatters: [EnglishDigitFormatter()],
+                            icon: Icons.code_outlined,
+                            onChanged: (val) => setDialogState(() {}),
+                            bodyFontSize: bodyFontSize,
+                            smallFontSize: smallFontSize,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildDialogTextField(
+                            l10n.accountNumber,
+                            _accountNumberController,
+                            hint: l10n.enterAccountNumber,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [EnglishDigitFormatter()],
+                            icon: Icons.numbers_outlined,
+                            obscureText: true,
+                            onChanged: (val) => setDialogState(() {}),
+                            bodyFontSize: bodyFontSize,
+                            smallFontSize: smallFontSize,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildDialogTextField(
+                            l10n.reEnterAccountNumber,
+                            _confirmAccountNumberController,
+                            hint: l10n.confirmAccountNumber,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [EnglishDigitFormatter()],
+                            icon: Icons.verified_user_outlined,
+                            errorText: isDirty && !isMatching
+                                ? l10n.accountNumbersDoNotMatch
+                                : null,
+                            onChanged: (val) => setDialogState(() {}),
+                            bodyFontSize: bodyFontSize,
+                            smallFontSize: smallFontSize,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildDialogTextField(
+                            l10n.accountHolderName,
+                            _holderNameController,
+                            hint: l10n.holderNameHint,
+                            icon: Icons.person_outline,
+                            onChanged: (val) => setDialogState(() {}),
+                            bodyFontSize: bodyFontSize,
+                            smallFontSize: smallFontSize,
+                          ),
+                          const SizedBox(height: 20),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.blue.withValues(alpha: 0.1),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.info_outline,
+                                  color: Colors.blue[700],
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    l10n.correctDetailsWarning,
+                                    style: TextStyle(
+                                      color: Colors.blue[800],
+                                      fontSize: smallFontSize,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Footer Actions
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, -2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text(
+                              l10n.cancel,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: bodyFontSize,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: SizedBox(
+                            height: buttonHeight * 0.8,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryOrangeStart,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: () async {
+                                if (_holderNameController.text.isEmpty ||
+                                    _accountNumberController.text.isEmpty ||
+                                    _ifscController.text.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(l10n.pleaseFillAllFields),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                if (!isMatching) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        l10n.accountNumbersDoNotMatch,
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                try {
+                                  await _walletRepository.addBankAccount({
+                                    'accountNumber':
+                                        _accountNumberController.text,
+                                    'ifscCode': _ifscController.text,
+                                    'accountHolderName':
+                                        _holderNameController.text,
+                                    'bankName': _bankNameController.text,
+                                    'isDefault': _bankAccounts
+                                        .isEmpty, // First one is default
+                                  });
+
+                                  // Clear fields
+                                  _holderNameController.clear();
+                                  _accountNumberController.clear();
+                                  _confirmAccountNumberController.clear();
+                                  _ifscController.clear();
+                                  _bankNameController.clear();
+                                  _selectedBank = null;
+
+                                  if (context.mounted) Navigator.pop(context);
+                                  _fetchPaymentDetails();
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Failed to save: $e'),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                              child: Text(
+                                l10n.saveBankDetails,
+                                style: TextStyle(fontSize: bodyFontSize),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showBankSearchDialog(
+    BuildContext context,
+    StateSetter setDialogState,
+    double bodyFontSize,
+  ) {
+    final searchController = TextEditingController();
+    List<String> filteredBanks = List.from(_indianBanks);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSearchState) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.7,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
                 ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    l10n.cancel,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: bodyFontSize,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  height: buttonHeight * 0.8,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+              child: Column(
+                children: [
+                  // Header
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryOrangeStart.withValues(
+                        alpha: 0.1,
+                      ),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(24),
+                        topRight: Radius.circular(24),
                       ),
                     ),
-                    onPressed: () async {
-                      if (_holderNameController.text.isEmpty ||
-                          _accountNumberController.text.isEmpty ||
-                          _ifscController.text.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(l10n.pleaseFillAllFields)),
-                        );
-                        return;
-                      }
-                      if (!isMatching) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(l10n.accountNumbersDoNotMatch),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const SizedBox(width: 40),
+                        Expanded(
+                          child: Text(
+                            'Select Bank',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: bodyFontSize + 2,
+                            ),
                           ),
-                        );
-                        return;
-                      }
-
-                      try {
-                        await _walletRepository.addBankAccount({
-                          'accountNumber': _accountNumberController.text,
-                          'ifscCode': _ifscController.text,
-                          'accountHolderName': _holderNameController.text,
-                          'bankName': _bankNameController.text,
-                          'isDefault':
-                              _bankAccounts.isEmpty, // First one is default
-                        });
-
-                        // Clear fields
-                        _holderNameController.clear();
-                        _accountNumberController.clear();
-                        _confirmAccountNumberController.clear();
-                        _ifscController.clear();
-                        _bankNameController.clear();
-
-                        if (context.mounted) Navigator.pop(context);
-                        _fetchPaymentDetails();
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Failed to save: $e')),
-                          );
-                        }
-                      }
-                    },
-                    child: Text(
-                      l10n.saveBankDetails,
-                      style: TextStyle(fontSize: bodyFontSize),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
+                  // Search Field
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: TextField(
+                      controller: searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Search bank name...',
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[50],
+                      ),
+                      onChanged: (value) {
+                        setSearchState(() {
+                          if (value.isEmpty) {
+                            filteredBanks = List.from(_indianBanks);
+                          } else {
+                            filteredBanks = _indianBanks
+                                .where(
+                                  (bank) => bank.toLowerCase().contains(
+                                    value.toLowerCase(),
+                                  ),
+                                )
+                                .toList();
+                          }
+                        });
+                      },
+                    ),
+                  ),
+                  // Bank List
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: filteredBanks.length,
+                      itemBuilder: (context, index) {
+                        final bank = filteredBanks[index];
+                        return ListTile(
+                          leading: const Icon(
+                            Icons.account_balance,
+                            color: Colors.grey,
+                          ),
+                          title: Text(bank),
+                          onTap: () {
+                            setDialogState(() {
+                              _selectedBank = bank;
+                              if (bank != 'Other') {
+                                _bankNameController.text = bank;
+                              } else {
+                                _bankNameController.clear();
+                              }
+                            });
+                            Navigator.pop(context);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
             );
           },
         );
@@ -956,9 +1276,11 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
     _upiIdController.clear();
     _confirmUpiIdController.clear();
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: false,
+      isScrollControlled: true,
+      isDismissible: false,
+      backgroundColor: Colors.transparent,
       builder: (context) {
         final l10n = AppLocalizations.of(context)!;
 
@@ -970,145 +1292,99 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
 
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            bool isMatching =
-                _upiIdController.text == _confirmUpiIdController.text &&
-                _upiIdController.text.isNotEmpty;
-            bool isDirty = _confirmUpiIdController.text.isNotEmpty;
-
-            return AlertDialog(
-              insetPadding: EdgeInsets.symmetric(
-                horizontal: 20 * paddingScale,
-                vertical: 24 * paddingScale,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-              ),
-              title: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryOrangeStart.withValues(
-                          alpha: 0.1,
-                        ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.qr_code,
-                        color: AppColors.primaryOrangeStart,
-                        size: iconSize * 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      l10n.addUpiId,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: bodyFontSize + 4,
-                      ),
-                    ),
-                  ],
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
                 ),
               ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildDialogTextField(
-                      l10n.upiId,
-                      _upiIdController,
-                      hint: l10n.upiIdHint,
-                      inputFormatters: [],
-                      icon: Icons.alternate_email_outlined,
-                      obscureText: false,
-                      onChanged: (val) {
-                        if (_isVerified) {
-                          setDialogState(() {
-                            _isVerified = false;
-                            _verifiedName = null;
-                          });
-                        }
-                      },
-                      bodyFontSize: bodyFontSize,
-                      smallFontSize: smallFontSize,
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.9,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryOrangeStart.withValues(
+                        alpha: 0.1,
+                      ),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(24),
+                        topRight: Radius.circular(24),
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    _buildDialogTextField(
-                      l10n.reEnterUpiId,
-                      _confirmUpiIdController,
-                      hint: l10n.confirmUpiId,
-                      inputFormatters: [],
-                      icon: Icons.verified_user_outlined,
-                      errorText: isDirty && !isMatching
-                          ? l10n.upiIdsDoNotMatch
-                          : null,
-                      onChanged: (val) => setDialogState(() {}),
-                      bodyFontSize: bodyFontSize,
-                      smallFontSize: smallFontSize,
-                    ),
-                    const SizedBox(height: 16),
-                    if (_isVerifying)
-                      const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: CircularProgressIndicator(),
-                      )
-                    else if (_errorMessage != null)
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          _errorMessage!,
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontSize: smallFontSize,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      )
-                    else if (_isVerified && _verifiedName != null)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.green.shade200),
-                        ),
-                        child: Row(
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Icon(
-                              Icons.check_circle,
-                              color: Colors.green,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 40),
                             Expanded(
                               child: Text(
-                                'Verified: $_verifiedName',
+                                l10n.addUpiId,
+                                textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: Colors.green.shade900,
                                   fontWeight: FontWeight.bold,
+                                  fontSize: bodyFontSize + 4,
                                 ),
                               ),
                             ),
+                            IconButton(
+                              onPressed: () => Navigator.pop(context),
+                              icon: const Icon(Icons.close),
+                            ),
                           ],
                         ),
-                      )
-                    else
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: isMatching
-                              ? () async {
-                                  setDialogState(() {
-                                    _isVerifying = true;
-                                    _errorMessage = null;
-                                  });
+                      ],
+                    ),
+                  ),
+                  // Content
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.only(
+                        left: 20,
+                        right: 20,
+                        top: 20,
+                        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildDialogTextField(
+                            l10n.upiId,
+                            _upiIdController,
+                            hint: l10n.upiIdHint,
+                            inputFormatters: [],
+                            icon: Icons.alternate_email_outlined,
+                            obscureText: false,
+                            onChanged: (val) async {
+                              setDialogState(() {
+                                _isVerified = false;
+                                _verifiedName = null;
+                                _errorMessage = null;
+                              });
+
+                              // Auto-verify when UPI ID has valid format
+                              if (val.isNotEmpty && val.contains('@')) {
+                                setDialogState(() {
+                                  _isVerifying = true;
+                                });
+
+                                // Add a small delay to avoid too many API calls while typing
+                                await Future.delayed(
+                                  const Duration(milliseconds: 800),
+                                );
+
+                                // Check if the value is still the same (user stopped typing)
+                                if (_upiIdController.text == val) {
                                   try {
                                     final res = await _walletRepository
-                                        .verifyUpi(
-                                          _upiIdController.text.trim(),
-                                        );
+                                        .verifyUpi(val.trim());
                                     setDialogState(() {
                                       _isVerifying = false;
                                       _isVerified = true;
@@ -1124,95 +1400,229 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                                     });
                                   }
                                 }
-                              : null,
-                          icon: const Icon(Icons.verified),
-                          label: const Text('Verify UPI'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                            disabledBackgroundColor: Colors.grey.shade300,
+                              }
+                            },
+                            bodyFontSize: bodyFontSize,
+                            smallFontSize: smallFontSize,
+                          ),
+                          const SizedBox(height: 16),
+                          if (_isVerifying)
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: AppColors.primaryOrangeStart
+                                      .withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppColors.primaryOrangeStart,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      'Verifying UPI ID...',
+                                      style: TextStyle(
+                                        color: Colors.orange.shade900,
+                                        fontSize: smallFontSize,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          if (_errorMessage != null)
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.red.shade200),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    color: Colors.red.shade700,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _errorMessage!,
+                                      style: TextStyle(
+                                        color: Colors.red.shade900,
+                                        fontSize: smallFontSize,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          if (_isVerified && _verifiedName != null)
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.green.shade200,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.check_circle,
+                                    color: Colors.green,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Verified: $_verifiedName',
+                                      style: TextStyle(
+                                        color: Colors.green.shade900,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: smallFontSize,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.blue.withValues(alpha: 0.1),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.info_outline,
+                                  color: Colors.blue[700],
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    l10n.upiInstantCreditNote,
+                                    style: TextStyle(
+                                      color: Colors.blue[800],
+                                      fontSize: smallFontSize,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Footer Actions
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, -2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text(
+                              l10n.cancel,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: bodyFontSize,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: SizedBox(
+                            height: buttonHeight * 0.8,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: _isVerified
+                                    ? AppColors.primaryOrangeStart
+                                    : Colors.grey,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: _isVerified && !_isSaving
+                                  ? () async {
+                                      setDialogState(() => _isSaving = true);
+                                      try {
+                                        await _walletRepository.addBankAccount({
+                                          'upiId': _upiIdController.text.trim(),
+                                          'bankName': 'UPI',
+                                          'accountHolderName': _verifiedName,
+                                          'accountNumber': '',
+                                          'ifscCode': '',
+                                        });
 
-                    const SizedBox(height: 16),
-                    Text(
-                      l10n.upiInstantCreditNote,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: smallFontSize,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    l10n.cancel,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: bodyFontSize,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  height: buttonHeight * 0.8,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      backgroundColor: _isVerified
-                          ? AppColors.primaryOrangeStart
-                          : Colors.grey,
-                    ),
-                    onPressed: _isVerified && !_isSaving
-                        ? () async {
-                            setDialogState(() => _isSaving = true);
-                            try {
-                              await _walletRepository.addBankAccount({
-                                'upiId': _upiIdController.text.trim(),
-                                'bankName': 'UPI',
-                                'accountHolderName': _verifiedName,
-                                'accountNumber':
-                                    '', // Mandatory field in backend or db? Usually empty string works if ignored.
-                                'ifscCode': '',
-                              });
+                                        // Clear fields
+                                        _upiIdController.clear();
+                                        _confirmUpiIdController.clear();
 
-                              // Clear fields
-                              _upiIdController.clear();
-                              _confirmUpiIdController.clear();
-
-                              if (context.mounted) Navigator.pop(context);
-                              _fetchPaymentDetails();
-                            } catch (e) {
-                              setDialogState(() {
-                                _isSaving = false;
-                                _errorMessage = 'Failed to save: $e';
-                              });
-                            }
-                          }
-                        : null,
-                    child: _isSaving
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
+                                        if (context.mounted) {
+                                          Navigator.pop(context);
+                                        }
+                                        _fetchPaymentDetails();
+                                      } catch (e) {
+                                        setDialogState(() {
+                                          _isSaving = false;
+                                          _errorMessage = 'Failed to save: $e';
+                                        });
+                                      }
+                                    }
+                                  : null,
+                              child: _isSaving
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : Text(
+                                      l10n.saveUpi,
+                                      style: TextStyle(fontSize: bodyFontSize),
+                                    ),
                             ),
-                          )
-                        : Text(
-                            l10n.saveUpi,
-                            style: TextStyle(fontSize: bodyFontSize),
                           ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             );
           },
         );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/app_colors.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/partner_stats.dart';
 import '../../widgets/omibay_care_widgets.dart';
 
@@ -10,8 +11,15 @@ class HealthCheckupScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Using dummy data for now - will be replaced with actual partner data
-    final stats = PartnerStats.dummy();
+    // Using empty stats since features are coming soon
+    final stats = const PartnerStats(
+      activeDays: 0,
+      monthlyJobs: 0,
+      weeklyEarningsStable: false,
+      jobCompletionRateHigh: false,
+      totalJobsCompleted: 0,
+      rating: 0.0,
+    );
     final isEligible = stats.isHealthCheckEligible();
 
     return Scaffold(
@@ -29,24 +37,26 @@ class HealthCheckupScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Hero Illustration Section
-                      _buildHeroSection(),
+                      _buildHeroSection(context),
                       const SizedBox(height: 24),
                       // Description Section
-                      _buildDescriptionSection(),
+                      _buildDescriptionSection(context),
                       const SizedBox(height: 24),
                       // Eligibility Status Section
-                      _buildEligibilitySection(stats, isEligible),
+                      _buildEligibilitySection(context, stats, isEligible),
                       const SizedBox(height: 24),
                       // Coming Soon Card
                       ComingSoonCard(
                         isEligible: isEligible,
                         eligibilityMessage: isEligible
-                            ? 'You are eligible for free health checkup!'
+                            ? AppLocalizations.of(
+                                context,
+                              )!.youAreEligibleForHealthCheckup
                             : '',
                       ),
                       const SizedBox(height: 24),
                       // What You'll Get Section
-                      _buildBenefitsPreview(),
+                      _buildBenefitsPreview(context),
                       const SizedBox(height: 40),
                     ],
                   ),
@@ -73,10 +83,10 @@ class HealthCheckupScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Free Health Checkup',
-              style: TextStyle(
+              AppLocalizations.of(context)!.freeHealthCheckup,
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
@@ -88,7 +98,8 @@ class HealthCheckupScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeroSection() {
+  Widget _buildHeroSection(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(32),
@@ -122,9 +133,9 @@ class HealthCheckupScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
-            'Annual Health Checkup',
-            style: TextStyle(
+          Text(
+            l10n.annualHealthCheckup,
+            style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
               color: Colors.white,
@@ -132,7 +143,7 @@ class HealthCheckupScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Comprehensive health screening\nfor OmiBay partners',
+            l10n.comprehensiveHealthScreening,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
@@ -145,7 +156,8 @@ class HealthCheckupScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDescriptionSection() {
+  Widget _buildDescriptionSection(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -177,9 +189,9 @@ class HealthCheckupScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
-                'About This Benefit',
-                style: TextStyle(
+              Text(
+                l10n.aboutThisBenefit,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
@@ -189,7 +201,7 @@ class HealthCheckupScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'OmiBay provides free annual health checkups to eligible partners as part of our commitment to your wellbeing. Once launched, you will receive a QR voucher that can be redeemed at partner healthcare facilities.',
+            l10n.healthCheckupBenefitDescription,
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey.shade700,
@@ -201,7 +213,12 @@ class HealthCheckupScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEligibilitySection(PartnerStats stats, bool isEligible) {
+  Widget _buildEligibilitySection(
+    BuildContext context,
+    PartnerStats stats,
+    bool isEligible,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -233,9 +250,9 @@ class HealthCheckupScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
-                'Eligibility Status',
-                style: TextStyle(
+              Text(
+                l10n.eligibilityRequirements,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
@@ -246,7 +263,7 @@ class HealthCheckupScreen extends StatelessWidget {
           const SizedBox(height: 16),
           EligibilityRequirementRow(
             icon: Icons.calendar_today_rounded,
-            title: 'Active Days',
+            title: l10n.activeDays,
             requirement:
                 '${stats.activeDays} / ${OmiBayCareConfig.healthCheckDays} days completed',
             isMet: stats.activeDays >= OmiBayCareConfig.healthCheckDays,
@@ -256,7 +273,8 @@ class HealthCheckupScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBenefitsPreview() {
+  Widget _buildBenefitsPreview(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -288,9 +306,9 @@ class HealthCheckupScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
-                'What You\'ll Get',
-                style: TextStyle(
+              Text(
+                l10n.whatYouGet,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
@@ -299,18 +317,18 @@ class HealthCheckupScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          _buildBenefitItem(Icons.qr_code_rounded, 'QR Health Voucher'),
+          _buildBenefitItem(Icons.qr_code_rounded, l10n.qrHealthVoucher),
           const SizedBox(height: 10),
           _buildBenefitItem(
             Icons.local_hospital_rounded,
-            'Partner Hospital Access',
+            l10n.partnerHospitalAccess,
           ),
           const SizedBox(height: 10),
-          _buildBenefitItem(Icons.science_rounded, 'Complete Blood Tests'),
+          _buildBenefitItem(Icons.science_rounded, l10n.completeBloodTests),
           const SizedBox(height: 10),
           _buildBenefitItem(
             Icons.monitor_heart_rounded,
-            'Vital Health Screening',
+            l10n.vitalHealthScreening,
           ),
         ],
       ),

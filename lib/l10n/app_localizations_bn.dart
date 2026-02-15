@@ -1553,6 +1553,27 @@ class AppLocalizationsBn extends AppLocalizations {
   String get youAreEligibleForEmergencyLoan => 'আপনি জরুরি ঋণের জন্য যোগ্য!';
 
   @override
+  String get eligibilityStatus => 'যোগ্যতার অবস্থা';
+
+  @override
+  String get highJobCompletion => 'উচ্চ কাজ সম্পন্নতা';
+
+  @override
+  String get qualityToolsEquipment => 'মানসম্পন্ন সরঞ্জাম';
+
+  @override
+  String get easyEmiDeduction => 'সহজ ইএমআই কাটিং';
+
+  @override
+  String get fastApprovalProcess => 'দ্রুত অনুমোদন';
+
+  @override
+  String get instantDisbursement => 'তাৎক্ষণিক বিতরণ';
+
+  @override
+  String get noCollateralRequired => 'কোনো জামানত প্রয়োজন নেই';
+
+  @override
   String get editProfile => 'প্রোফাইল সম্পাদনা';
 
   @override

@@ -1542,6 +1542,27 @@ class AppLocalizationsEn extends AppLocalizations {
       'You are eligible for emergency loan!';
 
   @override
+  String get eligibilityStatus => 'Eligibility Status';
+
+  @override
+  String get highJobCompletion => 'High Job Completion';
+
+  @override
+  String get qualityToolsEquipment => 'Quality Tools & Equipment';
+
+  @override
+  String get easyEmiDeduction => 'Easy EMI Deduction';
+
+  @override
+  String get fastApprovalProcess => 'Fast Approval Process';
+
+  @override
+  String get instantDisbursement => 'Instant Disbursement';
+
+  @override
+  String get noCollateralRequired => 'No Collateral Required';
+
+  @override
   String get editProfile => 'Edit Profile';
 
   @override

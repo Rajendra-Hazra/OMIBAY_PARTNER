@@ -486,25 +486,13 @@ class _AccountFaqScreenState extends State<AccountFaqScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.help_outline_rounded,
-                color: AppColors.primaryOrangeStart,
-                size: iconSize * 0.8,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  AppLocalizations.of(context)!.stillNeedHelp,
-                  style: TextStyle(
-                    fontSize: bodyFontSize,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ),
-            ],
+          Text(
+            AppLocalizations.of(context)!.stillNeedHelp,
+            style: TextStyle(
+              fontSize: bodyFontSize,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: 12),
           Text(

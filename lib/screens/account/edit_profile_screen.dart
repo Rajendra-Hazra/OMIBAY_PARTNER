@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:url_launcher/url_launcher.dart';
@@ -42,6 +43,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _isPhoneVerified = false;
   bool _hideHelp = false;
   String? _selectedBloodGroup;
+  String? _partnerId;
 
   static const List<String> _bloodGroups = [
     'A+',
@@ -114,11 +116,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _nameController.text = userData.fullName ?? userData.name;
           _dobController.text = userData.dateOfBirth ?? '';
           _emailController.text = userData.email ?? '';
-          _phoneController.text = userData.mobileNumber;
+          // Remove +91 prefix if present in mobile number
+          String phone = userData.mobileNumber;
+          if (phone.startsWith(
+            AppLocalizations.of(context)!.indiaCountryCode,
+          )) {
+            phone = phone
+                .replaceFirst(
+                  AppLocalizations.of(context)!.indiaCountryCode,
+                  '',
+                )
+                .trim();
+          }
+          _phoneController.text = phone;
           if (userData.profilePictureUrl != null &&
               userData.profilePictureUrl!.isNotEmpty) {
             _photoUrl = userData.profilePictureUrl!;
           }
+          _partnerId = userData.partnerId;
         } else {
           // Fallback to Prefs
           final savedName = prefs.getString('profile_name');
@@ -132,7 +147,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           );
           _dobController.text = savedDob ?? '';
           _emailController.text = savedEmail ?? '';
-          _phoneController.text = savedPhone ?? '';
+          // Remove +91 prefix if present in saved phone
+          String phone = savedPhone ?? '';
+          if (phone.startsWith(
+            AppLocalizations.of(context)!.indiaCountryCode,
+          )) {
+            phone = phone
+                .replaceFirst(
+                  AppLocalizations.of(context)!.indiaCountryCode,
+                  '',
+                )
+                .trim();
+          }
+          _phoneController.text = phone;
         }
 
         final l10n = AppLocalizations.of(context)!;
@@ -142,6 +169,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             l10n.placeholderPhotoUrl;
         _localPhotoPath = prefs.getString('profile_photo_path');
         _selectedBloodGroup = prefs.getString('profile_blood_group');
+        // Load partner ID from multiple possible keys, same as account screen
+        _partnerId =
+            _partnerId ??
+            prefs.getString('profile_partner_code') ??
+            prefs.getString('profile_referral_code') ??
+            prefs.getString('profile_id') ??
+            '';
         _isLoading = false;
       });
     } catch (e) {
@@ -1126,8 +1160,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         imageQuality: 85,
       );
       if (image != null) {
+        // Copy image to permanent app directory
+        final appDir = await getApplicationDocumentsDirectory();
+        final fileName =
+            'profile_picture_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final permanentPath = '${appDir.path}/$fileName';
+
+        // Delete old profile picture if it exists in app directory
+        if (_localPhotoPath != null &&
+            _localPhotoPath!.contains(appDir.path) &&
+            _localPhotoPath!.contains('profile_picture_')) {
+          try {
+            final oldFile = File(_localPhotoPath!);
+            if (await oldFile.exists()) {
+              await oldFile.delete();
+            }
+          } catch (e) {
+            debugPrint('Error deleting old profile picture: $e');
+          }
+        }
+
+        // Copy the picked image to permanent location
+        final File tempFile = File(image.path);
+        await tempFile.copy(permanentPath);
+
         setState(() {
-          _localPhotoPath = image.path;
+          _localPhotoPath = permanentPath;
         });
       }
     } catch (e) {
@@ -1231,6 +1289,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         children: [
                           _buildAvatarSection(),
                           const SizedBox(height: 24),
+                          // Partner ID Section
+                          if (_partnerId != null && _partnerId!.isNotEmpty)
+                            _buildPartnerIdSection(),
+                          if (_partnerId != null && _partnerId!.isNotEmpty)
+                            const SizedBox(height: 24),
                           _buildPersonalInformationSection(),
                           const SizedBox(height: 40),
                         ],
@@ -1561,6 +1624,87 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ],
         ),
       ],
+    );
+  }
+
+  // Partner ID Section
+  Widget _buildPartnerIdSection() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.textPrimary,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.badge_outlined, color: Colors.white, size: 18),
+          const SizedBox(width: 10),
+          const Text(
+            'ID:',
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.white70,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              _partnerId ?? '',
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          InkWell(
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: _partnerId ?? ''));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: Colors.white),
+                      const SizedBox(width: 12),
+                      Text(AppLocalizations.of(context)!.copied),
+                    ],
+                  ),
+                  backgroundColor: Colors.green,
+                  duration: const Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              );
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.copy_rounded,
+                color: Colors.white,
+                size: 16,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

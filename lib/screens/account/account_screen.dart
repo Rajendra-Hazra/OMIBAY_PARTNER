@@ -663,8 +663,15 @@ class _AccountScreenState extends State<AccountScreen> {
 
   /// Builds the OmiBay Care section with partner welfare benefits
   Widget _buildOmiBayCareSection(BuildContext context) {
-    // Using dummy data for now - will be replaced with actual partner data
-    final stats = PartnerStats.dummy();
+    // Show empty stats since features are coming soon
+    final stats = const PartnerStats(
+      activeDays: 0,
+      monthlyJobs: 0,
+      weeklyEarningsStable: false,
+      jobCompletionRateHigh: false,
+      totalJobsCompleted: 0,
+      rating: 0.0,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
