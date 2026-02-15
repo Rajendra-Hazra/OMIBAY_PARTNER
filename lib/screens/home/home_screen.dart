@@ -586,7 +586,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
       setState(() {
         if (savedName != null && savedName.isNotEmpty) {
-          _displayName = savedName;
+          // Check if the name is actually a phone number
+          final cleanedName = savedName.replaceAll(RegExp(r'[\s\-\(\)\+]'), '');
+          final isPhoneNumber = RegExp(r'^(91)?\d{10}$').hasMatch(cleanedName);
+
+          if (isPhoneNumber) {
+            // Show "Partner" instead of phone number
+            _displayName = 'Partner';
+          } else {
+            // Show only first name (like account screen)
+            final localizedName = LocalizationHelper.getLocalizedCustomerName(
+              context,
+              savedName,
+            );
+            _displayName = localizedName.split(' ').first;
+          }
+        } else {
+          // If no name saved, show Partner
+          _displayName = 'Partner';
         }
         if (savedPhotoPath != null && savedPhotoPath.isNotEmpty) {
           _photoUrl = savedPhotoPath;

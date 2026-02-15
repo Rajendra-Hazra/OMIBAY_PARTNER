@@ -1567,21 +1567,37 @@ class _PaymentSetupScreenState extends State<PaymentSetupScreen> {
                             height: buttonHeight * 0.8,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: _isVerified
+                                backgroundColor: !_isSaving
                                     ? AppColors.primaryOrangeStart
                                     : Colors.grey,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              onPressed: _isVerified && !_isSaving
+                              onPressed: !_isSaving
                                   ? () async {
+                                      // Prevent double submission
+                                      if (_isSaving) return;
+
+                                      // Validate UPI ID format
+                                      final upiId = _upiIdController.text
+                                          .trim();
+                                      if (upiId.isEmpty ||
+                                          !upiId.contains('@')) {
+                                        setDialogState(() {
+                                          _errorMessage =
+                                              'Please enter a valid UPI ID';
+                                        });
+                                        return;
+                                      }
+
                                       setDialogState(() => _isSaving = true);
                                       try {
                                         await _walletRepository.addBankAccount({
-                                          'upiId': _upiIdController.text.trim(),
+                                          'upiId': upiId,
                                           'bankName': 'UPI',
-                                          'accountHolderName': _verifiedName,
+                                          'accountHolderName':
+                                              _verifiedName ?? 'UPI User',
                                           'accountNumber': '',
                                           'ifscCode': '',
                                         });
