@@ -291,7 +291,11 @@ class SupportScreen extends StatelessWidget {
   ) {
     final l10n = AppLocalizations.of(context)!;
     return Container(
-      padding: EdgeInsets.all(verticalPadding),
+      padding: EdgeInsets.only(
+        left: verticalPadding,
+        right: verticalPadding,
+        bottom: verticalPadding,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
@@ -301,15 +305,6 @@ class SupportScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(
-            l10n.howCanWeHelp,
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: titleFontSize,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SizedBox(height: verticalPadding),
           GridView.count(
             crossAxisCount: 2,
             shrinkWrap: true,
@@ -679,18 +674,6 @@ class _FaqItem extends StatelessWidget {
           ),
         ),
         child: ExpansionTile(
-          leading: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.primaryOrangeStart.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.help_outline_rounded,
-              color: AppColors.primaryOrangeStart,
-              size: iconSize,
-            ),
-          ),
           title: Text(
             question,
             style: TextStyle(

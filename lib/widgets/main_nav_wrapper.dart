@@ -229,22 +229,46 @@ class _MainNavigationWrapperState extends State<MainNavigationWrapper> {
             // Second back press within 2 seconds - exit the app
             SystemNavigator.pop();
           } else {
-            // First back press - show exit message
+            // First back press - show Flipkart-style compact exit message with logo
             _lastBackPressTime = now;
 
             // Clear any existing snackbars and show new one
             ScaffoldMessenger.of(context).clearSnackBars();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(
-                  AppLocalizations.of(context)!.pressBackAgainToExit,
+                content: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Logo
+                    Image.asset(
+                      'images/logo.png',
+                      width: 22,
+                      height: 22,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(width: 6),
+                    // Text
+                    Text(
+                      AppLocalizations.of(context)!.pressBackAgainToExit,
+                      style: const TextStyle(fontSize: 13, color: Colors.white),
+                    ),
+                  ],
                 ),
                 duration: const Duration(seconds: 2),
                 behavior: SnackBarBehavior.floating,
-                // Position just above the bottom navigation bar with no gap
-                margin: const EdgeInsets.only(bottom: 0, left: 0, right: 0),
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.zero,
+                backgroundColor: const Color(0xFF323232),
+                // Center it with proper spacing above bottom nav
+                margin: const EdgeInsets.only(
+                  bottom: 20,
+                  left: 100,
+                  right: 100,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
                 ),
               ),
             );

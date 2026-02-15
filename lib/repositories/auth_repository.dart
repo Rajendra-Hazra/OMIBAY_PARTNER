@@ -159,6 +159,19 @@ class AuthRepositoryImpl implements AuthRepository {
       );
       await prefs.setString('partner_access_date', authResponse.data.createdAt);
 
+      // Save user details for chat and profile
+      if (authResponse.data.name.isNotEmpty) {
+        await prefs.setString('profile_name', authResponse.data.name);
+      }
+      if (authResponse.data.email != null &&
+          authResponse.data.email!.isNotEmpty) {
+        await prefs.setString('profile_email', authResponse.data.email!);
+      }
+      if (authResponse.data.partnerId != null &&
+          authResponse.data.partnerId!.isNotEmpty) {
+        await prefs.setString('partner_id', authResponse.data.partnerId!);
+      }
+
       if (authResponse.data.totalJobsDone > 0) {
         List<String> dummyJobs = List.filled(
           authResponse.data.totalJobsDone,
@@ -213,7 +226,20 @@ class AuthRepositoryImpl implements AuthRepository {
       await prefs.setString(
         'profile_rating',
         authResponse.data.avgRating.toString(),
-      ); // Update rating
+      );
+
+      // Update user details for chat and profile
+      if (authResponse.data.name.isNotEmpty) {
+        await prefs.setString('profile_name', authResponse.data.name);
+      }
+      if (authResponse.data.email != null &&
+          authResponse.data.email!.isNotEmpty) {
+        await prefs.setString('profile_email', authResponse.data.email!);
+      }
+      if (authResponse.data.partnerId != null &&
+          authResponse.data.partnerId!.isNotEmpty) {
+        await prefs.setString('partner_id', authResponse.data.partnerId!);
+      }
 
       // Update jobs count
       if (authResponse.data.totalJobsDone > 0) {
@@ -304,6 +330,19 @@ class AuthRepositoryImpl implements AuthRepository {
         authResponse.data.avgRating.toString(),
       );
       await prefs.setString('partner_access_date', authResponse.data.createdAt);
+
+      // Save user details for chat and profile
+      if (authResponse.data.name.isNotEmpty) {
+        await prefs.setString('profile_name', authResponse.data.name);
+      }
+      if (authResponse.data.email != null &&
+          authResponse.data.email!.isNotEmpty) {
+        await prefs.setString('profile_email', authResponse.data.email!);
+      }
+      if (authResponse.data.partnerId != null &&
+          authResponse.data.partnerId!.isNotEmpty) {
+        await prefs.setString('partner_id', authResponse.data.partnerId!);
+      }
 
       if (authResponse.data.totalJobsDone > 0) {
         List<String> dummyJobs = List.filled(

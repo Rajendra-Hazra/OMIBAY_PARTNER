@@ -17,6 +17,9 @@ import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../repositories/partner_service_repository.dart';
 import '../../repositories/order_repository.dart';
+import '../../repositories/earnings_repository.dart';
+import '../../repositories/notification_repository.dart';
+import '../../models/earnings_stats.dart';
 // import '../../services/notification_service.dart';
 import '../../services/location_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -41,13 +44,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _onlineSeconds = 0;
   bool _isInitialLoad = true;
   List<Map<String, dynamic>> _activeJobs = [];
-  // Weekly Incentive State
-  int _weeklyOrderCount = 0;
-  int _weeklyIncentiveTarget = 0;
-  double _weeklyIncentiveAmount = 0.0;
+  // Weekly Bonus State (same as earnings screen)
+  WeeklyBonus? _weeklyBonus;
 
   late final PartnerServiceRepository _partnerRepository;
   late final OrderRepository _orderRepository;
+  late final EarningsRepository _earningsRepository;
+  late final NotificationRepository _notificationRepository;
   // StreamSubscription<Map<String, dynamic>>? _notificationSubscription;
 
   // Location tracking
@@ -62,10 +65,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       apiClient: ApiClient(baseUrl: ApiEndpoints.baseUrl),
     );
     _orderRepository = OrderRepositoryImpl(baseUrl: ApiEndpoints.baseUrl);
+    _earningsRepository = EarningsRepository(
+      apiClient: ApiClient(baseUrl: ApiEndpoints.baseUrl),
+    );
+    _notificationRepository = NotificationRepository(
+      ApiClient(baseUrl: ApiEndpoints.baseUrl),
+    );
     WidgetsBinding.instance.addObserver(this);
     _loadProfileData();
     _loadActiveJob();
-    _loadOnlineStatus(); // Consolidate loading
+    _loadOnlineStatus();
+    _loadWeeklyBonus(); // Load weekly bonus from earnings API
+    _loadUnreadNotificationsCount(); // Load unread notifications count
     // Listen for global profile updates
     AppColors.profileUpdateNotifier.addListener(_loadProfileData);
     AppColors.jobUpdateNotifier.addListener(_loadActiveJob);
@@ -85,10 +96,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         if (mounted) {
           setState(() {
             _isOnline = status.isOnline;
-            _weeklyOrderCount = status.weeklyOrderCount;
-            _weeklyIncentiveTarget = status.weeklyIncentiveTarget;
-            _weeklyIncentiveAmount = status.weeklyIncentiveAmount;
-            _weeklyIncentiveAmount = status.weeklyIncentiveAmount;
             _rating = status.rating.toStringAsFixed(1);
             _todayBusiness = status.todayEarnings;
             _todayJobsDone = status.todayJobs;
@@ -104,10 +111,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         // Fallback to local storage if API fails
         final prefs = await SharedPreferences.getInstance();
         final savedIsOnline = prefs.getBool('partner_is_online') ?? false;
-        if (savedIsOnline) {
+
+        if (mounted) {
           setState(() {
-            _isOnline = true;
+            _isOnline = savedIsOnline;
           });
+        }
+
+        if (savedIsOnline) {
           await _catchUpOnlineTime();
           _startOnlineTimer();
         }
@@ -133,193 +144,270 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   // ... (Keep existing _saveOnlineStatus, timers, etc.)
 
-  Widget _buildChallengesAndReferralCard(
-    double borderRadius,
-    double bodyFontSize,
-    double smallFontSize,
-  ) {
-    // Logic for progress bar
-    double progress = 0.0;
-    if (_weeklyIncentiveTarget > 0) {
-      progress = (_weeklyOrderCount / _weeklyIncentiveTarget).clamp(0.0, 1.0);
+  // Load weekly bonus from earnings API (same as earnings screen)
+  Future<void> _loadWeeklyBonus() async {
+    try {
+      final stats = await _earningsRepository.getEarningsStats();
+      if (mounted) {
+        setState(() {
+          _weeklyBonus = stats.weeklyBonus; // Can be null if no data
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading weekly bonus: $e');
+      // Set to null on error to hide the card
+      if (mounted) {
+        setState(() {
+          _weeklyBonus = null;
+        });
+      }
     }
+  }
 
-    // Logic for display text
-    // "Complete X jobs"
-    String challengeText;
-    if (_weeklyIncentiveTarget > 0) {
-      challengeText = "Complete $_weeklyIncentiveTarget jobs this week";
-    } else {
-      challengeText = "Weekly challenge unavailable";
+  // Load unread notifications count
+  Future<void> _loadUnreadNotificationsCount() async {
+    try {
+      final notifications = await _notificationRepository.getNotifications();
+      final unreadCount = notifications.where((n) => !n.isRead).length;
+      AppColors.unreadNotificationsNotifier.value = unreadCount;
+    } catch (e) {
+      debugPrint('Error loading unread notifications count: $e');
+      // Set to 0 on error
+      AppColors.unreadNotificationsNotifier.value = 0;
     }
+  }
 
-    return Card(
-      elevation: 0,
-      color: const Color(0xFF0A192F),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(borderRadius * 0.6),
-        side: BorderSide(color: Colors.white.withValues(alpha: 0.1), width: 1),
+  // Weekly Bonus Card - Same as earnings screen
+  Widget _buildBonusCard(double borderRadius, double fontSize) {
+    final l10n = AppLocalizations.of(context)!;
+
+    // Always show card, use default values if API returns null
+    final bonus =
+        _weeklyBonus ??
+        WeeklyBonus(
+          title: 'Weekly Bonus',
+          subtitle: 'Complete jobs to earn bonus',
+          targetJobs: 15,
+          completedJobs: 0,
+          rewardAmount: 200.0,
+          isCompleted: false,
+          endsIn: 'This week',
+        );
+
+    double progress = (bonus.completedJobs / bonus.targetJobs).clamp(0.0, 1.0);
+    bool isComplete = bonus.isCompleted;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [const Color(0xFF1E293B), const Color(0xFF0F172A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(borderRadius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: Column(
+      child: Stack(
         children: [
-          // Weekly Bonus Challenge Section
+          // Decorative background elements
+          Positioned(
+            right: -20,
+            top: -20,
+            child: Icon(
+              Icons.stars,
+              size: 120,
+              color: Colors.white.withValues(alpha: 0.05),
+            ),
+          ),
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(20.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 0.2),
+                        color: AppColors.primaryOrangeStart.withValues(
+                          alpha: 0.15,
+                        ),
                         shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.primaryOrangeStart.withValues(
+                            alpha: 0.3,
+                          ),
+                          width: 2,
+                        ),
                       ),
                       child: Icon(
-                        Icons.emoji_events,
-                        color: Colors.orange,
-                        size: bodyFontSize,
+                        Icons.auto_awesome,
+                        color: AppColors.primaryOrangeStart,
+                        size: fontSize * 1.5,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 15),
                     Expanded(
-                      child: Text(
-                        AppLocalizations.of(
-                          context,
-                        )!.weeklyBonusChallenge, // Ensure this key exists or use hardcoded string if needed
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: bodyFontSize,
-                          color: Colors.white,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            bonus.title.toUpperCase(),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              fontSize: fontSize,
+                              letterSpacing: 1.1,
+                            ),
+                          ),
+                          Text(
+                            bonus.subtitle,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.6),
+                              fontSize: fontSize * 0.75,
+                            ),
+                          ),
+                          Text(
+                            bonus.endsIn.isNotEmpty
+                                ? 'Ends in ${bonus.endsIn}'
+                                : '',
+                            style: TextStyle(
+                              color: AppColors.primaryOrangeStart,
+                              fontWeight: FontWeight.bold,
+                              fontSize: fontSize * 0.75,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (isComplete)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.green.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: Text(
+                          'COMPLETED',
+                          style: TextStyle(
+                            color: Colors.green,
+                            fontSize: fontSize * 0.6,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 25),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      l10n.jobsDoneWithProgress(
+                        LocalizationHelper.convertBengaliToEnglish(
+                          bonus.completedJobs,
+                        ),
+                      ),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: fontSize * 0.85,
+                      ),
+                    ),
+                    Text(
+                      'Goal: ${LocalizationHelper.convertBengaliToEnglish(bonus.targetJobs)}',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontSize: fontSize * 0.75,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Stack(
+                        children: [
+                          Container(
+                            height: 12,
+                            width: double.infinity,
+                            color: Colors.white.withValues(alpha: 0.1),
+                          ),
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 1000),
+                            height: 12,
+                            width: constraints.maxWidth * progress,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [
+                                  AppColors.primaryOrangeStart,
+                                  Color(0xFFFFB800),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primaryOrangeStart
+                                      .withValues(alpha: 0.4),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 15),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.05),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              challengeText,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w500,
-                                color: Colors.white,
-                                fontSize: smallFontSize,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          if (_weeklyIncentiveTarget > 0)
-                            Text(
-                              "Win ₹${_weeklyIncentiveAmount.toStringAsFixed(0)}",
-                              style: TextStyle(
-                                color: const Color(0xFF34D399),
-                                fontWeight: FontWeight.bold,
-                                fontSize: smallFontSize,
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          backgroundColor: Colors.white.withValues(alpha: 0.1),
-                          color: Colors.orange,
-                          minHeight: 8,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Text(
-                          "$_weeklyOrderCount/$_weeklyIncentiveTarget Completed",
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.7),
-                            fontSize: smallFontSize * 0.9,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          /*
-          Divider(height: 1, color: Colors.white.withValues(alpha: 0.05)),
-          // Share & Earn Section
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.card_giftcard_rounded,
-                      color: const Color(0xFF60A5FA),
-                      size: bodyFontSize * 1.5,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      AppLocalizations.of(context)!.shareAndEarn,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: bodyFontSize,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  AppLocalizations.of(context)!.inviteYourFriends,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: smallFontSize,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/referral');
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E293B),
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 44),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.1),
-                      ),
-                    ),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.share_outlined, size: smallFontSize * 1.5),
-                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.redeem,
+                        color: Colors.greenAccent,
+                        size: fontSize * 1.25,
+                      ),
+                      const SizedBox(width: 10),
                       Text(
-                        AppLocalizations.of(context)!.invite,
-                        style: TextStyle(fontSize: bodyFontSize),
+                        l10n
+                            .potentialEarnings('')
+                            .replaceAll(l10n.currencySymbol, '')
+                            .trim(),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          fontSize: fontSize * 0.8,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${l10n.currencySymbol}${LocalizationHelper.convertBengaliToEnglish(bonus.rewardAmount.toInt().toString())}',
+                        style: TextStyle(
+                          color: Colors.greenAccent,
+                          fontWeight: FontWeight.bold,
+                          fontSize: fontSize * 1.1,
+                        ),
                       ),
                     ],
                   ),
@@ -327,7 +415,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ],
             ),
           ),
-          */
         ],
       ),
     );
@@ -621,7 +708,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       body: SafeArea(
         top: false,
         child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
+          physics: const ClampingScrollPhysics(),
           child: Column(
             children: [
               _buildHeader(context, titleFontSize, borderRadius, hPadding),
@@ -659,11 +746,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       smallFontSize,
                     ),
                     SizedBox(height: 24 * paddingScale),
-                    _buildChallengesAndReferralCard(
-                      borderRadius,
-                      bodyFontSize,
-                      smallFontSize,
-                    ),
+                    _buildBonusCard(borderRadius, bodyFontSize),
                     SizedBox(height: 24 * paddingScale),
                     _buildProTipsCard(
                       borderRadius,

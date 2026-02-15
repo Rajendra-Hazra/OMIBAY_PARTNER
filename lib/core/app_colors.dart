@@ -50,7 +50,7 @@ class AppColors {
   // Global Notifiers
   static final ValueNotifier<int> profileUpdateNotifier = ValueNotifier(0);
   static final ValueNotifier<int> unreadNotificationsNotifier = ValueNotifier(
-    2,
-  ); // Mock 2 unread by default
+    0,
+  );
   static final ValueNotifier<int> jobUpdateNotifier = ValueNotifier(0);
 }

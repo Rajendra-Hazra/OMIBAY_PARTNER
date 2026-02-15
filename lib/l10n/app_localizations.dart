@@ -395,7 +395,7 @@ abstract class AppLocalizations {
   /// No description provided for @pressBackAgainToExit.
   ///
   /// In en, this message translates to:
-  /// **'Press back again to exit'**
+  /// **'Press again to exit'**
   String get pressBackAgainToExit;
 
   /// No description provided for @appSlogan.
@@ -2531,7 +2531,7 @@ abstract class AppLocalizations {
   /// No description provided for @partnerId.
   ///
   /// In en, this message translates to:
-  /// **'Partner ID:'**
+  /// **'ID:'**
   String get partnerId;
 
   /// No description provided for @myDocuments.

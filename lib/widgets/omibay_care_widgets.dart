@@ -40,15 +40,11 @@ class OmiBayCareContainer extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with gradient
+          // Header with gradient (dark navy like profile section)
           Container(
             padding: const EdgeInsets.all(20),
             decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              gradient: AppColors.darkGradient,
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(24),
                 topRight: Radius.circular(24),
@@ -349,7 +345,7 @@ class BenefitListItem extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+          color: AppColors.darkNavyStart.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -358,7 +354,7 @@ class BenefitListItem extends StatelessWidget {
             const Icon(
               Icons.schedule_rounded,
               size: 12,
-              color: Color(0xFF6366F1),
+              color: AppColors.darkNavyStart,
             ),
             const SizedBox(width: 4),
             Text(
@@ -366,7 +362,7 @@ class BenefitListItem extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF6366F1),
+                color: AppColors.darkNavyStart,
               ),
             ),
           ],
@@ -450,15 +446,15 @@ class ComingSoonCard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF6366F1).withValues(alpha: 0.05),
-            const Color(0xFF8B5CF6).withValues(alpha: 0.05),
+            AppColors.darkNavyStart.withValues(alpha: 0.05),
+            AppColors.darkNavyEnd.withValues(alpha: 0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF6366F1).withValues(alpha: 0.2),
+          color: AppColors.darkNavyStart.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -466,12 +462,12 @@ class ComingSoonCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+              color: AppColors.darkNavyStart.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.hourglass_top_rounded,
-              color: Color(0xFF6366F1),
+              color: AppColors.darkNavyStart,
               size: 40,
             ),
           ),

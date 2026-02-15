@@ -691,13 +691,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                         bodyFontSize,
                         smallFontSize,
                       ),
-                    _buildSyncActionButton(
-                      effectiveJobData,
-                      screenWidth,
-                      screenHeight,
-                      paddingScale,
-                      bodyFontSize,
-                    ),
+                    // Action buttons are shown inside _buildCombinedDetails (synced with API status)
                     SizedBox(height: 100 * paddingScale),
                   ],
                 ),

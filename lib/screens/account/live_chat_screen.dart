@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/app_colors.dart';
+import '../../core/app_config.dart';
 
 class LiveChatScreen extends StatefulWidget {
   const LiveChatScreen({super.key});
@@ -11,21 +13,71 @@ class LiveChatScreen extends StatefulWidget {
 }
 
 class _LiveChatScreenState extends State<LiveChatScreen> {
-  late final WebViewController _controller;
+  WebViewController? _controller;
   bool _isLoading = true;
   bool _hasError = false;
+  bool _isControllerReady = false;
 
-  // TODO: Replace with your Tawk.to Property ID and Widget ID
-  static const String _tawkPropertyId = '698c0ffbbafe421c2d8f15fd';
-  static const String _tawkWidgetId = '1jh5hsrof';
+  // User data for tawk.to attributes
+  String? _userName;
+  String? _userEmail;
+  String? _userPhone;
+  String? _partnerId;
 
   @override
   void initState() {
     super.initState();
-    _initWebView();
+    _loadUserData();
+  }
+
+  /// Load logged-in user data from SharedPreferences
+  Future<void> _loadUserData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Try to get user data from various storage keys
+      _userName =
+          prefs.getString('profile_name') ??
+          prefs.getString('user_name') ??
+          prefs.getString('fullName') ??
+          'Partner';
+
+      _userEmail =
+          prefs.getString('profile_email') ??
+          prefs.getString('user_email') ??
+          prefs.getString('email') ??
+          '';
+
+      _userPhone =
+          prefs.getString('profile_phone') ??
+          prefs.getString('user_phone') ??
+          prefs.getString('mobileNumber') ??
+          '';
+
+      _partnerId =
+          prefs.getString('partner_id') ?? prefs.getString('partnerId') ?? '';
+
+      debugPrint(
+        '📞 Tawk.to User Data: $_userName | $_userEmail | $_userPhone | ID: $_partnerId',
+      );
+
+      // Initialize WebView after loading user data
+      _initWebView();
+    } catch (e) {
+      debugPrint('Error loading user data: $e');
+      _initWebView();
+    }
   }
 
   void _initWebView() {
+    final propertyId = AppConfig.tawkPropertyId;
+    final widgetId = AppConfig.tawkWidgetId;
+
+    // Use tawk.to direct chat URL - this avoids localStorage security issues
+    final tawkDirectUrl = 'https://tawk.to/chat/$propertyId/$widgetId';
+
+    debugPrint('🔧 Initializing Tawk.to WebView with URL: $tawkDirectUrl');
+
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.white)
@@ -33,320 +85,208 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
-            setState(() => _isLoading = true);
+            debugPrint('📄 Page started: $url');
+            if (mounted) {
+              setState(() => _isLoading = true);
+            }
           },
           onPageFinished: (String url) {
-            setState(() => _isLoading = false);
-            // Inject additional JavaScript to ensure Tawk.to loads properly
-            _controller.runJavaScript('''
-              console.log('Page finished loading');
-              if (typeof Tawk_API !== 'undefined') {
-                console.log('Tawk_API is defined');
-              } else {
-                console.log('Tawk_API is not defined yet');
-              }
-            ''');
+            debugPrint('✅ Page finished: $url');
+            if (mounted) {
+              setState(() => _isLoading = false);
+            }
+            // Inject user data into Tawk.to after page loads
+            _injectUserData();
           },
           onWebResourceError: (WebResourceError error) {
-            debugPrint('WebView error: ${error.description}');
+            debugPrint('❌ WebView error: ${error.description}');
             debugPrint('Error code: ${error.errorCode}');
             debugPrint('Error type: ${error.errorType}');
+            // Don't show error for subresource failures
+            if (error.isForMainFrame ?? true) {
+              if (mounted) {
+                setState(() {
+                  _hasError = true;
+                  _isLoading = false;
+                });
+              }
+            }
           },
           onNavigationRequest: (NavigationRequest request) {
-            // Allow all navigation within tawk.to domain
+            debugPrint('🔗 Navigation request: ${request.url}');
+            // Allow all navigation
             return NavigationDecision.navigate;
           },
         ),
       )
-      ..loadHtmlString(_getTawkToHtml());
+      ..loadRequest(Uri.parse(tawkDirectUrl));
+
+    if (mounted) {
+      setState(() {
+        _isControllerReady = true;
+      });
+    }
   }
 
-  String _getTawkToHtml() {
-    return '''<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <style>
-    * { 
-      margin: 0; 
-      padding: 0; 
-      box-sizing: border-box; 
+  /// Inject logged-in user data into Tawk.to widget
+  /// This ensures support team can see partner details immediately
+  void _injectUserData() {
+    if (_controller == null) return;
+
+    // Build the attributes object
+    final attributes = <String, String>{};
+
+    if (_userName != null && _userName!.isNotEmpty && _userName != 'Partner') {
+      attributes['name'] = _userName!;
     }
-    html, body { 
-      width: 100%; 
-      height: 100%; 
-      overflow: hidden;
-      background-color: #f8fafc;
+
+    if (_userEmail != null && _userEmail!.isNotEmpty) {
+      attributes['email'] = _userEmail!;
     }
-    #tawk-container {
-      width: 100%;
-      height: 100%;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+
+    if (_userPhone != null && _userPhone!.isNotEmpty) {
+      attributes['phone'] = _userPhone!;
     }
-    .loading {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center;
-      color: #64748b;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+    if (_partnerId != null && _partnerId!.isNotEmpty) {
+      attributes['Partner ID'] = _partnerId!;
     }
-    .loading p { 
-      margin-top: 12px; 
-      font-size: 14px; 
-    }
-    .spinner {
-      width: 40px;
-      height: 40px;
-      margin: 0 auto;
-      border: 4px solid #f3f4f6;
-      border-top: 4px solid #ff7a00;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    /* Hide default Tawk.to bubble since we're embedding it */
-    #tawk-bubble-container {
-      display: none !important;
-    }
-  </style>
-</head>
-<body>
-  <div id="tawk-container"></div>
-  <div class="loading" id="loading">
-    <div class="spinner"></div>
-    <p>Connecting to support...</p>
-  </div>
-  
-  <!--Start of Tawk.to Script-->
-  <script type="text/javascript">
-    var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
-    var tawkLoaded = false;
-    
-    Tawk_API.customStyle = {
-      visibility: {
-        desktop: {
-          position: 'br',
-          xOffset: 0,
-          yOffset: 0
-        },
-        mobile: {
-          position: 'br',
-          xOffset: 0,
-          yOffset: 0
-        },
-        bubble: {
-          rotate: '0deg',
-          xOffset: 0,
-          yOffset: 0
-        }
-      }
-    };
-    
-    Tawk_API.onLoad = function(){
-      console.log('Tawk.to loaded successfully');
-      tawkLoaded = true;
-      // Hide loading message
-      var loading = document.getElementById('loading');
-      if (loading) {
-        loading.style.display = 'none';
-      }
-      // Maximize the chat widget after a short delay
-      setTimeout(function(){
-        try {
-          Tawk_API.maximize();
-        } catch(e) {
-          console.error('Error maximizing chat:', e);
-        }
-      }, 500);
-    };
-    
-    Tawk_API.onChatMaximized = function(){
-      console.log('Chat maximized');
-    };
-    
-    Tawk_API.onChatMinimized = function(){
-      console.log('Chat minimized');
-      // Auto-maximize again if minimized
-      setTimeout(function(){
-        try {
-          Tawk_API.maximize();
-        } catch(e) {
-          console.error('Error re-maximizing chat:', e);
-        }
-      }, 100);
-    };
-    
-    // Set a timeout to check if Tawk.to loaded
-    setTimeout(function(){
-      if (!tawkLoaded) {
-        console.error('Tawk.to failed to load within timeout');
-        var loading = document.getElementById('loading');
-        if (loading) {
-          loading.innerHTML = '<div class="spinner"></div><p>Reconnecting...</p>';
-        }
-        // Try to reload the script
-        var existingScript = document.querySelector('script[src*="tawk.to"]');
-        if (existingScript) {
-          existingScript.remove();
-        }
-        // Reload the page after a delay
-        setTimeout(function(){
-          window.location.reload();
-        }, 2000);
-      }
-    }, 10000); // 10 second timeout
-    
-    (function(){
-      var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
-      s1.async = true;
-      s1.src = 'https://embed.tawk.to/$_tawkPropertyId/$_tawkWidgetId';
-      s1.charset = 'UTF-8';
-      s1.setAttribute('crossorigin','*');
-      s1.onerror = function() {
-        console.error('Failed to load Tawk.to script');
-        var loading = document.getElementById('loading');
-        if (loading) {
-          loading.innerHTML = '<p style="color: #ef4444;">Failed to connect. Please check your internet connection.</p>';
-        }
-      };
-      s0.parentNode.insertBefore(s1, s0);
-    })();
-  </script>
-  <!--End of Tawk.to Script-->
-</body>
-</html>''';
+
+    // Add partner identifier
+    attributes['User Type'] = 'Partner';
+
+    // Convert attributes to JavaScript object string
+    final jsAttributes = attributes.entries
+        .map((e) => '"${e.key}": "${_escapeJsString(e.value)}"')
+        .join(', ');
+
+    // Inject JavaScript to set user attributes - wait longer for direct URL load
+    final jsCode =
+        '''
+      (function() {
+        console.log('🔄 Injecting user data into Tawk.to...');
+        
+        var maxAttempts = 40;
+        var attempts = 0;
+        
+        var injectUserData = function() {
+          if (typeof Tawk_API !== 'undefined' && typeof Tawk_API.setAttributes === 'function') {
+            console.log('✅ Tawk_API found, setting attributes...');
+            
+            try {
+              Tawk_API.setAttributes({
+                $jsAttributes
+              }, function(error) {
+                if (error) {
+                  console.error('❌ Error setting Tawk.to attributes:', error);
+                } else {
+                  console.log('✅ User attributes set successfully');
+                }
+              });
+            } catch(e) {
+              console.error('Exception setting attributes:', e);
+            }
+            
+            return true;
+          }
+          return false;
+        };
+        
+        var checkInterval = setInterval(function() {
+          attempts++;
+          if (injectUserData()) {
+            clearInterval(checkInterval);
+          } else if (attempts >= maxAttempts) {
+            console.warn('⚠️ Tawk_API not available after ' + attempts + ' attempts');
+            clearInterval(checkInterval);
+          }
+        }, 500);
+      })();
+    ''';
+
+    _controller!.runJavaScript(jsCode);
+    debugPrint('📤 User data injection script executed');
+  }
+
+  /// Escape special characters for JavaScript string
+  String _escapeJsString(String str) {
+    return str
+        .replaceAll(r'\', r'\\')
+        .replaceAll('"', r'\"')
+        .replaceAll('\n', r'\n')
+        .replaceAll('\r', r'\r')
+        .replaceAll('\t', r'\t');
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final headingFontSize = (screenWidth * 0.05).clamp(18.0, 22.0);
-    final smallFontSize = (screenWidth * 0.032).clamp(11.0, 13.0);
-    final iconSize = (screenWidth * 0.06).clamp(24.0, 32.0);
-
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color.fromARGB(
+        255,
+        8,
+        103,
+        192,
+      ), // Dark color matching tawk.to
       body: SafeArea(
-        top: false,
-        child: Column(
+        child: Stack(
           children: [
-            _buildHeader(context, headingFontSize, smallFontSize, iconSize),
-            Expanded(
-              child: Stack(
-                children: [
-                  WebViewWidget(controller: _controller),
-                  if (_isLoading)
-                    Container(
-                      color: Colors.white,
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.primaryOrangeStart,
-                        ),
-                      ),
-                    ),
-                ],
+            // Full-screen WebView
+            if (_isControllerReady && _controller != null)
+              WebViewWidget(controller: _controller!),
+
+            // Loading indicator
+            if (_isLoading)
+              Container(
+                color: const Color(0xFF1A1A2E),
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.primaryOrangeStart,
+                  ),
+                ),
               ),
-            ),
+
+            // Error state
+            if (_hasError)
+              Container(
+                color: const Color(0xFF1A1A2E),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error_outline, size: 48, color: Colors.white),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Failed to load chat',
+                        style: TextStyle(fontSize: 16, color: Colors.white70),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _hasError = false;
+                            _isControllerReady = false;
+                          });
+                          _loadUserData();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryOrangeStart,
+                        ),
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // Initial loading (before controller is ready)
+            if (!_isControllerReady)
+              const Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.primaryOrangeStart,
+                ),
+              ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(
-    BuildContext context,
-    double headingFontSize,
-    double smallFontSize,
-    double iconSize,
-  ) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 10,
-        left: 10,
-        right: 16,
-        bottom: 16,
-      ),
-      decoration: const BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(24),
-          bottomRight: Radius.circular(24),
-        ),
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            icon: Icon(Icons.arrow_back_ios_new, size: iconSize * 0.7),
-            onPressed: () => Navigator.pop(context),
-            color: Colors.white,
-          ),
-          Container(
-            width: (iconSize * 1.5).clamp(36.0, 48.0),
-            height: (iconSize * 1.5).clamp(36.0, 48.0),
-            padding: const EdgeInsets.all(6),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-            child: Image.asset(
-              'images/logo.png',
-              errorBuilder: (context, error, stackTrace) => Icon(
-                Icons.business_center,
-                size: iconSize * 0.7,
-                color: AppColors.primaryOrangeStart,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  AppLocalizations.of(context)!.omibaySupport,
-                  style: TextStyle(
-                    fontSize: headingFontSize,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF22C55E), // Green dot
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      AppLocalizations.of(context)!.online,
-                      style: TextStyle(
-                        fontSize: smallFontSize,
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

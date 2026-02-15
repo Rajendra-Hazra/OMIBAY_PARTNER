@@ -171,7 +171,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get recommended => 'প্রস্তাবিত';
 
   @override
-  String get pressBackAgainToExit => 'প্রস্থান করতে আবার পেছনে টিপুন';
+  String get pressBackAgainToExit => 'প্রস্থান করতে আবার টিপুন';
 
   @override
   String get appSlogan => 'নিজের কাজ। নিজের বস।';
@@ -1321,7 +1321,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get workWithUs => 'আমাদের সাথে কাজ';
 
   @override
-  String get partnerId => 'পার্টনার আইডি:';
+  String get partnerId => 'আইডি:';
 
   @override
   String get myDocuments => 'আমার ডকুমেন্ট';

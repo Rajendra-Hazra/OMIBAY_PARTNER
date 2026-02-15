@@ -9,12 +9,9 @@ import '../services/notification_service.dart';
 
 /// Incoming Job Modal - Uber/Ola style job alert dialog
 ///
-/// This modal is displayed when a new job request arrives. The notification
-/// sound is handled by the system notification channel (not in-app audio)
-/// to ensure it works in background/terminated states.
-///
-/// Sound behavior:
-/// - Sound starts with the push notification (via notification channel)
+/// This modal is displayed when a new job request arrives.
+/// Sound behavior (Uber/Ola style):
+/// - Continuous looping audio plays while modal is visible
 /// - Sound stops when user accepts, declines, or timeout occurs
 class IncomingJobModal extends StatefulWidget {
   final Map<String, dynamic> job;
@@ -33,22 +30,63 @@ class IncomingJobModal extends StatefulWidget {
 }
 
 class _IncomingJobModalState extends State<IncomingJobModal> {
-  int _secondsRemaining = 30;
+  int _secondsRemaining = 180;
   Timer? _timer;
   bool _isProcessingAction = false;
+
+  // Audio player for continuous looping incoming job sound
+  AudioPlayer? _incomingJobPlayer;
 
   @override
   void initState() {
     super.initState();
     _startTimer();
-    // Note: Sound is handled by the notification channel, not in-app
-    // The notification with custom sound was already shown by NotificationService
+    _startIncomingJobAudio();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _stopIncomingJobAudio();
     super.dispose();
+  }
+
+  /// Start playing incoming job audio in continuous loop (Uber/Ola style)
+  Future<void> _startIncomingJobAudio() async {
+    // Skip audio on web - not supported
+    if (kIsWeb) {
+      debugPrint('Incoming job audio not supported on web');
+      return;
+    }
+
+    try {
+      _incomingJobPlayer = AudioPlayer();
+
+      // Set to loop continuously
+      await _incomingJobPlayer!.setReleaseMode(ReleaseMode.loop);
+      await _incomingJobPlayer!.setSource(
+        AssetSource('audio/incoming_job.mp3'),
+      );
+      await _incomingJobPlayer!.resume();
+
+      debugPrint('Incoming job audio started - looping');
+    } catch (e) {
+      debugPrint('Error starting incoming job audio: $e');
+    }
+  }
+
+  /// Stop the incoming job audio
+  Future<void> _stopIncomingJobAudio() async {
+    try {
+      if (_incomingJobPlayer != null) {
+        await _incomingJobPlayer!.stop();
+        await _incomingJobPlayer!.dispose();
+        _incomingJobPlayer = null;
+        debugPrint('Incoming job audio stopped');
+      }
+    } catch (e) {
+      debugPrint('Error stopping incoming job audio: $e');
+    }
   }
 
   void _startTimer() {
@@ -69,6 +107,9 @@ class _IncomingJobModalState extends State<IncomingJobModal> {
     _isProcessingAction = true;
 
     _timer?.cancel();
+
+    // Stop the continuous incoming job audio immediately
+    await _stopIncomingJobAudio();
 
     // Cancel the notification and stop the notification channel sound immediately
     // This stops the notification channel sound that was playing

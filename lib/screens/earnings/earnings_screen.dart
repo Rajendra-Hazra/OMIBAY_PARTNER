@@ -239,7 +239,6 @@ class _EarningsScreenState extends State<EarningsScreen> {
         _bankAccountAdded = bankAdded;
         _upiIdAdded = upiAdded;
         _transactions = transactionData;
-        _weeklyBonus = stats.weeklyBonus;
         _isLoading = false;
       });
     } catch (e) {
@@ -329,84 +328,75 @@ class _EarningsScreenState extends State<EarningsScreen> {
         children: [
           SafeArea(
             top: false,
-            child: RefreshIndicator(
-              onRefresh: _loadData,
-              color: AppColors.primaryOrangeStart,
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Column(
-                  children: [
-                    _buildHeader(
-                      context,
-                      titleFontSize,
-                      borderRadius,
-                      hPadding,
-                    ),
-                    _buildWalletHeader(
-                      context,
-                      balanceFontSize,
-                      borderRadius,
-                      hPadding,
-                      bodyFontSize,
-                      buttonHeight,
-                    ),
-                    Padding(
-                      padding: EdgeInsets.all(hPadding),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSectionTitle(l10n.earnings, sectionTitleSize),
-                          _buildPerformanceGrid(bodyFontSize, borderRadius),
-                          SizedBox(height: spacing),
-                          _buildMonthlyEarningsChart(
-                            chartHeight,
-                            borderRadius,
-                            bodyFontSize,
-                          ),
-                          SizedBox(height: spacing),
-                          _buildSectionTitle(
-                            l10n.incentivesAndOffers,
-                            sectionTitleSize,
-                          ),
-                          _buildBonusCard(borderRadius, bodyFontSize),
-                          SizedBox(height: 16 * paddingScale),
-                          // _buildReferCard(borderRadius, bodyFontSize),
-                          SizedBox(height: spacing),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildSectionTitle(
-                                  l10n.transactionHistory,
-                                  sectionTitleSize,
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: Column(
+                children: [
+                  _buildHeader(context, titleFontSize, borderRadius, hPadding),
+                  _buildWalletHeader(
+                    context,
+                    balanceFontSize,
+                    borderRadius,
+                    hPadding,
+                    bodyFontSize,
+                    buttonHeight,
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(hPadding),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionTitle(l10n.earnings, sectionTitleSize),
+                        _buildPerformanceGrid(bodyFontSize, borderRadius),
+                        SizedBox(height: spacing),
+                        _buildMonthlyEarningsChart(
+                          chartHeight,
+                          borderRadius,
+                          bodyFontSize,
+                        ),
+                        SizedBox(height: spacing),
+                        _buildSectionTitle(
+                          l10n.incentivesAndOffers,
+                          sectionTitleSize,
+                        ),
+                        _buildBonusCard(borderRadius, bodyFontSize),
+                        SizedBox(height: 16 * paddingScale),
+                        // _buildReferCard(borderRadius, bodyFontSize),
+                        SizedBox(height: spacing),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildSectionTitle(
+                                l10n.transactionHistory,
+                                sectionTitleSize,
+                              ),
+                            ),
+                            if (_transactions.isNotEmpty) ...[
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/withdrawal-history',
+                                  );
+                                },
+                                child: Text(
+                                  AppLocalizations.of(context)!.viewAll,
+                                  style: TextStyle(fontSize: bodyFontSize),
                                 ),
                               ),
-                              if (_transactions.isNotEmpty) ...[
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pushNamed(
-                                      context,
-                                      '/withdrawal-history',
-                                    );
-                                  },
-                                  child: Text(
-                                    AppLocalizations.of(context)!.viewAll,
-                                    style: TextStyle(fontSize: bodyFontSize),
-                                  ),
-                                ),
-                              ],
                             ],
-                          ),
-                          _buildTransactionList(
-                            bodyFontSize,
-                            borderRadius,
-                            iconSize,
-                          ),
-                          SizedBox(height: 20 * paddingScale),
-                        ],
-                      ),
+                          ],
+                        ),
+                        _buildTransactionList(
+                          bodyFontSize,
+                          borderRadius,
+                          iconSize,
+                        ),
+                        SizedBox(height: 20 * paddingScale),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -1451,12 +1441,18 @@ class _EarningsScreenState extends State<EarningsScreen> {
   Widget _buildBonusCard(double borderRadius, double fontSize) {
     final l10n = AppLocalizations.of(context)!;
 
-    // Use backend data if available, otherwise default/hidden
-    if (_weeklyBonus == null) {
-      return SizedBox.shrink(); // Or show loading/placeholder
-    }
-
-    final bonus = _weeklyBonus!;
+    // Always show card, use default values if API returns null
+    final bonus =
+        _weeklyBonus ??
+        WeeklyBonus(
+          title: 'Weekly Bonus',
+          subtitle: 'Complete jobs to earn bonus',
+          targetJobs: 15,
+          completedJobs: 0,
+          rewardAmount: 200.0,
+          isCompleted: false,
+          endsIn: 'This week',
+        );
 
     double progress = (bonus.completedJobs / bonus.targetJobs).clamp(0.0, 1.0);
     bool isComplete = bonus.isCompleted;

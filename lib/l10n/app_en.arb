@@ -52,7 +52,7 @@
   "bloodGroup": "Blood Group",
   "selectBloodGroup": "Select Blood Group",
   "recommended": "Recommended",
-  "pressBackAgainToExit": "Press back again to exit",
+  "pressBackAgainToExit": "Press again to exit",
   "appSlogan": "Own Work. Own Boss",
   "continuingToLogin": "Continuing to login..",
   
@@ -562,7 +562,7 @@
   
   "myAccount": "My Account",
   "workWithUs": "Work with Us",
-  "partnerId": "Partner ID:",
+  "partnerId": "ID:",
   "paymentMethod": "Payment Method",
   "myDocuments": "My Documents",
   "myServices": "My Services",

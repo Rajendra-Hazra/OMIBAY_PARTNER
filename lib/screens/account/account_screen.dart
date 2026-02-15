@@ -117,10 +117,21 @@ class _AccountScreenState extends State<AccountScreen> {
 
       setState(() {
         if (savedName != null && savedName.isNotEmpty) {
-          _displayName = LocalizationHelper.getLocalizedCustomerName(
-            context,
-            savedName,
-          );
+          // Check if the name is actually a phone number (only digits with optional +91 prefix)
+          final cleanedName = savedName.replaceAll(RegExp(r'[\s\-\(\)\+]'), '');
+          final isPhoneNumber = RegExp(r'^(91)?\d{10}$').hasMatch(cleanedName);
+
+          if (isPhoneNumber) {
+            // If name is a phone number, show "Partner" instead
+            _displayName = l10n.partner;
+          } else {
+            // Show only first name (like home screen header)
+            final localizedName = LocalizationHelper.getLocalizedCustomerName(
+              context,
+              savedName,
+            );
+            _displayName = localizedName.split(' ').first;
+          }
         } else {
           _displayName = l10n.partner;
         }
@@ -161,7 +172,7 @@ class _AccountScreenState extends State<AccountScreen> {
           top: false,
           bottom: false,
           child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
+            physics: const ClampingScrollPhysics(),
             child: Column(
               children: [
                 _buildHeader(context),

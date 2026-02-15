@@ -171,7 +171,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recommended => 'Recommended';
 
   @override
-  String get pressBackAgainToExit => 'Press back again to exit';
+  String get pressBackAgainToExit => 'Press again to exit';
 
   @override
   String get appSlogan => 'Own Work. Own Boss';
@@ -1307,7 +1307,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workWithUs => 'Work with Us';
 
   @override
-  String get partnerId => 'Partner ID:';
+  String get partnerId => 'ID:';
 
   @override
   String get myDocuments => 'My Documents';
