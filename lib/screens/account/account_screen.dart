@@ -125,12 +125,8 @@ class _AccountScreenState extends State<AccountScreen> {
             // If name is a phone number, show "Partner" instead
             _displayName = l10n.partner;
           } else {
-            // Show only first name (like home screen header)
-            final localizedName = LocalizationHelper.getLocalizedCustomerName(
-              context,
-              savedName,
-            );
-            _displayName = localizedName.split(' ').first;
+            // Show only first name - extract directly without LocalizationHelper
+            _displayName = savedName.trim().split(' ').first;
           }
         } else {
           _displayName = l10n.partner;

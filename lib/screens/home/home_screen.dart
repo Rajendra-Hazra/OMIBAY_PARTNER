@@ -584,26 +584,31 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       final savedTodayJobsDone = prefs.getInt('today_jobs_done') ?? 0;
       final savedOnlineSeconds = prefs.getInt('today_online_seconds') ?? 0;
 
+      debugPrint('Loading profile - savedName: $savedName');
+
       setState(() {
         if (savedName != null && savedName.isNotEmpty) {
           // Check if the name is actually a phone number
           final cleanedName = savedName.replaceAll(RegExp(r'[\s\-\(\)\+]'), '');
           final isPhoneNumber = RegExp(r'^(91)?\d{10}$').hasMatch(cleanedName);
 
+          debugPrint(
+            'Phone check - cleaned: $cleanedName, isPhone: $isPhoneNumber',
+          );
+
           if (isPhoneNumber) {
             // Show "Partner" instead of phone number
             _displayName = 'Partner';
+            debugPrint('Showing Partner (phone detected)');
           } else {
-            // Show only first name (like account screen)
-            final localizedName = LocalizationHelper.getLocalizedCustomerName(
-              context,
-              savedName,
-            );
-            _displayName = localizedName.split(' ').first;
+            // Show only first name - DON'T use LocalizationHelper, extract directly
+            _displayName = savedName.trim().split(' ').first;
+            debugPrint('Showing name: $_displayName');
           }
         } else {
           // If no name saved, show Partner
           _displayName = 'Partner';
+          debugPrint('No name saved, showing Partner');
         }
         if (savedPhotoPath != null && savedPhotoPath.isNotEmpty) {
           _photoUrl = savedPhotoPath;
