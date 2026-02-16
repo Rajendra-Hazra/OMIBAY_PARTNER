@@ -160,8 +160,24 @@ class AuthRepositoryImpl implements AuthRepository {
       await prefs.setString('partner_access_date', authResponse.data.createdAt);
 
       // Save user details for chat and profile
+      // Only update name if backend has a real name (not phone number)
       if (authResponse.data.name.isNotEmpty) {
-        await prefs.setString('profile_name', authResponse.data.name);
+        final cleanedBackendName = authResponse.data.name.replaceAll(
+          RegExp(r'[\s\-\(\)\+]'),
+          '',
+        );
+        final isPhoneNumber = RegExp(
+          r'^(91)?\d{10}$',
+        ).hasMatch(cleanedBackendName);
+
+        if (!isPhoneNumber) {
+          await prefs.setString('profile_name', authResponse.data.name);
+        } else {
+          final existingName = prefs.getString('profile_name');
+          if (existingName == null || existingName.isEmpty) {
+            await prefs.setString('profile_name', authResponse.data.name);
+          }
+        }
       }
       if (authResponse.data.email != null &&
           authResponse.data.email!.isNotEmpty) {
@@ -229,7 +245,11 @@ class AuthRepositoryImpl implements AuthRepository {
       );
 
       // Update user details for chat and profile
-      if (authResponse.data.name.isNotEmpty) {
+      // NEVER overwrite name - user can update it manually in edit profile
+      // Only set name from backend on first login (when no local name exists)
+      final existingName = prefs.getString('profile_name');
+      if ((existingName == null || existingName.isEmpty) &&
+          authResponse.data.name.isNotEmpty) {
         await prefs.setString('profile_name', authResponse.data.name);
       }
       if (authResponse.data.email != null &&
@@ -332,8 +352,24 @@ class AuthRepositoryImpl implements AuthRepository {
       await prefs.setString('partner_access_date', authResponse.data.createdAt);
 
       // Save user details for chat and profile
+      // Only update name if backend has a real name (not phone number)
       if (authResponse.data.name.isNotEmpty) {
-        await prefs.setString('profile_name', authResponse.data.name);
+        final cleanedBackendName = authResponse.data.name.replaceAll(
+          RegExp(r'[\s\-\(\)\+]'),
+          '',
+        );
+        final isPhoneNumber = RegExp(
+          r'^(91)?\d{10}$',
+        ).hasMatch(cleanedBackendName);
+
+        if (!isPhoneNumber) {
+          await prefs.setString('profile_name', authResponse.data.name);
+        } else {
+          final existingName = prefs.getString('profile_name');
+          if (existingName == null || existingName.isEmpty) {
+            await prefs.setString('profile_name', authResponse.data.name);
+          }
+        }
       }
       if (authResponse.data.email != null &&
           authResponse.data.email!.isNotEmpty) {

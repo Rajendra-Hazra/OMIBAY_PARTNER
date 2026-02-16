@@ -8,6 +8,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'l10n/app_localizations.dart';
 import 'core/app_theme.dart';
+import 'core/network/api_client.dart';
 import 'services/notification_service.dart';
 import 'screens/splash/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
@@ -20,6 +21,7 @@ import 'screens/auth/work_verification_screen.dart';
 import 'screens/jobs/job_details_screen.dart';
 import 'screens/jobs/active_job_screen.dart';
 import 'screens/notifications_screen.dart';
+import 'screens/no_internet_screen.dart';
 import 'screens/account/support_screen.dart';
 import 'screens/account/payment_setup_screen.dart';
 import 'screens/account/edit_services_screen.dart';
@@ -77,6 +79,9 @@ class LocaleNotifier extends ChangeNotifier {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Set global navigator key for network error handling
+  ApiClient.globalNavigatorKey = navigatorKey;
 
   // Initialize Firebase (skip on web until FirebaseOptions are configured)
   if (!kIsWeb) {

@@ -35,7 +35,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   bool _isOnline = false;
   String _displayName = '';
-  String _photoUrl = 'https://via.placeholder.com/150';
+  String _photoUrl = '';
   String _rating = '0.0';
   String _todayRating = '0.0';
   double _todayBusiness = 0.0;
@@ -588,23 +588,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
       setState(() {
         if (savedName != null && savedName.isNotEmpty) {
-          // Check if the name is actually a phone number
-          final cleanedName = savedName.replaceAll(RegExp(r'[\s\-\(\)\+]'), '');
-          final isPhoneNumber = RegExp(r'^(91)?\d{10}$').hasMatch(cleanedName);
-
-          debugPrint(
-            'Phone check - cleaned: $cleanedName, isPhone: $isPhoneNumber',
-          );
-
-          if (isPhoneNumber) {
-            // Show "Partner" instead of phone number
-            _displayName = 'Partner';
-            debugPrint('Showing Partner (phone detected)');
-          } else {
-            // Show only first name - DON'T use LocalizationHelper, extract directly
-            _displayName = savedName.trim().split(' ').first;
-            debugPrint('Showing name: $_displayName');
-          }
+          // Show only first name
+          _displayName = savedName.trim().split(' ').first;
+          debugPrint('Showing name: $_displayName');
         } else {
           // If no name saved, show Partner
           _displayName = 'Partner';

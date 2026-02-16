@@ -117,17 +117,8 @@ class _AccountScreenState extends State<AccountScreen> {
 
       setState(() {
         if (savedName != null && savedName.isNotEmpty) {
-          // Check if the name is actually a phone number (only digits with optional +91 prefix)
-          final cleanedName = savedName.replaceAll(RegExp(r'[\s\-\(\)\+]'), '');
-          final isPhoneNumber = RegExp(r'^(91)?\d{10}$').hasMatch(cleanedName);
-
-          if (isPhoneNumber) {
-            // If name is a phone number, show "Partner" instead
-            _displayName = l10n.partner;
-          } else {
-            // Show only first name - extract directly without LocalizationHelper
-            _displayName = savedName.trim().split(' ').first;
-          }
+          // Show only first name
+          _displayName = savedName.trim().split(' ').first;
         } else {
           _displayName = l10n.partner;
         }

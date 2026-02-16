@@ -1,9 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiClient {
   late final Dio _dio;
+  static GlobalKey<NavigatorState>? globalNavigatorKey;
 
   ApiClient({
     required String baseUrl,
@@ -36,6 +38,18 @@ class ApiClient {
             options.headers['Authorization'] = 'Bearer $token';
           }
           return handler.next(options);
+        },
+        onError: (DioException error, handler) async {
+          // Check for actual network connectivity errors only
+          if (error.type == DioExceptionType.connectionTimeout ||
+              error.type == DioExceptionType.connectionError) {
+            // Navigate to no internet screen
+            final context = globalNavigatorKey?.currentContext;
+            if (context != null && context.mounted) {
+              Navigator.of(context).pushNamed('/no-internet');
+            }
+          }
+          return handler.next(error);
         },
       ),
     );

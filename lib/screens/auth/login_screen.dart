@@ -14,6 +14,7 @@ import '../../core/localization_helper.dart';
 import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../repositories/auth_repository.dart';
+import '../../services/notification_service.dart';
 
 enum LoginStep { phone, otp, gmail, recovery }
 
@@ -170,6 +171,14 @@ class _LoginScreenState extends State<LoginScreen> {
       if (authResponse.data.isVerified || hasPartnerId || hasRemoteName) {
         Navigator.pushReplacementNamed(context, '/home');
       } else {
+        // Request notification permission before document verification
+        if (!kIsWeb) {
+          await NotificationService.instance.getToken().then((token) {
+            if (token != null) {
+              _authRepository.updateFcmToken(token);
+            }
+          });
+        }
         Navigator.pushReplacementNamed(context, '/verification');
       }
 
@@ -385,6 +394,14 @@ class _LoginScreenState extends State<LoginScreen> {
       if (authResponse.data.isVerified || hasPartnerId || hasRemoteName) {
         Navigator.pushReplacementNamed(context, '/home');
       } else {
+        // Request notification permission before document verification
+        if (!kIsWeb) {
+          await NotificationService.instance.getToken().then((token) {
+            if (token != null) {
+              _authRepository.updateFcmToken(token);
+            }
+          });
+        }
         Navigator.pushReplacementNamed(context, '/verification');
       }
     } catch (e) {
