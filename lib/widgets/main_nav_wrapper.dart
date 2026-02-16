@@ -237,17 +237,16 @@ class _MainNavigationWrapperState extends State<MainNavigationWrapper> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Logo
                     Image.asset(
                       'images/logo.png',
                       width: 22,
                       height: 22,
                       fit: BoxFit.contain,
                     ),
-                    const SizedBox(width: 6),
-                    // Text
+                    const SizedBox(width: 8),
                     Text(
                       AppLocalizations.of(context)!.pressBackAgainToExit,
                       style: const TextStyle(fontSize: 13, color: Colors.white),
@@ -257,18 +256,17 @@ class _MainNavigationWrapperState extends State<MainNavigationWrapper> {
                 duration: const Duration(seconds: 2),
                 behavior: SnackBarBehavior.floating,
                 backgroundColor: const Color(0xFF323232),
-                // Center it with proper spacing above bottom nav
                 margin: const EdgeInsets.only(
                   bottom: 20,
-                  left: 100,
-                  right: 100,
+                  left: 120,
+                  right: 120,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 8,
+                  horizontal: 16,
+                  vertical: 10,
                 ),
               ),
             );

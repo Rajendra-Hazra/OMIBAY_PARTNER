@@ -34,7 +34,6 @@ class _NoInternetScreenState extends State<NoInternetScreen> {
       textDirection: TextDirection.ltr,
       child: WillPopScope(
         onWillPop: () async {
-          // Disable back button
           return false;
         },
         child: Scaffold(
