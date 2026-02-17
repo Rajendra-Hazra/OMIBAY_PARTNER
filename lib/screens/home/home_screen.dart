@@ -74,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _loadProfileData();
     _loadActiveJob();
-    _loadOnlineStatus();
+    _loadOnlineStatus(); // This now loads cached first internally
     _loadWeeklyBonus(); // Load weekly bonus from earnings API
     _loadUnreadNotificationsCount(); // Load unread notifications count
     // Listen for global profile updates
@@ -90,38 +90,33 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   // Refactored to fetch status & stats from backend
   Future<void> _loadOnlineStatus() async {
     try {
+      // IMMEDIATELY load and set cached status first (no delay)
+      final prefs = await SharedPreferences.getInstance();
+      final localIsOnline = prefs.getBool('partner_is_online') ?? false;
+
+      // Set cached status immediately
+      if (mounted) {
+        setState(() {
+          _isOnline = localIsOnline;
+        });
+      }
+
+      // Start timer if already online
+      if (localIsOnline) {
+        await _catchUpOnlineTime();
+        _startOnlineTimer();
+      }
+
+      // Then fetch from API in background
       final status = await _partnerRepository.getPartnerStatus();
 
-      if (status != null) {
-        if (mounted) {
-          setState(() {
-            _isOnline = status.isOnline;
-            _rating = status.rating.toStringAsFixed(1);
-            _todayBusiness = status.todayEarnings;
-            _todayJobsDone = status.todayJobs;
-          });
-        }
-
-        if (status.isOnline) {
-          // Catch up on time if the app was killed while online
-          await _catchUpOnlineTime();
-          _startOnlineTimer();
-        }
-      } else {
-        // Fallback to local storage if API fails
-        final prefs = await SharedPreferences.getInstance();
-        final savedIsOnline = prefs.getBool('partner_is_online') ?? false;
-
-        if (mounted) {
-          setState(() {
-            _isOnline = savedIsOnline;
-          });
-        }
-
-        if (savedIsOnline) {
-          await _catchUpOnlineTime();
-          _startOnlineTimer();
-        }
+      if (status != null && mounted) {
+        // Only update stats, NOT online status (trust local)
+        setState(() {
+          _rating = status.rating.toStringAsFixed(1);
+          _todayBusiness = status.todayEarnings;
+          _todayJobsDone = status.todayJobs;
+        });
       }
 
       // After loading, wait for one frame then enable animations
